@@ -1,0 +1,9 @@
+FROM nginx
+COPY ./jvm/dockerfiles/nginx/nginx.conf /etc/nginx
+
+WORKDIR /js
+COPY ./js/dist/main.js /js
+COPY ./js/public/index.html /js
+COPY ./js/public/favicon.ico /js
+COPY ./js/public/logo192.png /js
+COPY ./js/public/logo512.png /js

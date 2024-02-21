@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "noImplicitAny": true,
+    "jsx": "react-jsx",
+    "target": "ES2015",
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node",
+    "baseUrl": "./",
+    "paths": {
+      "react-router-dom": ["node_modules/react-router-dom"]
+    },
+		"outDir": "./build",
+	},
+}

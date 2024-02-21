@@ -1,0 +1,62 @@
+.Player {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 3vh;
+	padding: 2rem;
+}
+
+.Player .info {
+	display: flex;
+	flex-direction: column;
+}
+
+.Player .avatar {
+	width: 60px;
+	height: 60px;
+	border-radius: 50%;
+	background-color: var(--primary-color);
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 30px;
+	margin-right: 20px;
+}
+
+.Player p {
+	margin:0;
+	padding: 0;
+}
+
+.Player .stats {
+	font-size: 2.5vh;
+	margin: 0;
+	padding: 0;
+}
+
+.Player .link {
+	cursor: pointer;
+	white-space: nowrap;
+}
+
+.Player .link:hover {
+	color: var(--primary-color);
+	text-decoration: underline;
+}
+
+.Player .color {
+	width: 30px;
+	height: 30px;
+	z-index: 10;
+	border-radius: 50%;
+	margin-left: 4vh;
+}
+
+.Player .color:has(.B){
+	background-color: var(--primary-color);
+}
+
+.Player .color:has(.W){
+	background-color: white;
+}

@@ -1,0 +1,45 @@
+
+.Home .title {
+  color: white;
+  font-size: 5vh;
+}
+
+.Home .description {
+  color: var(--primary-color);
+}
+
+.Home img {
+  width: 60%;
+  height: auto;
+  margin: 0;
+  padding: 0;
+}
+
+.Home .authors {
+  display: flex;
+  flex-direction: column;
+}
+
+.Home .authors a {
+  color: var(--primary-color);
+  font-size: 2vh;
+  transition: color 0.3s ease, color 0.3s ease;
+  padding: 2px;
+}
+
+.Home .authors :hover {
+  color: white;
+}
+
+.Home footer small {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  padding: 20px;
+  color: var(--secondary-color);
+}
+
+.Home footer p {
+  margin-top: 5vh;
+  font-size: small;
+}

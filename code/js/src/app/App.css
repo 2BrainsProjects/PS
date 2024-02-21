@@ -1,0 +1,33 @@
+.App {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.App > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: start;
+  align-items: center;
+  text-align: center;
+}
+
+.App > div:not(.Sidebar) {
+	margin-left: 5vw;
+}
+
+.App button {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  border: 0;
+  border-radius: 20px;
+  transition: 300ms ease-in-out;
+  padding: 1vh 3vh;
+}
+
+.App button:hover {
+  background-color: white;
+  color: var(--primary-color);
+  cursor: pointer;
+}

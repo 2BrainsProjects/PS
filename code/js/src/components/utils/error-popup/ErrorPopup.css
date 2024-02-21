@@ -1,0 +1,22 @@
+.ErrorPopup{
+	position: fixed;
+	top: 0;
+	left: 50%;
+	transform: translateX(-50%);
+	background-color: var(--primary-color);
+	color: var(--on-primary-color);
+	padding: 1vh 10vh 1vh 10vh;
+	margin: 2vh;
+	text-align: center;
+	border-radius: 10px;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+	z-index: 10;
+}
+
+.ErrorPopup .title {
+	font-size: 2.5vh;
+}
+
+.ErrorPopup .detail {
+	font-size: 1.5vh;
+}

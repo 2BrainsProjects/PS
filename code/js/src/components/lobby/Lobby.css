@@ -1,0 +1,44 @@
+
+.Lobby .content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.Lobby .content .waiting-for-opponent {
+  font-size: 4vh;
+  color: var(--on-primary-color);
+}
+
+.Lobby .spinner {
+  border: 5px solid var(--primary-color);
+  border-top: 5px solid var(--background-color);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 3vh;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.Lobby .content button {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  border: 0;
+  border-radius: 20px;
+  transition: 300ms ease-in-out;
+  padding: 1vh 10vh;
+  margin-top: 5vh;
+}
+
+.Lobby .content button:hover {
+  background-color: white;
+  color: var(--primary-color);
+  cursor: pointer;
+}

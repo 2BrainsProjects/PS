@@ -1,0 +1,1 @@
+delete from dbo.user where name like 'testUser%';
