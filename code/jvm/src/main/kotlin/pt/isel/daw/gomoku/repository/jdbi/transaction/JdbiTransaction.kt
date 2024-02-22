@@ -9,7 +9,5 @@ import pt.isel.daw.gomoku.repository.transaction.Transaction
 
 class JdbiTransaction(handle: Handle) : Transaction {
     override val userRepository = JdbiUserRepository(handle)
-    override val lobbyRepository = JdbiLobbyRepository(handle)
-    override val gameRepository = JdbiGameRepository(handle)
     override val tokenRepository = JdbiTokenRepository(handle)
 }

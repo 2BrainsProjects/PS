@@ -47,16 +47,10 @@ class HomeController {
     companion object {
         private val authors = listOf(
             AuthorModel(
-                name = "Ricardo Costa",
-                email = "rcosta.ms358@gmail.com",
-                github = "https://github.com/R1c4rdCo5t4",
-                number = 49511
-            ),
-            AuthorModel(
-                name = "Vasco Costa",
-                email = "vascosta15@gmail.com",
-                github = "https://github.com/VascostaIsel",
-                number = 49412
+                name = "Joana Chuço",
+                email = "joanachuco@gmail.com",
+                github = "https://github.com/49469",
+                number = 49469
             ),
             AuthorModel(
                 name = "Diogo Almeida",
@@ -68,8 +62,8 @@ class HomeController {
 
         private val home = GetHomeOutputModel(
             title = "Gomoku",
-            version = "0.1.0",
-            description = "Gomoku, also called Five in a Row, is an abstract strategy board game",
+            version = "0.0.1",
+            description = "Anonymous chat between users",
             authors = authors,
             repository = "https://github.com/isel-leic-daw/2023-daw-leic51d-08"
         )
