@@ -1,6 +1,5 @@
 package pt.isel.daw.gomoku.repository
 
-import pt.isel.daw.gomoku.domain.user.Stats
 import pt.isel.daw.gomoku.domain.user.User
 
 interface UserRepository {
@@ -14,5 +13,4 @@ interface UserRepository {
     fun isUser(id: Int): Boolean
     fun isUserByUsername(name: String): Boolean
     fun isUserByEmail(email: String): Boolean
-    fun updateStats(userId: Int, stats: Stats)
 }

@@ -81,7 +81,6 @@ class UserServiceTest : ServicesTest() {
         val user = usersServices.getUser(userId)
         assertEquals(user.name, userById.name)
         assertEquals(user.email, userById.email)
-        assertEquals(user.stats, userById.stats)
     }
 
     @Test

@@ -17,6 +17,7 @@ import pt.isel.daw.gomoku.http.pipeline.authentication.AuthenticationInterceptor
 import pt.isel.daw.gomoku.http.pipeline.authentication.SessionArgumentResolver
 import pt.isel.daw.gomoku.repository.jdbi.utils.configure
 import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.hours
 
 /**
  * The application's entry point
@@ -43,7 +44,7 @@ class GomokuApplication {
     @Bean
     fun usersDomainConfig() = UserDomainConfig(
         tokenSizeInBytes = 256 / 8,
-        tokenTtl = 15.days,
+        tokenTtl = 1.hours,
         tokenRollingTtl = 3.days,
         maxTokensPerUser = 3
     )

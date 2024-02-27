@@ -46,8 +46,7 @@ class UserController(
             clazz = listOf(Rels.User.HOME),
             properties = GetUserOutputModel(
                 session.user.name,
-                session.user.email,
-                session.user.stats
+                session.user.email
             ),
             links = listOf(
                 Links.self(Uris.User.HOME),
@@ -55,8 +54,6 @@ class UserController(
             ),
             actions = listOf(
                 Actions.User.logout(),
-                Actions.Lobby.join(),
-                Actions.Lobby.findMatch(),
                 Actions.User.getById(session.user.id)
             )
         ).ok()
@@ -74,6 +71,7 @@ class UserController(
         val userId = services.registerUser(body.name, body.email, body.password)
         return SirenEntity<Unit>(
             clazz = listOf(Rels.User.REGISTER),
+            // properties = RegisterOutputModel(CertificateFactory.getInstance("X.509").generateCertificate("".byteInputStream())),
             links = listOf(Links.home()),
             entities = listOf(
                 SubEntity.EmbeddedLink(
@@ -129,9 +127,9 @@ class UserController(
         val user = services.getUser(userId)
         return SirenEntity(
             clazz = listOf(Rels.User.USER),
-            properties = GetUserOutputModel(user.name, user.email, user.stats),
+            properties = GetUserOutputModel(user.name, user.email),
             links = listOf(Links.self(Uris.User.user(userId).toString())),
-            actions = listOf(Actions.Game.getGames())
+            actions = listOf()
         ).ok()
     }
 
@@ -163,7 +161,7 @@ class UserController(
             entities = users.map { user ->
                 SubEntity.EmbeddedRepresentation(
                     rel = listOf(Rels.User.USER, Rels.Collection.ITEM),
-                    properties = GetUserOutputModel(user.name, user.email, user.stats),
+                    properties = GetUserOutputModel(user.name, user.email),
                     links = listOf(Links.self(Uris.User.user(user.id).toString())),
                     actions = listOf(Actions.User.getById(user.id))
                 )

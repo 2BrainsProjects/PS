@@ -1,6 +1,5 @@
 package pt.isel.daw.gomoku.services.models
 
-import pt.isel.daw.gomoku.domain.user.Stats
 import pt.isel.daw.gomoku.domain.user.User
 
 data class UserModel(

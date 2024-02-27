@@ -13,8 +13,6 @@ import org.springframework.web.bind.MissingServletRequestParameterException
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
-import pt.isel.daw.gomoku.domain.exceptions.GameException
-import pt.isel.daw.gomoku.domain.exceptions.LobbyException
 import pt.isel.daw.gomoku.domain.exceptions.UserException
 import pt.isel.daw.gomoku.http.media.Problem
 import pt.isel.daw.gomoku.http.pipeline.authentication.AuthenticationInterceptor.Companion.WWW_AUTHENTICATE_HEADER
@@ -85,15 +83,8 @@ class ExceptionHandler {
     @ExceptionHandler(
         value = [
             IllegalArgumentException::class,
-            GameException.GameAlreadyOverException::class,
-            GameException.NotPlayerTurnException::class,
-            GameException.InvalidMoveException::class,
-            GameException.UserNotInGameException::class,
             UserException.InvalidTokenException::class,
-            UserException.UserAlreadyExistsException::class,
-            LobbyException.UserNotInLobbyException::class,
-            LobbyException.UserAlreadyInLobbyException::class,
-            LobbyException.UserAlreadyInGameException::class
+            UserException.UserAlreadyExistsException::class
         ]
     )
     fun handleBadRequest(request: HttpServletRequest, ex: Exception) =
@@ -121,18 +112,6 @@ class ExceptionHandler {
 
     @ExceptionHandler(
         value = [
-            LobbyException.LobbyIsFullException::class
-        ]
-    )
-    fun handleForbidden(request: HttpServletRequest, ex: Exception): ResponseEntity<Problem> =
-        ex.handle(
-            request = request,
-            status = HttpStatus.FORBIDDEN
-        )
-
-    @ExceptionHandler(
-        value = [
-            GameException.GameNotFoundException::class,
             UserException.UserNotFoundException::class
         ]
     )
@@ -140,17 +119,6 @@ class ExceptionHandler {
         ex.handle(
             request = request,
             status = HttpStatus.NOT_FOUND
-        )
-
-    @ExceptionHandler(
-        value = [
-            LobbyException.RuleNotImplementedException::class
-        ]
-    )
-    fun handleNotImplementedException(request: HttpServletRequest, ex: Exception) =
-        ex.handle(
-            request = request,
-            status = HttpStatus.NOT_IMPLEMENTED
         )
 
     @ExceptionHandler(value = [Exception::class])

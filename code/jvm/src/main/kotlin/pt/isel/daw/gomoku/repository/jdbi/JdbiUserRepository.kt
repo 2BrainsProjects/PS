@@ -2,7 +2,6 @@ package pt.isel.daw.gomoku.repository.jdbi
 
 import org.jdbi.v3.core.Handle
 import org.jdbi.v3.core.kotlin.mapTo
-import pt.isel.daw.gomoku.domain.user.Stats
 import pt.isel.daw.gomoku.domain.user.User
 import pt.isel.daw.gomoku.repository.UserRepository
 
@@ -122,26 +121,4 @@ class JdbiUserRepository(
             .bind("email", email)
             .mapTo<Int>()
             .one() == 1
-
-    override fun updateStats(userId: Int, stats: Stats) {
-        handle.createUpdate(
-            """
-                update dbo.User
-                set
-                    games_played = :gamesPlayed,
-                    wins = :wins,
-                    losses = :losses,
-                    draws = :draws,
-                    rating = :rating
-                where id = :userId
-            """
-        )
-            .bind("userId", userId)
-            .bind("gamesPlayed", stats.gamesPlayed)
-            .bind("wins", stats.wins)
-            .bind("losses", stats.losses)
-            .bind("draws", stats.draws)
-            .bind("rating", stats.rating)
-            .execute()
-    }
 }

@@ -25,26 +25,4 @@ object Uris {
         fun register() = URI(REGISTER)
         fun logout() = URI(LOGOUT)
     }
-
-    object Game {
-        const val GAME = "/game/{gameId}"
-        const val PLAY = "/game/play"
-        const val GAMES = "/games"
-        const val LEAVE = "/game/leave"
-
-        fun game(id: Int) = UriTemplate(GAME).expand(id)
-        fun play() = URI(PLAY)
-        fun games() = URI(GAMES)
-        fun leave() = URI(LEAVE)
-    }
-
-    object Lobby {
-        const val JOIN = "/lobby/join"
-        const val FIND_MATCH = "/lobby/matchmaking"
-        const val LEAVE = "/lobby/leave"
-
-        fun join() = URI(JOIN)
-        fun findMatch() = URI(FIND_MATCH)
-        fun leave() = URI(LEAVE)
-    }
 }

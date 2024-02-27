@@ -24,8 +24,6 @@ It is also represented in the following relational schema:
 
 The data model contains the following entities:
 * The `User` entity represents a user of the system;
-* The `Game` entity represents a game of Gomoku;
-* The `Lobby` entity represents a lobby, which contains the users that are waiting to join a game;
 * The `Token` entity represents a token used to authenticate a user;
 
 
@@ -76,8 +74,6 @@ The services package contains the classes that perform validations of parameters
 
 The services are organized in the following classes:
 * [UsersService](./src/main/kotlin/pt/isel/daw/gomoku/services/UserService.kt), which contains the services related to the `User` entity;
-* [GameService](./src/main/kotlin/pt/isel/daw/gomoku/services/GameService.kt), which contains the services related to the `Game` entity;
-* [LobbyService](./src/main/kotlin/pt/isel/daw/gomoku/services/LobbyService.kt), which contains the services related to the `Lobby` entity;
 
 #### Repository
 
@@ -85,8 +81,6 @@ The repository package contains the interfaces and implementations that are used
 
 The repository is organized in the following classes:
 * [UsersRepository](./src/main/kotlin/pt/isel/daw/gomoku/repository/UserRepository.kt), which contains the repository related to the `User` entity;
-* [GameRepository](./src/main/kotlin/pt/isel/daw/gomoku/repository/GameRepository.kt), which contains the repository related to the `Game` entity;
-* [LobbyRepository](./src/main/kotlin/pt/isel/daw/gomoku/repository/LobbyRepository.kt), which contains the repository related to the `Lobby` entity;
 * [TokenRepository](./src/main/kotlin/pt/isel/daw/gomoku/repository/TokenRepository.kt), which contains the repository related to the `Token` entity;
 
 This package also contains the `JdbiTransactionManager` used to access the database, and the `JdbiConfig` used to register the mappers of the application.
@@ -96,9 +90,6 @@ This package also contains the `JdbiTransactionManager` used to access the datab
 
 The domain package contains all the core entities of the game, such as:
 * [User](./src/main/kotlin/pt/isel/daw/gomoku/domain/user/User.kt), which represents a user of the system;
-* [Game](./src/main/kotlin/pt/isel/daw/gomoku/domain/game/Game.kt), which represents a game of Gomoku;
-* [Lobby](./src/main/kotlin/pt/isel/daw/gomoku/domain/lobby/Lobby.kt), which represents a lobby, that contains the users that are waiting to join a game;
-* [Board](./src/main/kotlin/pt/isel/daw/gomoku/domain/game/Board.kt), which represents the board of a game;
 
 This package also contains the specific custom exceptions that are thrown by the application.
 
