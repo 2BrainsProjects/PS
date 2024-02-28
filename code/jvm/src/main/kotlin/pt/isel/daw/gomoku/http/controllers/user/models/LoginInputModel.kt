@@ -10,6 +10,9 @@ data class LoginInputModel(
     @field:Pattern(regexp = Regex.VALID_STRING, message = Regex.VALID_STRING_MSG)
     val name: String? = null,
 
+    @field:Pattern(regexp = Regex.VALID_IP, message = Regex.VALID_IP_MSG)
+    val ip: String? = null,
+
     @field:Email
     val email: String? = null,
 

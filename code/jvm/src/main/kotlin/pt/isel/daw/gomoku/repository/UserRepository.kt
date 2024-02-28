@@ -3,7 +3,7 @@ package pt.isel.daw.gomoku.repository
 import pt.isel.daw.gomoku.domain.user.User
 
 interface UserRepository {
-
+    fun updateIp(id: Int, ip: String): Boolean
     fun registerUser(name: String, email: String, passwordHash: String): Int
     fun getUser(id: Int): User
     fun getUserByUsername(name: String): User

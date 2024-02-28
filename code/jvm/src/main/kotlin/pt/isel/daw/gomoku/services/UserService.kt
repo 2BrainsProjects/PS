@@ -2,11 +2,7 @@ package pt.isel.daw.gomoku.services
 
 import kotlinx.datetime.Clock
 import org.springframework.stereotype.Component
-import pt.isel.daw.gomoku.domain.exceptions.UserException.InvalidCredentialsException
-import pt.isel.daw.gomoku.domain.exceptions.UserException.InvalidTokenException
-import pt.isel.daw.gomoku.domain.exceptions.UserException.UnauthorizedException
-import pt.isel.daw.gomoku.domain.exceptions.UserException.UserAlreadyExistsException
-import pt.isel.daw.gomoku.domain.exceptions.UserException.UserNotFoundException
+import pt.isel.daw.gomoku.domain.exceptions.UserException.*
 import pt.isel.daw.gomoku.domain.exceptions.requireOrThrow
 import pt.isel.daw.gomoku.domain.user.Token
 import pt.isel.daw.gomoku.domain.user.User
@@ -16,6 +12,9 @@ import pt.isel.daw.gomoku.services.models.TokenModel
 import pt.isel.daw.gomoku.services.models.UserModel
 import pt.isel.daw.gomoku.services.models.UserModel.Companion.toModel
 import pt.isel.daw.gomoku.services.models.UsersModel
+import java.security.cert.CertStore
+import java.security.cert.CollectionCertStoreParameters
+
 
 @Component
 class UserService(
@@ -55,12 +54,18 @@ class UserService(
      * @return The user's token
      * @throws InvalidCredentialsException if the username or email is not provided
      */
-    fun loginUser(name: String?, email: String?, password: String): TokenModel =
-        when {
-            name != null -> loginByUsername(name, password)
-            email != null -> loginByEmail(email, password)
+    fun loginUser(name: String?, email: String?, password: String, ip: String?): TokenModel {
+
+        if (ip == null) throw InvalidCredentialsException("Ip is required for login")
+        val certStore = CertStore.getInstance("Collection", CollectionCertStoreParameters(certCollection))
+        val tokenModel = when {
+            name != null -> loginByUsername(name, password, ip)
+            email != null -> loginByEmail(email, password, ip)
             else -> throw InvalidCredentialsException("Username or email is required for login")
         }
+
+        return tokenModel
+    }
 
     /**
      * Gets a user by id
@@ -155,7 +160,7 @@ class UserService(
      * @return The user's token
      * @throws InvalidCredentialsException if the username or password is incorrect
      */
-    private fun loginByUsername(name: String, password: String): TokenModel = tm.run {
+    private fun loginByUsername(name: String, password: String, ip: String): TokenModel = tm.run {
         requireOrThrow<InvalidCredentialsException>(it.userRepository.isUserByUsername(name)) {
             "Incorrect username or password"
         }
@@ -163,6 +168,8 @@ class UserService(
         requireOrThrow<InvalidCredentialsException>(domain.verifyPassword(password, user.passwordHash)) {
             "Incorrect username or password"
         }
+        it.userRepository.updateIp(user.id, ip)
+
         createToken(user.id)
     }
 
@@ -173,7 +180,7 @@ class UserService(
      * @return The user's token
      * @throws InvalidCredentialsException if the email or password is incorrect
      */
-    private fun loginByEmail(email: String, password: String): TokenModel = tm.run {
+    private fun loginByEmail(email: String, password: String, ip: String): TokenModel = tm.run {
         requireOrThrow<InvalidCredentialsException>(it.userRepository.isUserByEmail(email)) {
             "Incorrect email or password"
         }
@@ -181,6 +188,8 @@ class UserService(
         requireOrThrow<InvalidCredentialsException>(domain.verifyPassword(password, user.passwordHash)) {
             "Incorrect email or password"
         }
+        it.userRepository.updateIp(user.id, ip)
+
         createToken(user.id)
     }
 }

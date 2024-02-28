@@ -6,7 +6,8 @@ import kotlinx.datetime.toJavaInstant
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 import pt.isel.daw.gomoku.domain.user.utils.TokenEncoder
-import java.security.SecureRandom
+import java.io.FileInputStream
+import java.security.cert.X509Certificate
 import java.util.*
 import java.security.*
 import java.security.cert.CertificateFactory
