@@ -26,5 +26,8 @@ data class RegisterInputModel(
     @field:NotBlank
     @field:Size(min = MIN_PASSWORD_LENGTH, max = MAX_PASSWORD_LENGTH)
     @field:Pattern(regexp = Regex.SECURE_PASSWORD, message = Regex.SECURE_PASSWORD_MSG)
-    val password: String
+    val password: String,
+
+    @field:NotBlank
+    val publicKey:String
 )

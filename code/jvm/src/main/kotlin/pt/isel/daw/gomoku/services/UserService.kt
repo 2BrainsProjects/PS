@@ -31,17 +31,20 @@ class UserService(
      * @return The user's id
      * @throws UserAlreadyExistsException if the user already exists
      */
-    fun registerUser(name: String, email: String, password: String): Int {
+    fun registerUser(name: String, email: String, password: String, publicKey: String): Int {
         val passwordHash = domain.encodePassword(password)
-        return tm.run {
-            requireOrThrow<UserAlreadyExistsException>(!it.userRepository.isUserByUsername(name)) {
-                "User with name $name already exists"
+        // pode mandar exceção
+        val serverCertificate = domain.loadServerCertificate()
+        val signedPublicKey = domain.signPublicKey(publicKey, serverCertificate)   // enviar de volta para o cliente?
+            return tm.run {
+                requireOrThrow<UserAlreadyExistsException>(!it.userRepository.isUserByUsername(name)) {
+                    "User with name $name already exists"
+                }
+                requireOrThrow<UserAlreadyExistsException>(!it.userRepository.isUserByEmail(email)) {
+                    "User with email $email already exists"
+                }
+                it.userRepository.registerUser(name, email, passwordHash)
             }
-            requireOrThrow<UserAlreadyExistsException>(!it.userRepository.isUserByEmail(email)) {
-                "User with email $email already exists"
-            }
-            it.userRepository.registerUser(name, email, passwordHash)
-        }
     }
 
     /**

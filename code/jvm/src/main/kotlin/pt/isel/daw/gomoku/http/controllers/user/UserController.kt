@@ -68,7 +68,7 @@ class UserController(
         @Valid @RequestBody
         body: RegisterInputModel
     ): ResponseEntity<*> {
-        val userId = services.registerUser(body.name, body.email, body.password)
+        val userId = services.registerUser(body.name, body.email, body.password, body.publicKey)
         return SirenEntity<Unit>(
             clazz = listOf(Rels.User.REGISTER),
             // properties = RegisterOutputModel(CertificateFactory.getInstance("X.509").generateCertificate("".byteInputStream())),
