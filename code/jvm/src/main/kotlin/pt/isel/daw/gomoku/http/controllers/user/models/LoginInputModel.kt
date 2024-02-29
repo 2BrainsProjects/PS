@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
 import pt.isel.daw.gomoku.http.utils.Regex
+import java.security.cert.X509Certificate
 
 data class LoginInputModel(
 
@@ -17,5 +18,8 @@ data class LoginInputModel(
     val email: String? = null,
 
     @field:NotBlank
-    val password: String
+    val password: String,
+
+    @field:NotBlank
+    val certificate: X509Certificate
 )

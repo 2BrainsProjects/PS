@@ -7,19 +7,24 @@ import pt.isel.daw.gomoku.domain.exceptions.requireOrThrow
 import pt.isel.daw.gomoku.domain.user.Token
 import pt.isel.daw.gomoku.domain.user.User
 import pt.isel.daw.gomoku.domain.user.UserDomain
+import pt.isel.daw.gomoku.domain.user.utils.CertificateDomain
 import pt.isel.daw.gomoku.repository.transaction.TransactionManager
 import pt.isel.daw.gomoku.services.models.TokenModel
 import pt.isel.daw.gomoku.services.models.UserModel
 import pt.isel.daw.gomoku.services.models.UserModel.Companion.toModel
 import pt.isel.daw.gomoku.services.models.UsersModel
-import java.security.cert.CertStore
-import java.security.cert.CollectionCertStoreParameters
+import java.security.cert.CertPathValidator
+import java.security.cert.CertificateFactory
+import java.security.cert.PKIXParameters
+import java.security.cert.TrustAnchor
+import java.security.cert.X509Certificate
 
 
 @Component
 class UserService(
     private val tm: TransactionManager,
     private val domain: UserDomain,
+    private val cd: CertificateDomain,
     private val clock: Clock
 ) {
     /**
@@ -32,18 +37,17 @@ class UserService(
      */
     fun registerUser(name: String, email: String, password: String, publicKey: String): Int {
         val passwordHash = domain.encodePassword(password)
-        // pode mandar exceção
-        val serverCertificate = domain.loadServerCertificate()
-        val signedPublicKey = domain.signPublicKey(publicKey, serverCertificate)   // enviar de volta para o cliente?
-            return tm.run {
-                requireOrThrow<UserAlreadyExistsException>(!it.userRepository.isUserByUsername(name)) {
-                    "User with name $name already exists"
-                }
-                requireOrThrow<UserAlreadyExistsException>(!it.userRepository.isUserByEmail(email)) {
-                    "User with email $email already exists"
-                }
-                it.userRepository.registerUser(name, email, passwordHash)
+        val serverCertificate = cd.loadServerCertificate()
+        val clientCertificate = cd.createClientCertificate(publicKey)
+        return tm.run {
+            requireOrThrow<UserAlreadyExistsException>(!it.userRepository.isUserByUsername(name)) {
+                "User with name $name already exists"
             }
+            requireOrThrow<UserAlreadyExistsException>(!it.userRepository.isUserByEmail(email)) {
+                "User with email $email already exists"
+            }
+            it.userRepository.registerUser(name, email, passwordHash)
+        }
     }
 
     /**
@@ -54,10 +58,30 @@ class UserService(
      * @return The user's token
      * @throws InvalidCredentialsException if the username or email is not provided
      */
-    fun loginUser(name: String?, email: String?, password: String, ip: String?): TokenModel {
+    fun loginUser(name: String?, email: String?, password: String, ip: String?, certificate: X509Certificate ): TokenModel {
+
+        try {
+            certificate.checkValidity()
+
+            val serverCertificate = cd.loadServerCertificate()
+
+            val certList = listOf( certificate, serverCertificate)
+            val factory = CertificateFactory.getInstance("X.509")
+            val certPath = factory.generateCertPath(certList)
+            val trustAnchorSet = HashSet<TrustAnchor>()
+            trustAnchorSet.add(TrustAnchor(serverCertificate, null))
+
+            // When a PKIXParameters object is created, isRevocationEnabled flag is set to true.
+            val params = PKIXParameters(trustAnchorSet)
+            val certPathValidator = CertPathValidator.getInstance("PKIX")
+
+            certPathValidator.validate(certPath, params);
+        } catch ( e: Exception) {
+            throw InvalidCredentialsException("certificate is not valid")
+        }
 
         if (ip == null) throw InvalidCredentialsException("Ip is required for login")
-        val certStore = CertStore.getInstance("Collection", CollectionCertStoreParameters(certCollection))
+
         val tokenModel = when {
             name != null -> loginByUsername(name, password, ip)
             email != null -> loginByEmail(email, password, ip)
