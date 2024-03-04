@@ -52,10 +52,10 @@ The physical data model contains the following aspects:
 ### Software Organization
 
 The backend server is organized in the following packages:
-* [/http](./src/main/kotlin/pt/isel/daw/gomoku/http), which contains the controllers used to process the HTTP requests - [see more](#http);
-* [/services](./src/main/kotlin/pt/isel/daw/gomoku/services/), which contains the classes that perform validations of parameters and implement the logic of the operations - [see more](#services);
-* [/repository](./src/main/kotlin/pt/isel/daw/gomoku/repository/), which contains the interfaces and implementations that are used to access the PostgreSQL database, using a the [JDBI](https://jdbi.org/) library - [see more](#repository);
-* [/domain](./src/main/kotlin/pt/isel/daw/gomoku/domain/), which contains all the core entities of the game - [see more](#domain);
+* [/http](./src/main/kotlin/pt/isel/ps/anonichat/http), which contains the controllers used to process the HTTP requests - [see more](#http);
+* [/services](./src/main/kotlin/pt/isel/ps/anonichat/services/), which contains the classes that perform validations of parameters and implement the logic of the operations - [see more](#services);
+* [/repository](./src/main/kotlin/pt/isel/ps/anonichat/repository/), which contains the interfaces and implementations that are used to access the PostgreSQL database, using a the [JDBI](https://jdbi.org/) library - [see more](#repository);
+* [/domain](./src/main/kotlin/pt/isel/ps/anonichat/domain/), which contains all the core entities of the game - [see more](#domain);
 
 
 #### HTTP
@@ -63,9 +63,9 @@ The backend server is organized in the following packages:
 The HTTP package contains the controllers that process the HTTP requests.
 
 The controllers are organized in the following classes:
-* [controllers](./src/main/kotlin/pt/isel/daw/gomoku/http/controllers/), which contains the controllers that process the requests using the [Spring Web MVC](https://docs.spring.io/spring-framework/reference/web/webmvc.html);
-* [pipeline](./src/main/kotlin/pt/isel/daw/gomoku/http/pipeline/), which contains the pipeline classes that process the requests, like the authentication and the error handling;
-* [utils](./src/main/kotlin/pt/isel/daw/gomoku/http/utils/), which contains the utility objects that are used by the controllers, like the `Uris` and `Params`.
+* [controllers](./src/main/kotlin/pt/isel/ps/anonichat/http/controllers/), which contains the controllers that process the requests using the [Spring Web MVC](https://docs.spring.io/spring-framework/reference/web/webmvc.html);
+* [pipeline](./src/main/kotlin/pt/isel/ps/anonichat/http/pipeline/), which contains the pipeline classes that process the requests, like the authentication and the error handling;
+* [utils](./src/main/kotlin/pt/isel/ps/anonichat/http/utils/), which contains the utility objects that are used by the controllers, like the `Uris` and `Params`.
 
 
 #### Services
@@ -73,15 +73,15 @@ The controllers are organized in the following classes:
 The services package contains the classes that perform validations of parameters and implement the logic of the operations. It is responsible for receiving the parameters from the controllers, validating them and calling the corresponding repository methods to access the database.
 
 The services are organized in the following classes:
-* [UsersService](./src/main/kotlin/pt/isel/daw/gomoku/services/UserService.kt), which contains the services related to the `User` entity;
+* [UsersService](./src/main/kotlin/pt/isel/ps/anonichat/services/UserService.kt), which contains the services related to the `User` entity;
 
 #### Repository
 
 The repository package contains the interfaces and implementations that are used to access the PostgreSQL database, using a the [JDBI](https://jdbi.org/) library.
 
 The repository is organized in the following classes:
-* [UsersRepository](./src/main/kotlin/pt/isel/daw/gomoku/repository/UserRepository.kt), which contains the repository related to the `User` entity;
-* [TokenRepository](./src/main/kotlin/pt/isel/daw/gomoku/repository/TokenRepository.kt), which contains the repository related to the `Token` entity;
+* [UsersRepository](./src/main/kotlin/pt/isel/ps/anonichat/repository/UserRepository.kt), which contains the repository related to the `User` entity;
+* [TokenRepository](./src/main/kotlin/pt/isel/ps/anonichat/repository/TokenRepository.kt), which contains the repository related to the `Token` entity;
 
 This package also contains the `JdbiTransactionManager` used to access the database, and the `JdbiConfig` used to register the mappers of the application.
 
@@ -89,7 +89,7 @@ This package also contains the `JdbiTransactionManager` used to access the datab
 #### Domain
 
 The domain package contains all the core entities of the game, such as:
-* [User](./src/main/kotlin/pt/isel/daw/gomoku/domain/user/User.kt), which represents a user of the system;
+* [User](./src/main/kotlin/pt/isel/ps/anonichat/domain/user/User.kt), which represents a user of the system;
 
 This package also contains the specific custom exceptions that are thrown by the application.
 
@@ -98,13 +98,13 @@ This package also contains the specific custom exceptions that are thrown by the
 
 The authentication of the backend service is made using an Interceptor that is registered in the `PipelineConfigurer`, which is responsible for processing the `Authorization` or the `Cookie` headers of the requests, validating the token and retrieving a user.
 
-The [`AuthenticationInterceptor`](./src/main/kotlin/pt/isel/daw/gomoku/http/pipeline/authentication/AuthenticationInterceptor.kt) class overrides the `preHandle` method, which is called before earch request is processed by the controller.
-The controllers that require authentication have a custom parameter [Session](./src/main/kotlin/pt/isel/daw/gomoku/http/pipeline/authentication/Session.kt) that is injected by the interceptor, which contains the user that is authenticated and the user token. 
+The [`AuthenticationInterceptor`](./src/main/kotlin/pt/isel/ps/anonichat/http/pipeline/authentication/AuthenticationInterceptor.kt) class overrides the `preHandle` method, which is called before earch request is processed by the controller.
+The controllers that require authentication have a custom parameter [Session](./src/main/kotlin/pt/isel/ps/anonichat/http/pipeline/authentication/Session.kt) that is injected by the interceptor, which contains the user that is authenticated and the user token. 
 
 
 ## Error Handling
 
-The backend service uses an [Exception Handler](./src/main/kotlin/pt/isel/daw/gomoku/http/pipeline/ExceptionHandler.kt), which is responsible to catch all the exceptions thrown by the application and return the corresponding error response, with the corresponding status code and message, represented by the [Problem](./src/main/kotlin/pt/isel/daw/gomoku/http/media/Problem.kt) class, which is then represented in the JSON format. For example, when a player tries to play when it's not his turn, a NotYourTurnException is thrown, which is then converted to the following response:
+The backend service uses an [Exception Handler](./src/main/kotlin/pt/isel/ps/anonichat/http/pipeline/ExceptionHandler.kt), which is responsible to catch all the exceptions thrown by the application and return the corresponding error response, with the corresponding status code and message, represented by the [Problem](./src/main/kotlin/pt/isel/ps/anonichat/http/media/Problem.kt) class, which is then represented in the JSON format. For example, when a player tries to play when it's not his turn, a NotYourTurnException is thrown, which is then converted to the following response:
 
 ```json
 {
