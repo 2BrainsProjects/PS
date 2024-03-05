@@ -29,6 +29,7 @@ object Uris {
     object Router{
         const val ROUTER = "/router/{routerId}"
         const val ROUTERS = "/routers"
+        const val ROUTERS_COUNT = "/routers/count"
 
         fun router(id: Int) = UriTemplate(ROUTER).expand(id)
         fun routers() = URI(ROUTERS)

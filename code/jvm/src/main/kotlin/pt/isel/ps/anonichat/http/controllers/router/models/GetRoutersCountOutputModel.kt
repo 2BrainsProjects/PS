@@ -1,4 +1,3 @@
 package pt.isel.ps.anonichat.http.controllers.router.models
 
-class GetRoutersCountOutputModel {
-}
+data class GetRoutersCountOutputModel(val count: Int)

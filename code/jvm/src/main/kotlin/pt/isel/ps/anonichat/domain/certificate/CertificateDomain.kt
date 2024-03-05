@@ -1,7 +1,10 @@
 package pt.isel.ps.anonichat.domain.certificate
 
+import org.springframework.stereotype.Component
+import java.io.BufferedReader
 import java.io.ByteArrayInputStream
 import java.io.FileInputStream
+import java.io.InputStreamReader
 import java.security.KeyFactory
 import java.security.KeyPair
 import java.security.KeyStore
@@ -13,6 +16,7 @@ import java.security.cert.X509Certificate
 import java.security.spec.X509EncodedKeySpec
 import java.util.Base64
 
+@Component
 class CertificateDomain {
 
     fun createClientCertificate(publicKey: String): X509Certificate {
@@ -73,43 +77,63 @@ class CertificateDomain {
         return CertificateFactory.getInstance("X.509").generateCertificate(inputStream) as X509Certificate
     }
 
-//    fun buildClientCertificate(clientPublicKey: PublicKey, serverCertificate: X509Certificate, signatureBytes: ByteArray): X509Certificate {
-//
-//        try {
-//            val serialNumber = BigInteger(64, java.security.SecureRandom())
-//
-//            val notBefore = Date()
-//            val notAfter = Date(System.currentTimeMillis() + 365 * 24 * 60 * 60 * 1000)
-//
-//            val clientSubjectDN = X500Principal("CN=Client Certificate")
-//
-//            val clientCertificateBuilder = X509CertificateBuilder(
-//                    serverCertificate.issuerX500Principal,
-//                    serialNumber,
-//                    notBefore,
-//                    notAfter,
-//                    clientSubjectDN,
-//                    SubjectPublicKeyInfo.getInstance(clientPublicKey.encoded)
-//            )
-//
-//            clientCertificateBuilder.addExtension(
-//                    serverCertificate.getExtensionValue("1.3.6.1.5.5.7.1.3"),
-//                    true
-//            )
-//
-//            val contentSigner = createContentSigner(serverCertificate.issuerX500Principal, serverCertificate.signatureAlgorithm, serverCertificate.privateKey)
-//            val clientCertificateHolder = clientCertificateBuilder.build(contentSigner)
-//
-//            return CertificateFactory.getInstance("X.509")
-//                    .generateCertificate(clientCertificateHolder.encoded.inputStream()) as X509Certificate
-//
-//        } catch (e: Exception) {
-//            e.printStackTrace()
-//        }
-//        throw IllegalStateException("Erro ao construir o certificado do cliente.")
-//    }
-//
-//    fun createContentSigner(issuer: X500Principal, signatureAlgorithm: String, privateKey: PrivateKey): ContentSigner {
-//        return JcaContentSignerBuilder(signatureAlgorithm).build(privateKey)
-//    }
+    /**
+     * this function requires openssl installed in system's PATH.
+     * the resultant certificate will be in clientId.crt
+     * @param clientId user's id
+     * @param name user's name
+     * @param email user's email
+     * @param password user's password
+     */
+    fun createKeyCommand(publicKey: String, clientId: Int, name: String, email: String, password: String){
+        val createKeyCommand = "openssl genrsa -out $BASE_PATH${clientId}.key 1024"
+        execute(createKeyCommand)
+        //                                                  publicKey
+        val createCSRCommand = "openssl req -new -key $BASE_PATH${clientId}.key -out $BASE_PATH${clientId}.csr"
+        execute(createCSRCommand)
+        // Country Name(2 letter code):
+        execute("")
+        // State or Province Name (full name):
+        execute("")
+        // Locality Name (eg, city):
+        execute("")
+        // Organization Name (eg, company):
+        execute("")
+        // Organizational Unit Name (eg, section):
+        execute("")
+        // Common Name(e.g. server FQDN or YOUR name): user's username
+        execute(name)
+        // Email Address: user's email
+        execute(email)
+        // A challenge password: (1234567890!Aa) user's password
+        execute(password)
+        // An optional company name:
+        execute("")
+
+        val signedCertificateCommand = "openssl x509 -req -days 365 -in $BASE_PATH${clientId}.csr -CA " +
+                "$BASE_PATH/certificate.crt -CAkey $BASE_PATH/privateKey.key -set_serial 01 -out $BASE_PATH${clientId}.crt"
+        execute(signedCertificateCommand)
+    }
+
+    private fun execute(command: String){
+        try {
+            val processBuilder = ProcessBuilder(command.split(" "))
+            val process = processBuilder.start()
+
+            val reader = BufferedReader(InputStreamReader(process.inputStream))
+            var line: String? = null
+
+            while (reader.readLine().also { line = it } != null) {
+                println(line)
+            }
+
+            process.waitFor()
+        } catch (e: Exception) {
+            throw IllegalStateException("Couldnt perform the command: $command")
+        }
+    }
+
+    companion object{
+        const val BASE_PATH = "/certificate"
+    }
 }

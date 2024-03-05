@@ -13,11 +13,7 @@ import pt.isel.ps.anonichat.services.models.TokenModel
 import pt.isel.ps.anonichat.services.models.UserModel
 import pt.isel.ps.anonichat.services.models.UserModel.Companion.toModel
 import pt.isel.ps.anonichat.services.models.UsersModel
-import java.security.cert.CertPathValidator
-import java.security.cert.CertificateFactory
-import java.security.cert.PKIXParameters
-import java.security.cert.TrustAnchor
-import java.security.cert.X509Certificate
+import java.security.cert.*
 
 
 @Component

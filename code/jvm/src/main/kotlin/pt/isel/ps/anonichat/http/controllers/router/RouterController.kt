@@ -8,13 +8,13 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import pt.isel.ps.anonichat.http.controllers.router.models.GetRouterOutputModel
+import pt.isel.ps.anonichat.http.controllers.router.models.GetRoutersCountInputModel
 import pt.isel.ps.anonichat.http.controllers.router.models.GetRoutersCountOutputModel
 import pt.isel.ps.anonichat.http.media.siren.SirenEntity
 import pt.isel.ps.anonichat.http.media.siren.SubEntity
 import pt.isel.ps.anonichat.http.utils.Actions
 import pt.isel.ps.anonichat.http.utils.Links
 import pt.isel.ps.anonichat.http.utils.MediaTypes
-import pt.isel.ps.anonichat.http.utils.Params
 import pt.isel.ps.anonichat.http.utils.Rels
 import pt.isel.ps.anonichat.http.utils.Uris
 import pt.isel.ps.anonichat.services.RouterService
@@ -26,13 +26,10 @@ class RouterController (
 ){
     @GetMapping(Uris.Router.ROUTERS)
     fun getRouters(
-        @RequestParam page: Int? = null,
-        @RequestParam limit: Int? = null,
-        @RequestParam sort: String? = null,
-        @RequestParam orderBy: String? = null
+        @Valid @RequestBody
+        body: GetRoutersCountInputModel,
     ): ResponseEntity<*> {
-        val params = Params(page, limit, sort, orderBy)
-        val (routers, totalRouters) = services.getRouters(params.skip, params.limit, params.orderBy, params.sort)
+        val routers = services.getRouters(body.routersIdList)
         return SirenEntity(
             clazz = listOf(Rels.Router.ROUTERS, Rels.Collection.COLLECTION),
             properties = GetRoutersCountOutputModel(routers.size),
@@ -47,6 +44,18 @@ class RouterController (
                     actions = listOf(Actions.Router.getById(router.id))
                 )
             }
+        ).ok()
+    }
+
+    @GetMapping(Uris.Router.ROUTERS_COUNT)
+    fun getRoutersCount( ): ResponseEntity<*> {
+        val id = services.getLastId()
+        return SirenEntity(
+            clazz = listOf(Rels.Router.ROUTERS_COUNT),
+            properties = GetRoutersCountOutputModel(id),
+            links = listOfNotNull(
+                Links.self(Uris.Router.ROUTERS_COUNT)
+            )
         ).ok()
     }
 }

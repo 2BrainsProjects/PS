@@ -94,7 +94,9 @@ class UserController(
         body: LoginInputModel,
         response: HttpServletResponse
     ): ResponseEntity<*> {
-        val token = services.loginUser(body.name, body.email, body.password, body.ip, body.certificate)
+        //É perciso ver a cena do ip aqui (interceptor ass. Joana)
+
+        val token = services.loginUser(body.name, body.email, body.password, body.ip)
         response.addCookie(token)
         return SirenEntity(
             clazz = listOf(Rels.User.LOGIN),

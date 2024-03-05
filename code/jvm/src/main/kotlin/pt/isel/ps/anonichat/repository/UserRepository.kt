@@ -1,6 +1,7 @@
 package pt.isel.ps.anonichat.repository
 
 import pt.isel.ps.anonichat.domain.user.User
+import java.security.cert.Certificate
 
 interface UserRepository {
     fun registerUser(name: String, email: String, passwordHash: String): Int

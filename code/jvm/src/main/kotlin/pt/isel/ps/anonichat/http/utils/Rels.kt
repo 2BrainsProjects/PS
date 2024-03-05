@@ -15,6 +15,7 @@ object Rels {
     }
 
     object Router {
+        const val ROUTERS_COUNT = "get-routers-count"
         const val ROUTER = "get-router"
         const val ROUTERS = "get-routers"
     }
