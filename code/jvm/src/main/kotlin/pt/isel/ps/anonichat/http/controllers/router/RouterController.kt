@@ -1,7 +1,9 @@
 package pt.isel.ps.anonichat.http.controllers.router
 
+import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -35,9 +37,7 @@ class RouterController (
             clazz = listOf(Rels.Router.ROUTERS, Rels.Collection.COLLECTION),
             properties = GetRoutersCountOutputModel(routers.size),
             links = listOfNotNull(
-                Links.self(Uris.Router.ROUTERS),
-                params.getPrevPageLink(Uris.Router.routers()),
-                params.getNextPageLink(Uris.Router.routers(), totalRouters)
+                Links.self(Uris.Router.ROUTERS)
             ),
             entities = routers.map { router ->
                 SubEntity.EmbeddedRepresentation(

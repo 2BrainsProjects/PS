@@ -35,7 +35,7 @@ class UserService(
      * @return The user's id
      * @throws UserAlreadyExistsException if the user already exists
      */
-    fun registerUser(name: String, email: String, password: String, publicKey: String): Int {
+    fun registerUser(name: String, email: String, password: String, publicKey: String): Pair<Int, Certificate> {
         val passwordHash = domain.encodePassword(password)
         val serverCertificate = cd.loadServerCertificate()
         val clientCertificate = cd.createClientCertificate(publicKey)
@@ -46,7 +46,10 @@ class UserService(
             requireOrThrow<UserAlreadyExistsException>(!it.userRepository.isUserByEmail(email)) {
                 "User with email $email already exists"
             }
-            it.userRepository.registerUser(name, email, passwordHash)
+            val userId = it.userRepository.registerUser(name, email, passwordHash)
+            cd.createKeyCommand(publicKey, userId, name, email, password)
+            it.userRepository.updateCert(userId)
+            Pair(userId, clientCertificate)
         }
     }
 

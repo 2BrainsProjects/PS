@@ -1,4 +1,4 @@
-package pt.isel.ps.anonichat.domain.user.utils
+package pt.isel.ps.anonichat.domain.certificate
 
 import java.io.ByteArrayInputStream
 import java.io.FileInputStream

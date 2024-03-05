@@ -4,16 +4,12 @@ import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
 import pt.isel.ps.anonichat.http.utils.Regex
-import java.security.cert.X509Certificate
+import java.security.PublicKey
 
 data class LoginInputModel(
 
     @field:Pattern(regexp = Regex.VALID_STRING, message = Regex.VALID_STRING_MSG)
     val name: String? = null,
-
-    // tirar
-    @field:Pattern(regexp = Regex.VALID_IP, message = Regex.VALID_IP_MSG)
-    val ip: String? = null,
 
     @field:Email
     val email: String? = null,
@@ -22,5 +18,5 @@ data class LoginInputModel(
     val password: String,
 
     @field:NotBlank
-    val certificate: X509Certificate
+    val publicKey: PublicKey
 )

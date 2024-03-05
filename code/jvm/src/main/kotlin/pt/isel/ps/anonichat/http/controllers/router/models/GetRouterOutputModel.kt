@@ -1,4 +1,3 @@
 package pt.isel.ps.anonichat.http.controllers.router.models
 
-class GetRouterOutputModel {
-}
+data class GetRouterOutputModel(val id: Int, val ip: String, val certificate: String)

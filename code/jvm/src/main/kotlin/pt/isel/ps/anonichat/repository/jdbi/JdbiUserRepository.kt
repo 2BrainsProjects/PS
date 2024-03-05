@@ -26,18 +26,6 @@ class JdbiUserRepository(
             .single()
 
     /**
-     * Updates a user's ip
-     * @param id The user's id
-     * @param ip The user's ip
-     * @return if the user's ip was updated
-     */
-    override fun updateIp(id: Int, ip: String): Boolean =
-        handle.createUpdate("update dbo.User set ip = :ip where id = :id")
-            .bind("id", id)
-            .bind("ip", ip)
-            .execute() == 1
-
-    /**
      * Gets a user by id
      * @param id The user's id
      * @return The user
@@ -133,4 +121,21 @@ class JdbiUserRepository(
             .bind("email", email)
             .mapTo<Int>()
             .one() == 1
+
+    /**
+     * Updates a user's ip
+     * @param id The user's id
+     * @param ip The user's ip
+     * @return if the user's ip was updated
+     */
+    override fun updateIp(id: Int, ip: String): Boolean =
+            handle.createUpdate("update dbo.User set ip = :ip where id = :id")
+                    .bind("id", id)
+                    .bind("ip", ip)
+                    .execute() == 1
+
+    override fun updateCert(id: Int): Boolean =
+            handle.createUpdate("update dbo.User set certificate = certificate/:id.crt where id = :id")
+                    .bind("id", id)
+                    .execute() == 1
 }
