@@ -7,7 +7,7 @@ import pt.isel.ps.anonichat.domain.exceptions.requireOrThrow
 import pt.isel.ps.anonichat.domain.user.Token
 import pt.isel.ps.anonichat.domain.user.User
 import pt.isel.ps.anonichat.domain.user.UserDomain
-import pt.isel.ps.anonichat.domain.user.utils.CertificateDomain
+import pt.isel.ps.anonichat.domain.certificate.CertificateDomain
 import pt.isel.ps.anonichat.repository.transaction.TransactionManager
 import pt.isel.ps.anonichat.services.models.TokenModel
 import pt.isel.ps.anonichat.services.models.UserModel
