@@ -6,8 +6,8 @@ import kotlinx.datetime.toJavaInstant
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 import pt.isel.ps.anonichat.domain.user.utils.TokenEncoder
-import java.util.*
-import java.security.*
+import java.security.SecureRandom
+import java.util.Base64
 
 /**
  * The domain of the users containing all the users logic

@@ -2,19 +2,21 @@ package pt.isel.ps.anonichat.services
 
 import kotlinx.datetime.Clock
 import org.springframework.stereotype.Component
-import pt.isel.ps.anonichat.domain.exceptions.UserException.*
+import pt.isel.ps.anonichat.domain.certificate.CertificateDomain
+import pt.isel.ps.anonichat.domain.exceptions.UserException.InvalidCredentialsException
+import pt.isel.ps.anonichat.domain.exceptions.UserException.InvalidTokenException
+import pt.isel.ps.anonichat.domain.exceptions.UserException.UnauthorizedException
+import pt.isel.ps.anonichat.domain.exceptions.UserException.UserAlreadyExistsException
+import pt.isel.ps.anonichat.domain.exceptions.UserException.UserNotFoundException
 import pt.isel.ps.anonichat.domain.exceptions.requireOrThrow
 import pt.isel.ps.anonichat.domain.user.Token
 import pt.isel.ps.anonichat.domain.user.User
 import pt.isel.ps.anonichat.domain.user.UserDomain
-import pt.isel.ps.anonichat.domain.certificate.CertificateDomain
 import pt.isel.ps.anonichat.repository.transaction.TransactionManager
 import pt.isel.ps.anonichat.services.models.TokenModel
 import pt.isel.ps.anonichat.services.models.UserModel
 import pt.isel.ps.anonichat.services.models.UserModel.Companion.toModel
 import pt.isel.ps.anonichat.services.models.UsersModel
-import java.security.cert.*
-
 
 @Component
 class UserService(
@@ -31,10 +33,8 @@ class UserService(
      * @return The user's id
      * @throws UserAlreadyExistsException if the user already exists
      */
-    fun registerUser(name: String, email: String, password: String, publicKey: String): Pair<Int, Certificate> {
+    fun registerUser(name: String, email: String, password: String, publicKey: String): Pair<Int, String> {
         val passwordHash = domain.encodePassword(password)
-        val serverCertificate = cd.loadServerCertificate()
-        val clientCertificate = cd.createClientCertificate(publicKey)
         return tm.run {
             requireOrThrow<UserAlreadyExistsException>(!it.userRepository.isUserByUsername(name)) {
                 "User with name $name already exists"
@@ -43,9 +43,10 @@ class UserService(
                 "User with email $email already exists"
             }
             val userId = it.userRepository.registerUser(name, email, passwordHash)
-            cd.createKeyCommand(publicKey, userId, name, email, password)
+            val certContent = cd.createKeyCommand(publicKey, userId, name, email, password)
             it.userRepository.updateCert(userId)
-            Pair(userId, clientCertificate)
+
+            Pair(userId, certContent)
         }
     }
 
@@ -57,30 +58,7 @@ class UserService(
      * @return The user's token
      * @throws InvalidCredentialsException if the username or email is not provided
      */
-    fun loginUser(name: String?, email: String?, password: String, ip: String?, certificate: X509Certificate ): TokenModel {
-
-        try {
-            certificate.checkValidity()
-
-            val serverCertificate = cd.loadServerCertificate()
-
-            val certList = listOf( certificate, serverCertificate)
-            val factory = CertificateFactory.getInstance("X.509")
-            val certPath = factory.generateCertPath(certList)
-            val trustAnchorSet = HashSet<TrustAnchor>()
-            trustAnchorSet.add(TrustAnchor(serverCertificate, null))
-
-            // When a PKIXParameters object is created, isRevocationEnabled flag is set to true.
-            val params = PKIXParameters(trustAnchorSet)
-            val certPathValidator = CertPathValidator.getInstance("PKIX")
-
-            certPathValidator.validate(certPath, params);
-        } catch ( e: Exception) {
-            throw InvalidCredentialsException("certificate is not valid")
-        }
-
-        if (ip == null) throw InvalidCredentialsException("Ip is required for login")
-
+    fun loginUser(name: String?, email: String?, password: String, ip: String): TokenModel {
         val tokenModel = when {
             name != null -> loginByUsername(name, password, ip)
             email != null -> loginByEmail(email, password, ip)
@@ -109,11 +87,11 @@ class UserService(
      * @param sort The sort order
      * @return The list of users
      */
-    fun getUsers(skip: Int, limit: Int, orderBy: String, sort: String): UsersModel {
-        return tm.run {
-            val users = it.userRepository.getUsers(skip, limit, orderBy, sort).map { user -> user.toModel() }
-            val totalUsers = it.userRepository.getTotalUsers()
-            UsersModel(users, totalUsers)
+    fun getUsers(usersIds: List<Int>): UsersModel {
+        return tm.run { tr ->
+            val users = usersIds.map { id -> tr.userRepository.getUser(id) }.map { user -> user.toModel() }
+            val maxUserId = tr.userRepository.getLastId()
+            UsersModel(users, maxUserId)
         }
     }
 

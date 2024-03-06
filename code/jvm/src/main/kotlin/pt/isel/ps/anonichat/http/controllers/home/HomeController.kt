@@ -67,6 +67,6 @@ class HomeController {
             repository = "https://github.com/isel-leic-daw/2023-daw-leic51d-08"
         )
         private val androidLinks = listOf(Links.self(Uris.HOME), Links.userHome())
-        private val webLinks = listOf(Links.self(Uris.HOME), Links.userHome(), Links.user())
+        private val webLinks = listOf(Links.self(Uris.HOME), Links.userHome())
     }
 }

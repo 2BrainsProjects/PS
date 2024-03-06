@@ -10,13 +10,11 @@ object Rels {
         const val REGISTER = "register"
         const val LOGIN = "login"
         const val LOGOUT = "logout"
-        const val USER = "get-user"
         const val USERS = "get-users"
     }
 
     object Router {
         const val ROUTERS_COUNT = "get-routers-count"
-        const val ROUTER = "get-router"
         const val ROUTERS = "get-routers"
     }
 

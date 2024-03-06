@@ -7,31 +7,31 @@ import org.springframework.web.bind.support.WebDataBinderFactory
 import org.springframework.web.context.request.NativeWebRequest
 import org.springframework.web.method.support.HandlerMethodArgumentResolver
 import org.springframework.web.method.support.ModelAndViewContainer
+import pt.isel.ps.anonichat.domain.utils.Ip
 
 /**
- * Resolves the session parameter from handlers
+ * Resolves the ip parameter from handlers
  */
 @Component
-class SessionArgumentResolver : HandlerMethodArgumentResolver {
-
+class IpArgumentResolver : HandlerMethodArgumentResolver {
     override fun supportsParameter(parameter: MethodParameter) =
-        parameter.parameterType == Session::class.java
+        parameter.parameterType == Ip::class.java
 
     override fun resolveArgument(
         parameter: MethodParameter,
         mavContainer: ModelAndViewContainer?,
         webRequest: NativeWebRequest,
         binderFactory: WebDataBinderFactory?
-    ): Session {
+    ): Ip {
         val request = webRequest.getNativeRequest(HttpServletRequest::class.java)
             ?: throw IllegalStateException("HttpServletRequest not found")
-        return getSession(request) ?: throw IllegalStateException("User not authenticated")
+        return getIp(request) ?: throw IllegalStateException("Ip not found")
     }
 
     companion object {
-        private const val KEY = "AuthenticatedUserArgumentResolver"
+        private const val KEY = "IpArgumentResolver"
 
-        fun addSession(session: Session, request: HttpServletRequest) = request.setAttribute(KEY, session)
-        fun getSession(request: HttpServletRequest): Session? = request.getAttribute(KEY)?.let { it as? Session }
+        fun addIp(ip: Ip, request: HttpServletRequest) = request.setAttribute(KEY, ip)
+        fun getIp(request: HttpServletRequest): Ip? = request.getAttribute(KEY)?.let { it as? Ip }
     }
 }

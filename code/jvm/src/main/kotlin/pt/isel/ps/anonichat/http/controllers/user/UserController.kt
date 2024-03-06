@@ -1,22 +1,22 @@
 package pt.isel.ps.anonichat.http.controllers.user
 
 import jakarta.servlet.http.Cookie
-import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import pt.isel.ps.anonichat.domain.utils.Ip
 import pt.isel.ps.anonichat.http.controllers.user.models.GetUserOutputModel
-import pt.isel.ps.anonichat.http.controllers.user.models.GetUsersCountOutputModel
+import pt.isel.ps.anonichat.http.controllers.user.models.GetUsersInputModel
+import pt.isel.ps.anonichat.http.controllers.user.models.GetUsersOutputModel
 import pt.isel.ps.anonichat.http.controllers.user.models.LoginInputModel
 import pt.isel.ps.anonichat.http.controllers.user.models.LoginOutputModel
 import pt.isel.ps.anonichat.http.controllers.user.models.RegisterInputModel
+import pt.isel.ps.anonichat.http.controllers.user.models.RegisterOutputModel
 import pt.isel.ps.anonichat.http.media.siren.SirenEntity
 import pt.isel.ps.anonichat.http.media.siren.SubEntity
 import pt.isel.ps.anonichat.http.pipeline.authentication.RequestTokenProcessor.Companion.TOKEN
@@ -25,7 +25,6 @@ import pt.isel.ps.anonichat.http.utils.Actions
 import pt.isel.ps.anonichat.http.utils.Links
 import pt.isel.ps.anonichat.http.utils.MediaTypes.PROBLEM_MEDIA_TYPE
 import pt.isel.ps.anonichat.http.utils.MediaTypes.SIREN_MEDIA_TYPE
-import pt.isel.ps.anonichat.http.utils.Params
 import pt.isel.ps.anonichat.http.utils.Rels
 import pt.isel.ps.anonichat.http.utils.Uris
 import pt.isel.ps.anonichat.services.UserService
@@ -46,16 +45,17 @@ class UserController(
         SirenEntity(
             clazz = listOf(Rels.User.HOME),
             properties = GetUserOutputModel(
+                session.user.id,
+                session.user.ip,
                 session.user.name,
-                session.user.email
+                session.user.certificate
             ),
             links = listOf(
                 Links.self(Uris.User.HOME),
                 Links.home()
             ),
             actions = listOf(
-                Actions.User.logout(),
-                Actions.User.getById(session.user.id)
+                Actions.User.logout()
             )
         ).ok()
 
@@ -69,34 +69,28 @@ class UserController(
         @Valid @RequestBody
         body: RegisterInputModel
     ): ResponseEntity<*> {
-        val (userId, certificatePath) = services.registerUser(body.name, body.email, body.password, body.publicKey)
-        return SirenEntity<Unit>(
+        val (userId, certificateContent) = services.registerUser(body.name, body.email, body.password, body.publicKey)
+        return SirenEntity(
             clazz = listOf(Rels.User.REGISTER),
-            // properties = RegisterOutputModel(CertificateFactory.getInstance("X.509").generateCertificate("".byteInputStream())),
-            links = listOf(Links.home()),
-            entities = listOf(
-                SubEntity.EmbeddedLink(
-                    rel = listOf(Rels.User.USER),
-                    href = Uris.User.user(userId)
-                )
-            )
-        ).created(Uris.User.user(userId))
+            properties = RegisterOutputModel(userId, certificateContent),
+            links = listOf(Links.home())
+        ).created(Uris.User.home())
     }
 
     /**
      * Handles the request to login a user
      * @param body the request body (LoginInputModel)
+     * @param
      * @return the response with the user's token
      */
     @PostMapping(Uris.User.LOGIN)
     fun loginUser(
         @Valid @RequestBody
         body: LoginInputModel,
-        response: HttpServletResponse
+        response: HttpServletResponse,
+        ip: Ip
     ): ResponseEntity<*> {
-        //É perciso ver a cena do ip aqui (interceptor ass. Joana)
-
-        val token = services.loginUser(body.name, body.email, body.password, body.ip)
+        val token = services.loginUser(body.name, body.email, body.password, ip.ip)
         response.addCookie(token)
         return SirenEntity(
             clazz = listOf(Rels.User.LOGIN),
@@ -121,52 +115,26 @@ class UserController(
     }
 
     /**
-     * Handles the request to get a user by id
-     * @param userId the user's id
-     * @return the response with the user
-     */
-    @GetMapping(Uris.User.USER)
-    fun getUser(@PathVariable userId: Int): ResponseEntity<*> {
-        val user = services.getUser(userId)
-        return SirenEntity(
-            clazz = listOf(Rels.User.USER),
-            properties = GetUserOutputModel(user.name, user.email),
-            links = listOf(Links.self(Uris.User.user(userId).toString())),
-            actions = listOf()
-        ).ok()
-    }
-
-    /**
      * Handles the request to get list of users
-     * @param page the page number
-     * @param limit the max number of users to include
-     * @param orderBy the property to order by
-     * @param sort the sort order
+     * @param body the request body (GetUsersInputModel)
      * @return the response with the list of users
      */
     @GetMapping(Uris.User.USERS)
     fun getUsers(
-        @RequestParam page: Int? = null,
-        @RequestParam limit: Int? = null,
-        @RequestParam sort: String? = null,
-        @RequestParam orderBy: String? = null
+        @RequestBody
+        body: GetUsersInputModel
     ): ResponseEntity<*> {
-        val params = Params(page, limit, sort, orderBy)
-        val (users, totalUsers) = services.getUsers(params.skip, params.limit, params.orderBy, params.sort)
+        val (users, maxUserId) = services.getUsers(body.usersIdList)
         return SirenEntity(
             clazz = listOf(Rels.User.USERS, Rels.Collection.COLLECTION),
-            properties = GetUsersCountOutputModel(users.size),
+            properties = GetUsersOutputModel(maxUserId),
             links = listOfNotNull(
-                Links.self(Uris.User.USERS),
-                params.getPrevPageLink(Uris.User.users()),
-                params.getNextPageLink(Uris.User.users(), totalUsers)
+                Links.self(Uris.User.USERS)
             ),
             entities = users.map { user ->
                 SubEntity.EmbeddedRepresentation(
-                    rel = listOf(Rels.User.USER, Rels.Collection.ITEM),
-                    properties = GetUserOutputModel(user.name, user.email),
-                    links = listOf(Links.self(Uris.User.user(user.id).toString())),
-                    actions = listOf(Actions.User.getById(user.id))
+                    rel = listOf(Rels.Collection.ITEM),
+                    properties = GetUserOutputModel(user.id, user.ip, user.name, user.certificate)
                 )
             }
         ).ok()

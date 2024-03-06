@@ -4,7 +4,6 @@ import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
 import pt.isel.ps.anonichat.http.utils.Regex
-import java.security.PublicKey
 
 data class LoginInputModel(
 
@@ -15,8 +14,6 @@ data class LoginInputModel(
     val email: String? = null,
 
     @field:NotBlank
-    val password: String,
-
-    @field:NotBlank
-    val publicKey: PublicKey
+    val password: String
 )
+// name/email -> id -> certPath -> certContent

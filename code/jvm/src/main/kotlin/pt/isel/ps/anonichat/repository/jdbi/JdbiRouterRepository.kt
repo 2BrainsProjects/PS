@@ -5,8 +5,8 @@ import org.jdbi.v3.core.kotlin.mapTo
 import pt.isel.ps.anonichat.domain.router.Router
 import pt.isel.ps.anonichat.repository.RouterRepository
 
-class JdbiRouterRepository (
-        private val handle: Handle
+class JdbiRouterRepository(
+    private val handle: Handle
 ) : RouterRepository {
 
     /**
@@ -15,11 +15,11 @@ class JdbiRouterRepository (
      * @param certificate The router's certificate
      * @return The row
      */
-    override fun createRouter(ip: String, certificate: String):Boolean =
-         handle.createUpdate("insert into dbo.Router (ip, certificate) values (:ip, :certificate)")
-                .bind("ip", ip)
-                .bind("certificate", certificate)
-                .execute() == 1
+    override fun createRouter(ip: String, certificate: String): Boolean =
+        handle.createUpdate("insert into dbo.Router (ip, certificate) values (:ip, :certificate)")
+            .bind("ip", ip)
+            .bind("certificate", certificate)
+            .execute() == 1
 
     /**
      * Gets a router by ip
@@ -27,10 +27,10 @@ class JdbiRouterRepository (
      * @return The router
      */
     override fun getRouterByIp(ip: String): Router =
-         handle.createQuery("select * from dbo.Router where ip = :ip")
-                .bind("ip", ip)
-                .mapTo<Router>()
-                .single()
+        handle.createQuery("select * from dbo.Router where ip = :ip")
+            .bind("ip", ip)
+            .mapTo<Router>()
+            .single()
 
     /**
      * Gets a router by id
@@ -65,11 +65,11 @@ class JdbiRouterRepository (
             .single() != 0
 
     /**
-     * Gets the last router
-     * @return The last router
+     * Gets the last router's id
+     * @return The last router's id
      */
-    override fun lastRouter(): Router =
-        handle.createQuery("select * from dbo.Router order by id desc limit 1")
-            .mapTo<Router>()
+    override fun lastRouterId(): Int =
+        handle.createQuery("select id from dbo.Router order by id desc limit 1")
+            .mapTo<Int>()
             .single()
 }

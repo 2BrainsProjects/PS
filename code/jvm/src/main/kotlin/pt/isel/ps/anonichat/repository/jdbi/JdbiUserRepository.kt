@@ -59,28 +59,6 @@ class JdbiUserRepository(
             .single()
 
     /**
-     * Gets a list of users
-     * @param skip The number of users to skip
-     * @param limit the max number of users to include
-     * @param orderBy the column to order by
-     * @param sort the sort order
-     * @return the list of users
-     */
-    override fun getUsers(skip: Int, limit: Int, orderBy: String, sort: String): List<User> =
-        handle.createQuery(
-            """
-                select * from dbo.User
-                order by $orderBy $sort, name asc
-                offset :skip rows
-                limit :limit
-            """.trimIndent()
-        )
-            .bind("skip", skip)
-            .bind("limit", limit)
-            .mapTo<User>()
-            .list()
-
-    /**
      * Gets the number of total users
      * @return total users
      */
@@ -123,19 +101,33 @@ class JdbiUserRepository(
             .one() == 1
 
     /**
+     * Gets the last user's id
+     * @return The last user's id
+     */
+    override fun getLastId(): Int =
+        handle.createQuery("select max(id) from dbo.User")
+            .mapTo<Int>()
+            .one()
+
+    /**
      * Updates a user's ip
      * @param id The user's id
      * @param ip The user's ip
      * @return if the user's ip was updated
      */
     override fun updateIp(id: Int, ip: String): Boolean =
-            handle.createUpdate("update dbo.User set ip = :ip where id = :id")
-                    .bind("id", id)
-                    .bind("ip", ip)
-                    .execute() == 1
+        handle.createUpdate("update dbo.User set ip = :ip where id = :id")
+            .bind("id", id)
+            .bind("ip", ip)
+            .execute() == 1
 
+    /**
+     * Updates a user's certificate
+     * @param id The user's id
+     * @return if the user's certificate was updated
+     */
     override fun updateCert(id: Int): Boolean =
-            handle.createUpdate("update dbo.User set certificate = certificate/:id.crt where id = :id")
-                    .bind("id", id)
-                    .execute() == 1
+        handle.createUpdate("update dbo.User set certificate = certificate/:id.crt where id = :id")
+            .bind("id", id)
+            .execute() == 1
 }

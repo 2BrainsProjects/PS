@@ -29,5 +29,5 @@ data class RegisterInputModel(
     val password: String,
 
     @field:NotBlank
-    val publicKey:String
+    val publicKey: String
 )

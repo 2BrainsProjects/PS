@@ -6,18 +6,18 @@ import pt.isel.ps.anonichat.repository.transaction.TransactionManager
 
 @Component
 class RouterService(
-        private val tm: TransactionManager
+    private val tm: TransactionManager
 ) {
     /**
      * Gets the routers count
      * @param list The list of id
      * @return The list of Routers
      */
-    fun getRouters(list: List<Int>):List<Router>{
+    fun getRouters(list: List<Int>): List<Router> {
         return tm.run {
             val toReturn = mutableListOf<Router>()
             list.forEach { id ->
-                if(it.routerRepository.isRouter(id)) {
+                if (it.routerRepository.isRouter(id)) {
                     val router = it.routerRepository.getRouterById(id)
                     toReturn.add(router)
                 }
@@ -32,7 +32,7 @@ class RouterService(
      */
     fun getLastId(): Int {
         return tm.run {
-            it.routerRepository.lastRouter().id
+            it.routerRepository.lastRouterId()
         }
     }
 }

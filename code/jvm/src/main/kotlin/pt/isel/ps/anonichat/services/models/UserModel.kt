@@ -4,10 +4,12 @@ import pt.isel.ps.anonichat.domain.user.User
 
 data class UserModel(
     val id: Int,
+    val ip: String,
     val name: String,
-    val email: String
+    val email: String,
+    val certificate: String
 ) {
     companion object {
-        fun User.toModel() = UserModel(id, name, email)
+        fun User.toModel() = UserModel(id, ip, name, email, certificate)
     }
 }

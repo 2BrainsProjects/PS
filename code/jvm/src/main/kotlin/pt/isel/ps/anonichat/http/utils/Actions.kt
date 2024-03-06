@@ -14,12 +14,6 @@ object Actions {
 
     object User {
 
-        fun getById(id: Int) = Action(
-            name = Rels.User.USER,
-            href = Uris.User.user(id),
-            method = Methods.GET
-        )
-
         fun getUsers() = Action(
             name = Rels.User.USERS,
             href = Uris.User.users(),
@@ -75,12 +69,6 @@ object Actions {
     }
 
     object Router {
-
-        fun getById(id: Int) = Action(
-            name = Rels.Router.ROUTER,
-            href = Uris.Router.router(id),
-            method = Methods.GET
-        )
 
         fun getRouters() = Action(
             name = Rels.Router.ROUTERS,

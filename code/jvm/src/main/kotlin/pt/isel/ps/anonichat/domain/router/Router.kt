@@ -7,7 +7,7 @@ package pt.isel.ps.anonichat.domain.router
  * @property certificate The router's certificate path
 */
 data class Router(
-        val id: Int,
-        val ip: String,
-        val certificate: String
+    val id: Int,
+    val ip: String,
+    val certificate: String
 )
