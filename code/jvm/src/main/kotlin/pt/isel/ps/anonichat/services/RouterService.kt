@@ -15,14 +15,11 @@ class RouterService(
      */
     fun getRouters(list: List<Int>): List<Router> {
         return tm.run {
-            val toReturn = mutableListOf<Router>()
-            list.forEach { id ->
+            list.mapNotNull { id ->
                 if (it.routerRepository.isRouter(id)) {
-                    val router = it.routerRepository.getRouterById(id)
-                    toReturn.add(router)
-                }
+                    it.routerRepository.getRouterById(id)
+                } else null
             }
-            toReturn
         }
     }
 

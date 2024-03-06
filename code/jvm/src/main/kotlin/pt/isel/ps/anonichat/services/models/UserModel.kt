@@ -10,6 +10,6 @@ data class UserModel(
     val certificate: String
 ) {
     companion object {
-        fun User.toModel() = UserModel(id, ip, name, email, certificate)
+        fun User.toModel(certificate: String) = UserModel(id, ip ?: "", name, email, certificate)
     }
 }

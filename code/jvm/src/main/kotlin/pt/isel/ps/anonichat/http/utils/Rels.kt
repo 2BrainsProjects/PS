@@ -11,6 +11,7 @@ object Rels {
         const val LOGIN = "login"
         const val LOGOUT = "logout"
         const val USERS = "get-users"
+        const val USERS_COUNT = "get-users-count"
     }
 
     object Router {

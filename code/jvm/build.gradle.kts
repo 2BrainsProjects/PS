@@ -42,6 +42,9 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-webflux")
     testImplementation(kotlin("test"))
     testImplementation("junit:junit:4.13.1")
+
+    // Bouncy Castle
+    implementation("org.bouncycastle:bcprov-jdk15on:1.68")
 }
 
 tasks.withType<KotlinCompile> {

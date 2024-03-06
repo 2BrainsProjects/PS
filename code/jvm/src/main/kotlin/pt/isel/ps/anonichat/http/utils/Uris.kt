@@ -15,6 +15,7 @@ object Uris {
         const val LOGIN = "/login"
         const val LOGOUT = "/logout"
         const val USERS = "/users"
+        const val USERS_COUNT = "/users/count"
 
         fun home() = URI(HOME)
         fun users() = URI(USERS)

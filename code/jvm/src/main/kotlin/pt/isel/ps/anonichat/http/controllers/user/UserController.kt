@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import pt.isel.ps.anonichat.domain.utils.Ip
+import pt.isel.ps.anonichat.http.controllers.router.models.GetRoutersCountOutputModel
 import pt.isel.ps.anonichat.http.controllers.user.models.GetUserOutputModel
+import pt.isel.ps.anonichat.http.controllers.user.models.GetUsersCountOutputModel
 import pt.isel.ps.anonichat.http.controllers.user.models.GetUsersInputModel
 import pt.isel.ps.anonichat.http.controllers.user.models.GetUsersOutputModel
 import pt.isel.ps.anonichat.http.controllers.user.models.LoginInputModel
@@ -41,14 +43,16 @@ class UserController(
      * @return the response with the user home
      */
     @GetMapping(Uris.User.HOME)
-    fun getUserHome(session: Session): ResponseEntity<*> =
-        SirenEntity(
+    fun getUserHome(
+        session: Session
+    ): ResponseEntity<*> {
+        return SirenEntity(
             clazz = listOf(Rels.User.HOME),
             properties = GetUserOutputModel(
                 session.user.id,
-                session.user.ip,
+                session.user.ip ?: "",
                 session.user.name,
-                session.user.certificate
+                session.user.certificate ?: ""  // problema de registo noutro sitio
             ),
             links = listOf(
                 Links.self(Uris.User.HOME),
@@ -58,6 +62,7 @@ class UserController(
                 Actions.User.logout()
             )
         ).ok()
+    }
 
     /**
      * Handles the request to register a new user
@@ -124,10 +129,10 @@ class UserController(
         @RequestBody
         body: GetUsersInputModel
     ): ResponseEntity<*> {
-        val (users, maxUserId) = services.getUsers(body.usersIdList)
+        val (users, count) = services.getUsers(body.usersIdList)
         return SirenEntity(
             clazz = listOf(Rels.User.USERS, Rels.Collection.COLLECTION),
-            properties = GetUsersOutputModel(maxUserId),
+            properties = GetUsersOutputModel(count),
             links = listOfNotNull(
                 Links.self(Uris.User.USERS)
             ),
@@ -137,6 +142,18 @@ class UserController(
                     properties = GetUserOutputModel(user.id, user.ip, user.name, user.certificate)
                 )
             }
+        ).ok()
+    }
+
+    @GetMapping(Uris.User.USERS_COUNT)
+    fun getRoutersCount(): ResponseEntity<*> {
+        val id = services.getLastId()
+        return SirenEntity(
+            clazz = listOf(Rels.User.USERS_COUNT),
+            properties = GetUsersCountOutputModel(id),
+            links = listOfNotNull(
+                Links.self(Uris.User.USERS_COUNT)
+            )
         ).ok()
     }
 

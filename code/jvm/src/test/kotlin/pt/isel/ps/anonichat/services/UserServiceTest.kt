@@ -1,6 +1,7 @@
 package pt.isel.ps.anonichat.services
 
 import pt.isel.ps.anonichat.domain.exceptions.UserException.UserAlreadyExistsException
+import kotlin.math.min
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -11,33 +12,33 @@ class UserServiceTest : ServicesTest() {
     @Test
     fun `register a user`() {
         // given: a user
-        val (name, email, password) = testUserData()
+        val (name, email, password, publicKey) = testUserData()
 
         // when: registering the user
-        val userId = usersServices.registerUser(name, email, password)
+        val (userId, _) = usersServices.registerUser(name, email, password, publicKey)
 
         // then: the user is registered
-        val user = usersServices.getUser(userId)
-        assertEquals(name, user.name)
-        assertEquals(email, user.email)
+        val users = usersServices.getUsers(listOf(userId))
+        assertEquals(name, users.users[0].name)
+        assertEquals(email, users.users[0].email)
 
         // when: registering the same user again
         // then: an exception is thrown
         assertFailsWith<UserAlreadyExistsException> {
-            usersServices.registerUser(name, email, password)
+            usersServices.registerUser(name, email, password, publicKey)
         }
     }
 
     @Test
     fun `login a user by username`() {
         // given: a user
-        val (name, email, password) = testUserData()
+        val (name, email, password, publicKey) = testUserData()
 
         // when: registering the user
-        usersServices.registerUser(name, email, password)
+        usersServices.registerUser(name, email, password, publicKey)
 
         // and: logging in the user
-        val (token) = usersServices.loginUser(name, null, password)
+        val (token) = usersServices.loginUser(name, null, password, "192.127.0.1")
 
         // and: getting the user by token
         val userByToken = usersServices.getUserByToken(token)
@@ -50,13 +51,13 @@ class UserServiceTest : ServicesTest() {
     @Test
     fun `login a user by email`() {
         // given: a user
-        val (name, email, password) = testUserData()
+        val (name, email, password, publicKey) = testUserData()
 
         // when: registering the user
-        usersServices.registerUser(name, email, password)
+        usersServices.registerUser(name, email, password, publicKey)
 
         // and: logging in the user by email
-        val (token) = usersServices.loginUser(null, email, password)
+        val (token) = usersServices.loginUser(null, email, password, "192.127.0.1")
 
         // and: getting the user by token
         val userByToken = usersServices.getUserByToken(token)
@@ -67,46 +68,35 @@ class UserServiceTest : ServicesTest() {
     }
 
     @Test
-    fun `get user by id`() {
-        // given: a user
-        val (name, email, password) = testUserData()
-
-        // when: registering the user
-        val userId = usersServices.registerUser(name, email, password)
-
-        // and: getting the user by id
-        val userById = usersServices.getUser(userId)
-
-        // then: the user is the same as the one registered
-        val user = usersServices.getUser(userId)
-        assertEquals(user.name, userById.name)
-        assertEquals(user.email, userById.email)
-    }
-
-    @Test
     fun `get users`() {
         // given: a user
-        val (name, email, password) = testUserData()
+        val (name, email, password, publicKey) = testUserData()
 
         // when: registering the user
-        usersServices.registerUser(name, email, password)
+        usersServices.registerUser(name, email, password, publicKey)
+
+        val maxId = usersServices.getLastId()
 
         // then: when getting the users, the user is present
-        val (users, totalUsers) = usersServices.getUsers(0, 5, "rating", "asc")
+        val list = List(min(5, maxId)){
+            (0..maxId).random()
+        }.distinct()
+        val (users, totalUsers) = usersServices.getUsers(list)
         assertTrue(totalUsers > 0)
         assertTrue(users.isNotEmpty())
+        assertEquals(users.size, list.size)
     }
 
     @Test
     fun `logout a user`() {
         // given: a user
-        val (name, email, password) = testUserData()
+        val (name, email, password, publicKey) = testUserData()
 
         // when: registering the user
-        usersServices.registerUser(name, email, password)
+        usersServices.registerUser(name, email, password, publicKey)
 
         // and: logging in the user
-        val (token) = usersServices.loginUser(name, null, password)
+        val (token) = usersServices.loginUser(name, null, password, "192.127.0.1")
 
         // then: the user is logged in
         val userByToken = usersServices.getUserByToken(token)

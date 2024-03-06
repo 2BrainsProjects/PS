@@ -32,20 +32,51 @@ class UserRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun `can get list of users`() {
-        // given: test users
-        registerTestUser()
-        registerTestUser()
-        registerTestUser()
+    fun `update the ip of the user`() {
+        val username = testUsername()
+        val email = testEmail()
+        val password = HASHED_TEST_PASSWORD
+        val ip = "255.255.2.5"
 
-        // when: getting the first 3 users ordered by id ascending
-        val limit = 3
-        val users = usersRepository.getUsers(0, limit, "id", "asc")
+        val userId = usersRepository.registerUser(username, email, password)
 
-        // then: we get the first 3 oldest users in the database
-        assertTrue(users.isNotEmpty())
-        assertTrue(users.all { it.id > 0 })
-        assertEquals(limit, users.size)
-        assertEquals(users.sortedBy { it.id }, users)
+        val userAfterCreation = usersRepository.getUser(userId)
+
+        assertEquals(userAfterCreation.ip, null)
+
+        val flag = usersRepository.updateIp(userId, ip)
+        val userAfterUpdate = usersRepository.getUser(userId)
+
+        assertTrue(flag)
+        assertEquals(userAfterUpdate.ip, ip)
+    }
+
+    @Test
+    fun `update the certificate of the user`() {
+        val username = testUsername()
+        val email = testEmail()
+        val password = HASHED_TEST_PASSWORD
+
+        val userId = usersRepository.registerUser(username, email, password)
+
+        val cert = "/certificate/$userId"
+
+        val userAfterCreation = usersRepository.getUser(userId)
+
+        assertEquals(userAfterCreation.certificate, null)
+
+        val flag = usersRepository.updateCert(userId, cert)
+        val userAfterUpdate = usersRepository.getUser(userId)
+
+        assertTrue(flag)
+        assertEquals(userAfterUpdate.certificate, cert)
+    }
+
+    @Test
+    fun `get the last user id`() {
+        val totalUsers = usersRepository.getTotalUsers()
+        val lastId = usersRepository.getLastId()
+
+        assertTrue(totalUsers <= lastId)
     }
 }

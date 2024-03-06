@@ -15,11 +15,13 @@ class JdbiRouterRepository(
      * @param certificate The router's certificate
      * @return The row
      */
-    override fun createRouter(ip: String, certificate: String): Boolean =
+    override fun createRouter(ip: String, certificate: String): Int =
         handle.createUpdate("insert into dbo.Router (ip, certificate) values (:ip, :certificate)")
             .bind("ip", ip)
             .bind("certificate", certificate)
-            .execute() == 1
+            .executeAndReturnGeneratedKeys()
+            .mapTo<Int>()
+            .single()
 
     /**
      * Gets a router by ip
@@ -48,7 +50,7 @@ class JdbiRouterRepository(
      * @param id The router's id
      * @return If the router was deleted
      */
-    override fun deleteRouter(id: String): Boolean =
+    override fun deleteRouter(id: Int): Boolean =
         handle.createUpdate("delete from dbo.Router where id = :id")
             .bind("id", id)
             .execute() == 1
@@ -62,7 +64,7 @@ class JdbiRouterRepository(
         handle.createQuery("select * from dbo.Router where id = :id")
             .bind("id", id)
             .mapTo<Int>()
-            .single() != 0
+            .singleOrNull() != null
 
     /**
      * Gets the last router's id

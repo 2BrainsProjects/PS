@@ -11,9 +11,9 @@ package pt.isel.ps.anonichat.domain.user
  */
 data class User(
     val id: Int,
-    val ip: String,
+    val ip: String?,
     val name: String,
     val email: String,
     val passwordHash: String,
-    val certificate: String
+    val certificate: String?
 )

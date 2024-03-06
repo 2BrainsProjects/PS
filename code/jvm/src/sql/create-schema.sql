@@ -2,10 +2,11 @@ create schema dbo;
 
 create table if not exists dbo.User(
     id serial primary key,
+    ip varchar(15) null,
     name varchar(64) unique not null,
-    password_hash varchar(60) not null,
     email varchar(64) unique not null check (email ~ '^[A-Za-z0-9+_.-]+@(.+)$'),
-    certificate varchar(256),
+    password_hash varchar(60) not null,
+    certificate varchar(256) null
 );
 
 create table if not exists dbo.Token(
@@ -17,6 +18,6 @@ create table if not exists dbo.Token(
 
 create table if not exists dbo.Router(
     id serial primary key,
-    ip varchar(15) unique not null,
-    certificate varchar(256) not null,
+    ip varchar(15) null,
+    certificate varchar(256) null
 );

@@ -17,7 +17,7 @@ class JdbiUserRepository(
      * @return The user's id
      */
     override fun registerUser(name: String, email: String, passwordHash: String): Int =
-        handle.createUpdate("insert into dbo.User (name, email, password_hash) values (:name, :email, :passwordHash)")
+        handle.createUpdate("insert into dbo.User (ip, name, email, password_hash, certificate) values (null, :name, :email, :passwordHash, null)")
             .bind("name", name)
             .bind("email", email)
             .bind("passwordHash", passwordHash)
@@ -126,8 +126,9 @@ class JdbiUserRepository(
      * @param id The user's id
      * @return if the user's certificate was updated
      */
-    override fun updateCert(id: Int): Boolean =
-        handle.createUpdate("update dbo.User set certificate = certificate/:id.crt where id = :id")
+    override fun updateCert(id: Int, certPath: String): Boolean =
+        handle.createUpdate("update dbo.User set certificate = :certPath where id = :id")
             .bind("id", id)
+            .bind("certPath", certPath)
             .execute() == 1
 }

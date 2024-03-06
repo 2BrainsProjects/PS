@@ -3,8 +3,8 @@ package pt.isel.ps.anonichat.domain.certificate
 import org.springframework.stereotype.Component
 import java.io.BufferedReader
 import java.io.ByteArrayInputStream
+import java.io.File
 import java.io.FileInputStream
-import java.io.InputStreamReader
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 
@@ -36,39 +36,30 @@ class CertificateDomain {
      * @param password user's password
      */
     fun createKeyCommand(publicKey: String, clientId: Int, name: String, email: String, password: String): String {
-        val createKeyCommand = "openssl genrsa -out $BASE_PATH$clientId.key 1024"
-        execute(createKeyCommand)
-
-        val createCSRCommand = createCSRCommand(clientId)
+        val createCSRCommand = createCSRCommand(clientId, publicKey)
         execute(createCSRCommand)
         answeringCSRCreation(name, email, password)
 
         val signedCertificateCommand = signedCertificateCommand(clientId)
         execute(signedCertificateCommand)
 
-        val crtContent = readFile("$BASE_PATH$clientId.crt")
+        val crtContent = readFile("$BASE_PATH/$clientId.crt")
         return crtContent
     }
 
     private fun execute(command: String) {
+        println(command)
+
         try {
-            val processBuilder = ProcessBuilder(command.split(" "))
-            val process = processBuilder.start()
+            val runtime = Runtime.getRuntime()
+            runtime.exec("cmd /c $command")
 
-            val reader = BufferedReader(InputStreamReader(process.inputStream))
-            var line: String?
-
-            while (reader.readLine().also { line = it } != null) {
-                println(line)
-            }
-
-            process.waitFor()
         } catch (e: Exception) {
-            throw IllegalStateException("Couldnt perform the command: $command")
+            throw IllegalStateException(e.message)
         }
     }
 
-    private fun readFile(filePath: String): String {
+    fun readFile(filePath: String): String {
         val bufferedReader = BufferedReader(FileInputStream(filePath).bufferedReader())
         val text = bufferedReader.readText()
         bufferedReader.close()
@@ -96,15 +87,30 @@ class CertificateDomain {
         execute("")
     }
 
-    private fun createCSRCommand(clientId: Int) =
-        //                            publicKey
-        "openssl req -new -key $BASE_PATH$clientId.key -out $BASE_PATH$clientId.csr"
+    private fun createCSRCommand(clientId: Int, clientPublicKey: String): String {
+        val dir = File(BASE_PATH)
+        if(!dir.exists()) {
+            execute("mkdir $BASE_PATH")
+        }
+        val file = File("$BASE_PATH$USERS/$clientId.key")
+        if (!file.exists()) {
+            execute("echo $clientPublicKey > $BASE_PATH$USERS/$clientId.key")
+        }
+        // -key pede uma chave privada
+        return "openssl req -new -key $BASE_PATH$USERS/$clientId.key -out $BASE_PATH$USERS/$clientId.csr"
+    }
 
-    private fun signedCertificateCommand(clientId: Int) =
-        "openssl x509 -req -days 365 -in $BASE_PATH$clientId.csr -CA $BASE_PATH/certificate.crt -CAkey " +
-            "$BASE_PATH/privateKey.key -set_serial 01 -out $BASE_PATH$clientId.crt"
+    private fun signedCertificateCommand(clientId: Int): String{
+        val file = File("$BASE_PATH$USERS/$clientId.crt")
+        if (!file.exists()) {
+            execute("type nul > $BASE_PATH$USERS/$clientId.crt")
+        }
+        return "openssl x509 -req -days 365 -in $BASE_PATH$USERS/$clientId.csr -CA $BASE_PATH/certificate.crt -CAkey " +
+                "$BASE_PATH/privateKey.key -out $BASE_PATH$USERS/$clientId.crt"
+    }
 
     companion object {
-        const val BASE_PATH = "/certificate"
+        const val BASE_PATH = "D:\\ISEL\\6sem\\PS\\code\\jvm\\certificates"
+        const val USERS = "/users"
     }
 }

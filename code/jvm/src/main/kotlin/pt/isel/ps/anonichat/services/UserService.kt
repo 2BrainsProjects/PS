@@ -14,7 +14,6 @@ import pt.isel.ps.anonichat.domain.user.User
 import pt.isel.ps.anonichat.domain.user.UserDomain
 import pt.isel.ps.anonichat.repository.transaction.TransactionManager
 import pt.isel.ps.anonichat.services.models.TokenModel
-import pt.isel.ps.anonichat.services.models.UserModel
 import pt.isel.ps.anonichat.services.models.UserModel.Companion.toModel
 import pt.isel.ps.anonichat.services.models.UsersModel
 
@@ -44,7 +43,7 @@ class UserService(
             }
             val userId = it.userRepository.registerUser(name, email, passwordHash)
             val certContent = cd.createKeyCommand(publicKey, userId, name, email, password)
-            it.userRepository.updateCert(userId)
+            it.userRepository.updateCert(userId, "$BASE_PATH/users/$userId.crt")
 
             Pair(userId, certContent)
         }
@@ -69,17 +68,6 @@ class UserService(
     }
 
     /**
-     * Gets a user by id
-     * @param id The user's id
-     * @return The user
-     * @throws UserNotFoundException if the user was not found
-     */
-    fun getUser(id: Int): UserModel = tm.run {
-        requireOrThrow<UserNotFoundException>(it.userRepository.isUser(id)) { "User was not found" }
-        it.userRepository.getUser(id).toModel()
-    }
-
-    /**
      * Get list of users
      * @param skip The number of users to skip
      * @param limit The number of users to get
@@ -89,7 +77,18 @@ class UserService(
      */
     fun getUsers(usersIds: List<Int>): UsersModel {
         return tm.run { tr ->
-            val users = usersIds.map { id -> tr.userRepository.getUser(id) }.map { user -> user.toModel() }
+            val users = usersIds.mapNotNull { id ->
+                if (tr.userRepository.isUser(id)) {
+                    tr.userRepository.getUser(id)
+                }else
+                    null
+            }
+                .map { user ->
+                    val cert = if(user.certificate != null) {
+                        cd.readFile(user.certificate)
+                    } else ""
+                    user.toModel(cert)
+                }
             val maxUserId = tr.userRepository.getLastId()
             UsersModel(users, maxUserId)
         }
@@ -155,6 +154,16 @@ class UserService(
     }
 
     /**
+     * Gets the last router id
+     * @return The last router id
+     */
+    fun getLastId(): Int {
+        return tm.run {
+            it.userRepository.getLastId()
+        }
+    }
+
+    /**
      * Logs in a user by username
      * @param name The user's username
      * @param password The user's password
@@ -192,5 +201,9 @@ class UserService(
         it.userRepository.updateIp(user.id, ip)
 
         createToken(user.id)
+    }
+
+    companion object{
+        private const val BASE_PATH = "/certificate"
     }
 }

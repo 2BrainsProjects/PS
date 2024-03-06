@@ -2,6 +2,7 @@ package pt.isel.ps.anonichat.repository
 
 import pt.isel.ps.anonichat.GomokuTest
 import pt.isel.ps.anonichat.domain.user.utils.Sha256TokenEncoder
+import pt.isel.ps.anonichat.repository.jdbi.JdbiRouterRepository
 import pt.isel.ps.anonichat.repository.jdbi.JdbiTokenRepository
 import pt.isel.ps.anonichat.repository.jdbi.JdbiUserRepository
 import java.security.SecureRandom
@@ -13,12 +14,20 @@ open class RepositoryTest : GomokuTest() {
 
     val usersRepository = JdbiUserRepository(handle)
     val tokenRepository = JdbiTokenRepository(handle)
+    val routersRepository = JdbiRouterRepository(handle)
 
     fun registerTestUser(
         username: String = testUsername(),
         email: String = testEmail()
     ): Int {
         return usersRepository.registerUser(username, email, HASHED_TEST_PASSWORD)
+    }
+
+    fun registerTestRouter(
+        ip: String = testIp(),
+        certificate: String = testCertificate()
+    ): Int{
+        return routersRepository.createRouter(ip, certificate)
     }
 
     fun hashToken(token: String): String = tokenEncoder.hash(token)

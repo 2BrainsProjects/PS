@@ -13,5 +13,5 @@ interface UserRepository {
     fun isUserByEmail(email: String): Boolean
     fun getLastId(): Int
     fun updateIp(id: Int, ip: String): Boolean
-    fun updateCert(id: Int): Boolean
+    fun updateCert(id: Int, certPath: String): Boolean
 }
