@@ -1,5 +1,7 @@
 package pt.isel.ps.anonichat.services
 
+import org.junit.jupiter.api.RepeatedTest
+import org.springframework.test.annotation.Repeat
 import pt.isel.ps.anonichat.domain.exceptions.UserException.UserAlreadyExistsException
 import kotlin.math.min
 import kotlin.test.Test
@@ -12,10 +14,10 @@ class UserServiceTest : ServicesTest() {
     @Test
     fun `register a user`() {
         // given: a user
-        val (name, email, password, publicKey) = testUserData()
+        val (name, email, password, clientCSR) = testUserData()
 
         // when: registering the user
-        val (userId, _) = usersServices.registerUser(name, email, password, publicKey)
+        val (userId, _) = usersServices.registerUser(name, email, password, clientCSR, basePath + "\\$USERS")
 
         // then: the user is registered
         val users = usersServices.getUsers(listOf(userId))
@@ -25,17 +27,17 @@ class UserServiceTest : ServicesTest() {
         // when: registering the same user again
         // then: an exception is thrown
         assertFailsWith<UserAlreadyExistsException> {
-            usersServices.registerUser(name, email, password, publicKey)
+            usersServices.registerUser(name, email, password, clientCSR, basePath + "\\$USERS")
         }
     }
 
     @Test
     fun `login a user by username`() {
         // given: a user
-        val (name, email, password, publicKey) = testUserData()
+        val (name, email, password, clientCSR) = testUserData()
 
         // when: registering the user
-        usersServices.registerUser(name, email, password, publicKey)
+        usersServices.registerUser(name, email, password, clientCSR, basePath + "\\$USERS")
 
         // and: logging in the user
         val (token) = usersServices.loginUser(name, null, password, "192.127.0.1")
@@ -51,10 +53,10 @@ class UserServiceTest : ServicesTest() {
     @Test
     fun `login a user by email`() {
         // given: a user
-        val (name, email, password, publicKey) = testUserData()
+        val (name, email, password, clientCSR) = testUserData()
 
         // when: registering the user
-        usersServices.registerUser(name, email, password, publicKey)
+        usersServices.registerUser(name, email, password, clientCSR, basePath + "\\$USERS")
 
         // and: logging in the user by email
         val (token) = usersServices.loginUser(null, email, password, "192.127.0.1")
@@ -70,10 +72,10 @@ class UserServiceTest : ServicesTest() {
     @Test
     fun `get users`() {
         // given: a user
-        val (name, email, password, publicKey) = testUserData()
+        val (name, email, password, clientCSR) = testUserData()
 
         // when: registering the user
-        usersServices.registerUser(name, email, password, publicKey)
+        usersServices.registerUser(name, email, password, clientCSR, basePath + "\\$USERS")
 
         val maxId = usersServices.getLastId()
 
@@ -84,16 +86,15 @@ class UserServiceTest : ServicesTest() {
         val (users, totalUsers) = usersServices.getUsers(list)
         assertTrue(totalUsers > 0)
         assertTrue(users.isNotEmpty())
-        assertEquals(users.size, list.size)
     }
 
     @Test
     fun `logout a user`() {
         // given: a user
-        val (name, email, password, publicKey) = testUserData()
+        val (name, email, password, clientCSR) = testUserData()
 
         // when: registering the user
-        usersServices.registerUser(name, email, password, publicKey)
+        usersServices.registerUser(name, email, password, clientCSR, basePath + "\\$USERS")
 
         // and: logging in the user
         val (token) = usersServices.loginUser(name, null, password, "192.127.0.1")

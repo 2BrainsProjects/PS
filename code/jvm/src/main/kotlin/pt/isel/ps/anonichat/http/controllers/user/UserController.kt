@@ -74,7 +74,7 @@ class UserController(
         @Valid @RequestBody
         body: RegisterInputModel
     ): ResponseEntity<*> {
-        val (userId, certificateContent) = services.registerUser(body.name, body.email, body.password, body.publicKey)
+        val (userId, certificateContent) = services.registerUser(body.name, body.email, body.password, body.clientCSR)
         return SirenEntity(
             clazz = listOf(Rels.User.REGISTER),
             properties = RegisterOutputModel(userId, certificateContent),

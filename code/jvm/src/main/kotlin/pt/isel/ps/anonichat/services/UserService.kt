@@ -32,7 +32,7 @@ class UserService(
      * @return The user's id
      * @throws UserAlreadyExistsException if the user already exists
      */
-    fun registerUser(name: String, email: String, password: String, publicKey: String): Pair<Int, String> {
+    fun registerUser(name: String, email: String, password: String, clientCSR: String, path: String = basePath): Pair<Int, String> {
         val passwordHash = domain.encodePassword(password)
         return tm.run {
             requireOrThrow<UserAlreadyExistsException>(!it.userRepository.isUserByUsername(name)) {
@@ -42,8 +42,8 @@ class UserService(
                 "User with email $email already exists"
             }
             val userId = it.userRepository.registerUser(name, email, passwordHash)
-            val certContent = cd.createKeyCommand(publicKey, userId, name, email, password)
-            it.userRepository.updateCert(userId, "$BASE_PATH/users/$userId.crt")
+            val certContent = cd.createCertCommand(clientCSR, userId, name, email, password, path)
+            it.userRepository.updateCert(userId, "$path/$userId.crt")
 
             Pair(userId, certContent)
         }
@@ -204,6 +204,8 @@ class UserService(
     }
 
     companion object{
-        private const val BASE_PATH = "/certificate"
+        private val basePath
+            get() = path()
+        private fun path() = System.getProperty("user.dir") + "\\certificates\\users"
     }
 }

@@ -2,9 +2,12 @@ package pt.isel.ps.anonichat.domain.certificate
 
 import org.springframework.stereotype.Component
 import java.io.BufferedReader
+import java.io.BufferedWriter
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.OutputStreamWriter
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 
@@ -35,24 +38,25 @@ class CertificateDomain {
      * @param email user's email
      * @param password user's password
      */
-    fun createKeyCommand(publicKey: String, clientId: Int, name: String, email: String, password: String): String {
-        val createCSRCommand = createCSRCommand(clientId, publicKey)
-        execute(createCSRCommand)
-        answeringCSRCreation(name, email, password)
+    fun createCertCommand(clientCSR: String, clientId: Int, name: String, email: String, password: String, path:String): String {
+        createCSRTempFile(clientId, clientCSR, path)
+        println("csr temp file created")
 
-        val signedCertificateCommand = signedCertificateCommand(clientId)
+        val certFile = File("$path/$clientId.crt")
+        certFile.createNewFile()
+
+        val signedCertificateCommand = signedCertificateCommand(clientId, path, SERVER_PATH)
         execute(signedCertificateCommand)
 
-        val crtContent = readFile("$BASE_PATH/$clientId.crt")
+        val crtContent = readFile("$path/$clientId.crt")
+        deleteTempFile("$path/$clientId.csr")
         return crtContent
     }
 
     private fun execute(command: String) {
-        println(command)
-
         try {
             val runtime = Runtime.getRuntime()
-            runtime.exec("cmd /c $command")
+            runtime.exec(command)
 
         } catch (e: Exception) {
             throw IllegalStateException(e.message)
@@ -66,51 +70,35 @@ class CertificateDomain {
         return text
     }
 
-    private fun answeringCSRCreation(name: String, email: String, password: String) {
-        // Country Name(2 letter code):
-        execute("")
-        // State or Province Name (full name):
-        execute("")
-        // Locality Name (eg, city):
-        execute("")
-        // Organization Name (eg, company):
-        execute("")
-        // Organizational Unit Name (eg, section):
-        execute("")
-        // Common Name(e.g. server FQDN or YOUR name): user's username
-        execute(name)
-        // Email Address: user's email
-        execute(email)
-        // A challenge password: (1234567890!Aa) user's password
-        execute(password)
-        // An optional company name:
-        execute("")
+    private fun deleteTempFile(filePath: String) {
+        val file = File(filePath)
+        if (file.exists()) {
+            file.delete()
+        }
     }
 
-    private fun createCSRCommand(clientId: Int, clientPublicKey: String): String {
-        val dir = File(BASE_PATH)
+    private fun createCSRTempFile(clientId: Int, clientCSR: String, path: String) {
+        val dir = File(path)
         if(!dir.exists()) {
-            execute("mkdir $BASE_PATH")
+            execute("mkdir $path")
         }
-        val file = File("$BASE_PATH$USERS/$clientId.key")
+        val file = File("$path/$clientId.csr")
         if (!file.exists()) {
-            execute("echo $clientPublicKey > $BASE_PATH$USERS/$clientId.key")
+            execute("cmd /c type nul > $path/$clientId.csr")
+            BufferedWriter(OutputStreamWriter(FileOutputStream("$path/$clientId.csr"))).use {
+                it.write("-----BEGIN CERTIFICATE REQUEST-----\n")
+                it.write(clientCSR + "\n")
+                it.write("-----END CERTIFICATE REQUEST-----\n")
+            }
         }
-        // -key pede uma chave privada
-        return "openssl req -new -key $BASE_PATH$USERS/$clientId.key -out $BASE_PATH$USERS/$clientId.csr"
     }
 
-    private fun signedCertificateCommand(clientId: Int): String{
-        val file = File("$BASE_PATH$USERS/$clientId.crt")
-        if (!file.exists()) {
-            execute("type nul > $BASE_PATH$USERS/$clientId.crt")
-        }
-        return "openssl x509 -req -days 365 -in $BASE_PATH$USERS/$clientId.csr -CA $BASE_PATH/certificate.crt -CAkey " +
-                "$BASE_PATH/privateKey.key -out $BASE_PATH$USERS/$clientId.crt"
-    }
+    private fun signedCertificateCommand(clientId: Int, path: String, pathServer: String): String =
+        "openssl x509 -req -days 365 -in $path/$clientId.csr -CA $pathServer/certificate.crt -CAkey $pathServer/privateKey.key -out $path/$clientId.crt"
 
-    companion object {
-        const val BASE_PATH = "D:\\ISEL\\6sem\\PS\\code\\jvm\\certificates"
-        const val USERS = "/users"
+    companion object{
+        private val SERVER_PATH
+            get() = path()
+        private fun path() = System.getProperty("user.dir") + "\\certificates"
     }
 }
