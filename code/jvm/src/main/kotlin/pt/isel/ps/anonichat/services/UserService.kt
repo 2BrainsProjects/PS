@@ -76,7 +76,7 @@ class UserService(
         }
         val certContent: String = cd.readFile("$path/$userId.crt")
 
-        return tokenModel
+        return Pair(tokenModel, certContent)
     }
 
     /**

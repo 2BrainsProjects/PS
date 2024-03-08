@@ -41,7 +41,7 @@ class UserController(
     ): ResponseEntity<*> {
         return SirenEntity(
             clazz = listOf(Rels.User.HOME),
-            properties = GetUserOutputModel(
+            properties = GetUserHomeOutputModel(
                 session.user.id,
                 session.user.name
             ),
@@ -86,11 +86,11 @@ class UserController(
         response: HttpServletResponse,
         ip: Ip
     ): ResponseEntity<*> {
-        val token = services.loginUser(body.name, body.email, body.password, ip.ip)
+        val (token, certContent) = services.loginUser(body.name, body.email, body.password, ip.ip)
         response.addCookie(token)
         return SirenEntity(
             clazz = listOf(Rels.User.LOGIN),
-            properties = LoginOutputModel(token.value, token.expiration.epochSeconds),
+            properties = LoginOutputModel(certContent, token.value, token.expiration.epochSeconds),
             links = listOf(Links.home(), Links.userHome())
         ).ok()
     }
