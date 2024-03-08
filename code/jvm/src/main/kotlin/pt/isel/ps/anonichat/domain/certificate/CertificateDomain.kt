@@ -14,22 +14,6 @@ import java.security.cert.X509Certificate
 @Component
 class CertificateDomain {
 
-    fun loadServerCertificate(): X509Certificate {
-        try {
-            val certificateFactory = CertificateFactory.getInstance("X.509")
-            val certStream = FileInputStream("certificate/certificate.crt")
-            return certificateFactory.generateCertificate(certStream) as X509Certificate
-        } catch (e: Exception) {
-            throw IllegalStateException("failed to load server certificate")
-        }
-    }
-
-    fun certificateFromString(base64: ByteArray): X509Certificate {
-        val inputStream = ByteArrayInputStream(base64)
-
-        return CertificateFactory.getInstance("X.509").generateCertificate(inputStream) as X509Certificate
-    }
-
     /**
      * this function requires openssl installed in system's PATH.
      * the resultant certificate will be in clientId.crt

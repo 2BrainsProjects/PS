@@ -11,14 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import pt.isel.ps.anonichat.domain.utils.Ip
 import pt.isel.ps.anonichat.http.controllers.router.models.GetRoutersCountOutputModel
-import pt.isel.ps.anonichat.http.controllers.user.models.GetUserOutputModel
-import pt.isel.ps.anonichat.http.controllers.user.models.GetUsersCountOutputModel
-import pt.isel.ps.anonichat.http.controllers.user.models.GetUsersInputModel
-import pt.isel.ps.anonichat.http.controllers.user.models.GetUsersOutputModel
-import pt.isel.ps.anonichat.http.controllers.user.models.LoginInputModel
-import pt.isel.ps.anonichat.http.controllers.user.models.LoginOutputModel
-import pt.isel.ps.anonichat.http.controllers.user.models.RegisterInputModel
-import pt.isel.ps.anonichat.http.controllers.user.models.RegisterOutputModel
+import pt.isel.ps.anonichat.http.controllers.user.models.*
 import pt.isel.ps.anonichat.http.media.siren.SirenEntity
 import pt.isel.ps.anonichat.http.media.siren.SubEntity
 import pt.isel.ps.anonichat.http.pipeline.authentication.RequestTokenProcessor.Companion.TOKEN
@@ -50,9 +43,7 @@ class UserController(
             clazz = listOf(Rels.User.HOME),
             properties = GetUserOutputModel(
                 session.user.id,
-                session.user.ip ?: "",
-                session.user.name,
-                session.user.certificate ?: ""  // problema de registo noutro sitio
+                session.user.name
             ),
             links = listOf(
                 Links.self(Uris.User.HOME),

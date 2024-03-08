@@ -4,10 +4,7 @@ import org.junit.jupiter.api.RepeatedTest
 import org.springframework.test.annotation.Repeat
 import pt.isel.ps.anonichat.domain.exceptions.UserException.UserAlreadyExistsException
 import kotlin.math.min
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class UserServiceTest : ServicesTest() {
 
@@ -40,10 +37,10 @@ class UserServiceTest : ServicesTest() {
         usersServices.registerUser(name, email, password, clientCSR, basePath + "\\$USERS")
 
         // and: logging in the user
-        val (token) = usersServices.loginUser(name, null, password, "192.127.0.1")
+        val (token) = usersServices.loginUser(name, null, password, "192.127.0.1", basePath + "\\$USERS")
 
         // and: getting the user by token
-        val userByToken = usersServices.getUserByToken(token)
+        val userByToken = usersServices.getUserByToken(token.value)
 
         // then: the user is logged in
         assertEquals(name, userByToken?.name)
@@ -59,7 +56,7 @@ class UserServiceTest : ServicesTest() {
         usersServices.registerUser(name, email, password, clientCSR, basePath + "\\$USERS")
 
         // and: logging in the user by email
-        val (token) = usersServices.loginUser(null, email, password, "192.127.0.1")
+        val (token) = usersServices.loginUser(null, email, password, "192.127.0.1", basePath + "\\$USERS")
 
         // and: getting the user by token
         val userByToken = usersServices.getUserByToken(token)
@@ -97,16 +94,16 @@ class UserServiceTest : ServicesTest() {
         usersServices.registerUser(name, email, password, clientCSR, basePath + "\\$USERS")
 
         // and: logging in the user
-        val (token) = usersServices.loginUser(name, null, password, "192.127.0.1")
+        val (token, _) = usersServices.loginUser(name, null, password, "192.127.0.1", basePath + "\\$USERS")
 
         // then: the user is logged in
         val userByToken = usersServices.getUserByToken(token)
         assertEquals(name, userByToken?.name)
 
         // when: revoking the token
-        usersServices.revokeToken(token)
+        usersServices.revokeToken(token.value)
 
         // then: the token is no longer valid to get the user
-        assertEquals(null, usersServices.getUserByToken(token))
+        assertEquals(null, usersServices.getUserByToken(token.value))
     }
 }
