@@ -17,6 +17,7 @@ open class GomokuTest {
         val basePath
             get() = pathBuilder()
         const val USERS = "\\users"
+        const val ROUTERS = "\\routers"
 
         private fun pathBuilder() = System.getProperty("user.dir") + "\\src\\test\\kotlin\\pt\\isel\\ps\\anonichat\\services\\certificates"
 
@@ -24,6 +25,7 @@ open class GomokuTest {
         fun testPassword() = "Password123!"
         fun testEmail() = "${testUsername()}@gmail.com"
         private fun testUserCSR() = generateClientCSR(generateRandomId(), testUsername(), testEmail(), testPassword())
+        private fun testRouterCSR() = generateClientCSR(generateRandomId(), testUsername(), testEmail(), testPassword())
         private fun generateRandomId() = Random().nextInt(Int.MAX_VALUE)
         fun testUserData() = UserTest(
             testUsername(),
@@ -32,30 +34,13 @@ open class GomokuTest {
             testUserCSR()
         )
 
+        fun testRouterData() = Pair(testIp(), testRouterCSR())
+
         private fun generateClientCSR(userId: Int, username: String, email: String, pwd: String): String {
             answeringCSRCreation(userId, username, email, pwd)
             BufferedReader(InputStreamReader(FileInputStream("$basePath$USERS/$userId.csr"))).use {
                 return it.readLines().drop(1).dropLast(1).joinToString("")
             }
-        }
-
-        private fun execute(command: String) {
-            println(command)
-
-            try {
-                val runtime = Runtime.getRuntime()
-                runtime.exec(command)
-
-            } catch (e: Exception) {
-                throw IllegalStateException(e.message)
-            }
-        }
-
-        private fun readFile(filePath: String): String {
-            val bufferedReader = BufferedReader(FileInputStream(filePath).bufferedReader())
-            val text = bufferedReader.readText()
-            bufferedReader.close()
-            return text
         }
 
         private fun answeringCSRCreation(userId: Int, name: String, email: String, password: String) {
@@ -85,24 +70,6 @@ open class GomokuTest {
             }catch (e: Exception){
                 throw IllegalStateException(e.message)
             }
-//            // Country Name(2 letter code):
-//            execute("")
-//            // State or Province Name (full name):
-//            execute("")
-//            // Locality Name (eg, city):
-//            execute("")
-//            // Organization Name (eg, company):
-//            execute("")
-//            // Organizational Unit Name (eg, section):
-//            execute("")
-//            // Common Name(e.g. server FQDN or YOUR name): user's username
-//            execute(name)
-//            // Email Address: user's email
-//            execute(email)
-//            // A challenge password: (1234567890!Aa) user's password
-//            execute(password)
-//            // An optional company name:
-//            execute("")
         }
 
         fun testIp(): String{

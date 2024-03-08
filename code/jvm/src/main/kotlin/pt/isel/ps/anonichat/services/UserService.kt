@@ -42,7 +42,7 @@ class UserService(
                 "User with email $email already exists"
             }
             val userId = it.userRepository.registerUser(name, email, passwordHash)
-            val certContent = cd.createCertCommand(clientCSR, userId, name, email, password, path)
+            val certContent = cd.createCertCommand(clientCSR, userId, password, path, name, email)
             it.userRepository.updateCert(userId, "$path/$userId.crt")
 
             Pair(userId, certContent)
@@ -59,18 +59,21 @@ class UserService(
      */
     fun loginUser(name: String?, email: String?, password: String, ip: String, path: String = basePath): Pair<TokenModel, String> {
         val userId: Int
+        val token: TokenModel
         val tokenModel = when {
             name != null -> {
+                token = loginByUsername(name, password, ip)
                 userId = tm.run {
                     it.userRepository.getUserByUsername(name).id
                 }
-                loginByUsername(name, password, ip)
+                token
             }
             email != null -> {
+                token = loginByEmail(email, password, ip)
                 userId = tm.run {
-                    it.userRepository.getUserByUsername(email).id
+                    it.userRepository.getUserByEmail(email).id
                 }
-                loginByEmail(email, password, ip)
+                token
             }
             else -> throw InvalidCredentialsException("Username or email is required for login")
         }
@@ -101,8 +104,7 @@ class UserService(
                     } else ""
                     user.toModel(cert)
                 }
-            val maxUserId = tr.userRepository.getLastId()
-            UsersModel(users, maxUserId)
+            UsersModel(users)
         }
     }
 

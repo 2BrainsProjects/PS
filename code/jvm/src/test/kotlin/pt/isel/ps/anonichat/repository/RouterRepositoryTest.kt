@@ -12,8 +12,8 @@ class RouterRepositoryTest : RepositoryTest() {
         val ip = testIp()
         val certificate = testCertificate()
 
-        routersRepository.createRouter(ip, certificate)
-
+        val id = routersRepository.createRouter(ip)
+        routersRepository.updateCert(id, certificate)
         val router = routersRepository.getRouterByIp(ip)
         assertEquals(router.ip, ip)
         assertEquals(router.certificate, certificate)
@@ -42,7 +42,9 @@ class RouterRepositoryTest : RepositoryTest() {
         val ip = testIp()
         val certificate = testCertificate()
 
-        routersRepository.createRouter(ip, certificate)
+        val id = routersRepository.createRouter(ip)
+
+        routersRepository.updateCert(id, certificate)
         val router = routersRepository.getRouterByIp(ip)
 
         assertEquals(router.ip, ip)

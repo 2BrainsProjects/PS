@@ -32,7 +32,7 @@ class RouterController(
         @Valid @RequestBody
         body: GetRoutersCountInputModel
     ): ResponseEntity<*> {
-        val routers = services.getRouters(body.routersIdList)
+        val (routers) = services.getRouters(body.routersIdList)
         return SirenEntity(
             clazz = listOf(Rels.Router.ROUTERS, Rels.Collection.COLLECTION),
             properties = GetRoutersCountOutputModel(routers.size),

@@ -120,10 +120,10 @@ class UserController(
         @RequestBody
         body: GetUsersInputModel
     ): ResponseEntity<*> {
-        val (users, count) = services.getUsers(body.usersIdList)
+        val (users) = services.getUsers(body.usersIdList)
         return SirenEntity(
             clazz = listOf(Rels.User.USERS, Rels.Collection.COLLECTION),
-            properties = GetUsersOutputModel(count),
+            properties = GetUsersOutputModel(users.size),
             links = listOfNotNull(
                 Links.self(Uris.User.USERS)
             ),

@@ -22,15 +22,24 @@ class CertificateDomain {
      * @param email user's email
      * @param password user's password
      */
-    fun createCertCommand(clientCSR: String, clientId: Int, name: String, email: String, password: String, path:String): String {
+    fun createCertCommand(
+        clientCSR: String,
+        clientId: Int,
+        password: String,
+        path: String,
+        name: String = "",
+        email: String = ""
+    ): String {
         createCSRTempFile(clientId, clientCSR, path)
-        println("csr temp file created")
 
         val certFile = File("$path/$clientId.crt")
         certFile.createNewFile()
 
         val signedCertificateCommand = signedCertificateCommand(clientId, path, SERVER_PATH)
         execute(signedCertificateCommand)
+
+        // wait for the file to be written on
+        while(BufferedReader(FileInputStream(certFile).bufferedReader()).readLines().isEmpty()){}
 
         val crtContent = readFile("$path/$clientId.crt")
         deleteTempFile("$path/$clientId.csr")
@@ -68,7 +77,7 @@ class CertificateDomain {
         }
         val file = File("$path/$clientId.csr")
         if (!file.exists()) {
-            execute("cmd /c type nul > $path/$clientId.csr")
+            file.createNewFile()
             BufferedWriter(OutputStreamWriter(FileOutputStream("$path/$clientId.csr"))).use {
                 it.write("-----BEGIN CERTIFICATE REQUEST-----\n")
                 it.write(clientCSR + "\n")

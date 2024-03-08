@@ -20,6 +20,7 @@ class UserServiceTest : ServicesTest() {
         val users = usersServices.getUsers(listOf(userId))
         assertEquals(name, users.users[0].name)
         assertEquals(email, users.users[0].email)
+        assertTrue(users.users[0].certificate.isNotEmpty())
 
         // when: registering the same user again
         // then: an exception is thrown
@@ -83,8 +84,7 @@ class UserServiceTest : ServicesTest() {
             else
                 (0..maxId).random()
         }.distinct()
-        val (users, totalUsers) = usersServices.getUsers(list)
-        assertTrue(totalUsers > 0)
+        val (users) = usersServices.getUsers(list)
         assertTrue(users.isNotEmpty())
     }
 

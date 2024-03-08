@@ -15,10 +15,9 @@ class JdbiRouterRepository(
      * @param certificate The router's certificate
      * @return The row
      */
-    override fun createRouter(ip: String, certificate: String): Int =
-        handle.createUpdate("insert into dbo.Router (ip, certificate) values (:ip, :certificate)")
+    override fun createRouter(ip: String): Int =
+        handle.createUpdate("insert into dbo.Router (ip, certificate) values (:ip, null)")
             .bind("ip", ip)
-            .bind("certificate", certificate)
             .executeAndReturnGeneratedKeys()
             .mapTo<Int>()
             .single()
@@ -74,4 +73,10 @@ class JdbiRouterRepository(
         handle.createQuery("select id from dbo.Router order by id desc limit 1")
             .mapTo<Int>()
             .single()
+
+    override fun updateCert(id: Int, certPath: String) : Boolean =
+        handle.createUpdate("update dbo.Router set certificate = :certPath where id = :id")
+            .bind("id", id)
+            .bind("certPath", certPath)
+            .execute() == 1
 }

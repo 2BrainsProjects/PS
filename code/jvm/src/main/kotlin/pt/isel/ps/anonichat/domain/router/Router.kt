@@ -9,5 +9,5 @@ package pt.isel.ps.anonichat.domain.router
 data class Router(
     val id: Int,
     val ip: String,
-    val certificate: String
+    val certificate: String?
 )

@@ -24,10 +24,9 @@ open class RepositoryTest : GomokuTest() {
     }
 
     fun registerTestRouter(
-        ip: String = testIp(),
-        certificate: String = testCertificate()
+        ip: String = testIp()
     ): Int{
-        return routersRepository.createRouter(ip, certificate)
+        return routersRepository.createRouter(ip)
     }
 
     fun hashToken(token: String): String = tokenEncoder.hash(token)
