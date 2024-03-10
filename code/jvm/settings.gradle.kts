@@ -1,1 +1,1 @@
-rootProject.name = "gomoku"
+rootProject.name = "anonichat"

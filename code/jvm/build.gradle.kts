@@ -9,7 +9,7 @@ plugins {
     kotlin("plugin.spring") version "1.8.22"
 }
 
-group = "pt.isel.daw"
+group = "pt.isel.ps"
 version = "0.0.1-SNAPSHOT"
 
 java {
@@ -42,9 +42,6 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-webflux")
     testImplementation(kotlin("test"))
     testImplementation("junit:junit:4.13.1")
-
-    // Bouncy Castle
-    implementation("org.bouncycastle:bcprov-jdk15on:1.68")
 }
 
 tasks.withType<KotlinCompile> {
@@ -60,7 +57,7 @@ tasks.withType<Test> {
 
 tasks.register<JavaExec>("launch") {
     group = "launch"
-    this.mainClass.set("pt.isel.daw.gomoku.GomokuApplicationKt")
+    this.mainClass.set("pt.isel.ps.anonichat.AnonichatApplicationKt")
     classpath = sourceSets["main"].runtimeClasspath
 }
 

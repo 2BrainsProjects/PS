@@ -1,4 +1,4 @@
-# Gomoku Frontend Technical Document
+# Anonichat Frontend Technical Document
 
 This document contains the frontend internal software organization and the main implementation challenges.
 
@@ -7,7 +7,7 @@ This document contains the frontend internal software organization and the main 
 
 The frontend application is a single page application built using React and served with Webpack.
 
-The Gomoku API documentation can be found [here](/docs/README.md).
+The Anonichat API documentation can be found [here](/docs/README.md).
 The backend internal software organization can be found [here](../jvm/README.md).
 
 
@@ -33,7 +33,7 @@ The communication with the API is done in the `services` layer, that has the fol
 
 * `LinksService` - The class that contains all the hypermedia links needed for the communication with the API;
 * `HttpService` - The base class for all the services, which allows to make requests with the `GET`, `POST`, `PUT` and `DELETE` methods;
-* `GomokuService` - The class that contains all the domain related services:
+* `AnonichatService` - The class that contains all the domain related services:
     * `HomeService` - The service that contains the method to get the API Home.
     * `UsersService` - The service that contains the methods for the user management;
     * `GamesService` - The service that contains the methods for the game management;
@@ -76,7 +76,7 @@ To use this context, the component should use the `useSession` hook to access th
 
 ### ServicesContext
 
-This context provides all the services needed for the application with the service of the type `GomokuService`.
+This context provides all the services needed for the application with the service of the type `AnonichatService`.
 This provides a better sense of organization and allows the application to have a single point of access to all the services, without having
 to create a new instance of the service in each component.
 
@@ -101,7 +101,7 @@ It allows the application to have different routes and pages, and persist the st
 
 ## Conclusion
 
-In conclusion, this technical document provides an in-depth overview of the Gomoku frontend application organization and structure.
+In conclusion, this technical document provides an in-depth overview of the Anonichat frontend application organization and structure.
 It outlines the application internal software organization, such as the API communication, authentication, contexts/providers, navigation and deep-linking.
 
 All the requirements were met and the application is fully functional.

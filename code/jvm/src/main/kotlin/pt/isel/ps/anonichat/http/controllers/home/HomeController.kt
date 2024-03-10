@@ -60,11 +60,11 @@ class HomeController {
         )
 
         private val home = GetHomeOutputModel(
-            title = "Gomoku",
+            title = "Anonichat",
             version = "0.0.1",
             description = "Anonymous chat between users",
             authors = authors,
-            repository = "https://github.com/isel-leic-daw/2023-daw-leic51d-08"
+            repository = "https://github.com/isel-leic-ps/2023-ps-leic51d-08"
         )
         private val androidLinks = listOf(Links.self(Uris.HOME), Links.userHome())
         private val webLinks = listOf(Links.self(Uris.HOME), Links.userHome())

@@ -26,7 +26,7 @@ function Home() {
           <h1 className="title">{home?.title}</h1>
           <div className="container">
             <p className="description">{home?.description}</p>
-            <img src="/logo512.png" alt="Gomoku" />
+            <img src="/logo512.png" alt="Anonichat" />
             <h3>Developed by:</h3>
             <div className="authors">
               {home?.authors.map(author => (

@@ -4,7 +4,7 @@ import { HomeService } from './api/home/HomeService';
 import { LobbyService } from './api/lobby/LobbyService';
 import { GamesService } from './api/game/GamesService';
 
-export class GomokuService {
+export class AnonichatService {
   readonly homeService: HomeService;
   readonly usersService: UsersService;
   readonly lobbyService: LobbyService;

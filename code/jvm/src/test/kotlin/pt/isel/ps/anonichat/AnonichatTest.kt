@@ -10,7 +10,7 @@ import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.util.*
 
-open class GomokuTest {
+open class AnonichatTest {
     data class UserTest(val username: String, val email: String, val password: String, val publicKey: String)
 
     companion object {
@@ -24,7 +24,7 @@ open class GomokuTest {
         fun testUsername() = "testUser${UUID.randomUUID().toString().substring(0, 6)}"
         fun testPassword() = "Password123!"
         fun testEmail() = "${testUsername()}@gmail.com"
-        private fun testUserCSR() = generateClientCSR(generateRandomId(), testUsername(), testEmail(), testPassword())
+        fun testUserCSR() = generateClientCSR(generateRandomId(), testUsername(), testEmail(), testPassword())
         private fun testRouterCSR() = generateClientCSR(generateRandomId(), testUsername(), testEmail(), testPassword())
         private fun generateRandomId() = Random().nextInt(Int.MAX_VALUE)
         fun testUserData() = UserTest(

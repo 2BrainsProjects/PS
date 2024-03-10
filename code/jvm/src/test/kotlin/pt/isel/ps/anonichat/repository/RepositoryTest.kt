@@ -1,6 +1,6 @@
 package pt.isel.ps.anonichat.repository
 
-import pt.isel.ps.anonichat.GomokuTest
+import pt.isel.ps.anonichat.AnonichatTest
 import pt.isel.ps.anonichat.domain.user.utils.Sha256TokenEncoder
 import pt.isel.ps.anonichat.repository.jdbi.JdbiRouterRepository
 import pt.isel.ps.anonichat.repository.jdbi.JdbiTokenRepository
@@ -8,7 +8,7 @@ import pt.isel.ps.anonichat.repository.jdbi.JdbiUserRepository
 import java.security.SecureRandom
 import java.util.*
 
-open class RepositoryTest : GomokuTest() {
+open class RepositoryTest : AnonichatTest() {
     private val handle = jdbi.open()
     private val tokenEncoder = Sha256TokenEncoder()
 

@@ -25,7 +25,7 @@ import kotlin.time.Duration.Companion.hours
  * The application's entry point
  */
 @SpringBootApplication
-class GomokuApplication {
+class AnonichatApplication {
 
     @Bean
     fun jdbi(): Jdbi = Jdbi.create(
@@ -72,5 +72,5 @@ class PipelineConfigurer(
 }
 
 fun main(args: Array<String>) {
-    runApplication<GomokuApplication>(*args)
+    runApplication<AnonichatApplication>(*args)
 }

@@ -132,7 +132,7 @@ class ExceptionHandler {
         ).also { ex.printStackTrace() }
 
     companion object {
-        private const val PROBLEMS_DOCS_URI = "https://github.com/isel-leic-daw/2023-daw-leic51d-08/tree/main/docs/problems/"
+        private const val PROBLEMS_DOCS_URI = "https://github.com/isel-leic-ps/2023-ps-leic51d-08/tree/main/docs/problems/"
 
         private fun Exception.handle(
             request: HttpServletRequest,

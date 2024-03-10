@@ -1,4 +1,4 @@
-# Gomoku - API Documentation
+# Anonichat - API Documentation
 
 This document contains the HTTP API documentation for a frontend client application.
 
@@ -56,7 +56,7 @@ This API uses [hypermedia](https://en.wikipedia.org/wiki/Hypermedia), which is a
 
 The API navigation graphis represented in the following diagram:
 
-![API Navigation Graph](./diagrams/gomoku-diagrams-navigation-graph.svg)
+![API Navigation Graph](./diagrams/anonichat-diagrams-navigation-graph.svg)
 
 We highlight the following aspects of the API journey:
 

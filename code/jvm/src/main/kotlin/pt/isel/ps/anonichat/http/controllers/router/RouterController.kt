@@ -3,12 +3,12 @@ package pt.isel.ps.anonichat.http.controllers.router
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import pt.isel.ps.anonichat.http.controllers.router.models.GetRouterOutputModel
-import pt.isel.ps.anonichat.http.controllers.router.models.GetRoutersCountInputModel
 import pt.isel.ps.anonichat.http.controllers.router.models.GetRoutersCountOutputModel
+import pt.isel.ps.anonichat.http.controllers.router.models.GetRoutersOutputModel
 import pt.isel.ps.anonichat.http.media.siren.SirenEntity
 import pt.isel.ps.anonichat.http.media.siren.SubEntity
 import pt.isel.ps.anonichat.http.utils.Links
@@ -24,18 +24,18 @@ class RouterController(
 ) {
     /**
      * Handles the request to get list of routers
-     * @param body the request body (GetRoutersCountInputModel)
+     * @param ids the request body (GetRoutersCountInputModel)
      * @return the response with the list of routers
      */
     @GetMapping(Uris.Router.ROUTERS)
     fun getRouters(
-        @Valid @RequestBody
-        body: GetRoutersCountInputModel
+        @Valid @RequestParam
+        ids: List<Int>
     ): ResponseEntity<*> {
-        val (routers) = services.getRouters(body.routersIdList)
+        val (routers) = services.getRouters(ids)
         return SirenEntity(
             clazz = listOf(Rels.Router.ROUTERS, Rels.Collection.COLLECTION),
-            properties = GetRoutersCountOutputModel(routers.size),
+            properties = GetRoutersOutputModel(routers.size),
             links = listOfNotNull(
                 Links.self(Uris.Router.ROUTERS)
             ),

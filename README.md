@@ -2,7 +2,7 @@
 ## **Project and Seminar**
 ## Summer Semester 2023/2024
 
-### Gomoku - Backend & Frontend Web Implementation
+### Anonichat - Backend & Frontend Web Implementation
 
 <img src="https://skillicons.dev/icons?i=kotlin,java,spring,postgresql,typescript,react"/>
 

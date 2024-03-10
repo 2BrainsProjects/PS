@@ -1,10 +1,10 @@
-# Gomoku - Technical Document
+# Anonichat - Technical Document
 
 This document contains the backend internal software organization, the data model and the main implementation challenges.
 
 ## Introduction
 
-The backend server exposes a HTTP API that provides a system for the Gomoku game, written in [Kotlin](https://kotlinlang.org/) that uses the [Spring Boot](https://spring.io/projects/spring-boot) library for processing the HTTP requests. 
+The backend server exposes a HTTP API that provides a system for the Anonichat game, written in [Kotlin](https://kotlinlang.org/) that uses the [Spring Boot](https://spring.io/projects/spring-boot) library for processing the HTTP requests. 
 
 The backend implementation was made to be used by frontend applications that communicate with each other via the the backend service, which is responsible for ensuring all game rules, as well as managing and storing all game related data. It is also designed in a way to allow the evolution of game rules, including allowing different games to use different rules. The frontend applications adapt automatically to these evolving and dynamic game rules.
 
@@ -16,11 +16,11 @@ The backend implementation was made to be used by frontend applications that com
 The conceptual data model of the backend server is represented in the following diagram, that holds the 
 entity-relationship diagram of the database:
 
-![Data Model](../../docs/diagrams/gomoku-diagrams-er-diagram.svg)
+![Data Model](../../docs/diagrams/anonichat-diagrams-er-diagram.svg)
 
 It is also represented in the following relational schema:
 
-![Data Model](../../docs/diagrams/gomoku-diagrams-relational-diagram.svg)
+![Data Model](../../docs/diagrams/anonichat-diagrams-relational-diagram.svg)
 
 The data model contains the following entities:
 * The `User` entity represents a user of the system;
@@ -108,7 +108,7 @@ The backend service uses an [Exception Handler](./src/main/kotlin/pt/isel/ps/ano
 
 ```json
 {
-    "type": "https://github.com/isel-leic-daw/2023-daw-leic51d-08/tree/main/docs/problems/not-player-turn",
+    "type": "https://github.com/isel-leic-ps/2023-ps-leic51d-08/tree/main/docs/problems/not-player-turn",
     "title": "Not Player Turn",
     "detail": "It's not your turn to play",
     "instance": "/api/games/1"
@@ -133,7 +133,7 @@ docker-compose up
 
 # Conclusion
 
-In conclusion, this technical document provides an in-depth overview of the Gomoku backend service. It outlines the application architecture, data model, software organization and various implementation details of the server.
+In conclusion, this technical document provides an in-depth overview of the Anonichat backend service. It outlines the application architecture, data model, software organization and various implementation details of the server.
 The system is built with flexibility in mind, allowing for the adaptation of game rules in the future, and dynamic interaction between frontend applications and the backend service.
 
 To enhance the system in the future, there are several potential improvements we can make, such as:

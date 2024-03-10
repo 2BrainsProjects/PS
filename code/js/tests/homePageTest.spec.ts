@@ -5,8 +5,8 @@ import { test, expect } from '@playwright/test';
 test('home page init', async ({ page }) => {
   await page.goto('http://localhost:8080/');
 
-  await expect(page.locator('.title')).toContainText('Gomoku');
-  await expect(page.getByText('Gomoku, also called Five in a')).toBeVisible();
+  await expect(page.locator('.title')).toContainText('Anonichat');
+  await expect(page.getByText('Anonichat, also called Five in a')).toBeVisible();
   await expect(page.locator('h3')).toContainText('Developed by:');
   await expect(page.getByRole('link', { name: 'Ricardo Costa' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Vasco Costa' })).toBeVisible();

@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import pt.isel.ps.anonichat.domain.utils.Ip
 import pt.isel.ps.anonichat.http.controllers.router.models.GetRoutersCountOutputModel
@@ -117,10 +118,9 @@ class UserController(
      */
     @GetMapping(Uris.User.USERS)
     fun getUsers(
-        @RequestBody
-        body: GetUsersInputModel
+        @RequestParam ids: List<Int>
     ): ResponseEntity<*> {
-        val (users) = services.getUsers(body.usersIdList)
+        val (users) = services.getUsers(ids)
         return SirenEntity(
             clazz = listOf(Rels.User.USERS, Rels.Collection.COLLECTION),
             properties = GetUsersOutputModel(users.size),

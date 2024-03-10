@@ -12,7 +12,7 @@ services:
     ports:
       - 5432:5432
 
-  gomoku-service:
+  anonichat-service:
     build:
       context: .
       dockerfile: ./dockerfiles/Dockerfile-spring
@@ -28,7 +28,7 @@ services:
     ports:
       - 8080:8080
     depends_on:
-      - gomoku-service
+      - anonichat-service
 
   ubuntu:
     container_name: ubuntu
