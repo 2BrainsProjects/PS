@@ -59,7 +59,7 @@ class UserController(
     /**
      * Handles the request to register a new user
      * @param body the request body (RegisterInputModel)
-     * @return the response with the user's id
+     * @return the response with the user's id and certificate content
      */
     @PostMapping(Uris.User.REGISTER)
     fun registerUser(
@@ -77,8 +77,9 @@ class UserController(
     /**
      * Handles the request to login a user
      * @param body the request body (LoginInputModel)
-     * @param
-     * @return the response with the user's token
+     * @param response the response of the request
+     * @param ip The Ip the request
+     * @return the response with the user's token and the certificate content
      */
     @PostMapping(Uris.User.LOGIN)
     fun loginUser(
@@ -113,12 +114,13 @@ class UserController(
 
     /**
      * Handles the request to get list of users
-     * @param body the request body (GetUsersInputModel)
+     * @param ids the request query ids of the users
      * @return the response with the list of users
      */
     @GetMapping(Uris.User.USERS)
     fun getUsers(
-        @RequestParam ids: List<Int>
+        @RequestParam
+        ids: List<Int>
     ): ResponseEntity<*> {
         val (users) = services.getUsers(ids)
         return SirenEntity(
@@ -136,6 +138,10 @@ class UserController(
         ).ok()
     }
 
+    /**
+     * Handles the request to get the max users id
+     * @return the response with the users max id
+     */
     @GetMapping(Uris.User.USERS_COUNT)
     fun getRoutersCount(): ResponseEntity<*> {
         val id = services.getLastId()

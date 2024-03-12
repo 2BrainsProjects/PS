@@ -29,7 +29,9 @@ class UserService(
      * @param name The user's name
      * @param email The user's email
      * @param password The user's password
-     * @return The user's id
+     * @param clientCSR The client's CSR
+     * @param path The path of certificate
+     * @return The user's id and the certificate
      * @throws UserAlreadyExistsException if the user already exists
      */
     fun registerUser(name: String, email: String, password: String, clientCSR: String, path: String = basePath): Pair<Int, String> {
@@ -41,8 +43,14 @@ class UserService(
             requireOrThrow<UserAlreadyExistsException>(!it.userRepository.isUserByEmail(email)) {
                 "User with email $email already exists"
             }
+
+            // Register a new user
             val userId = it.userRepository.registerUser(name, email, passwordHash)
+
+            // Certificate need the user's id to be created
             val certContent = cd.createCertCommand(clientCSR, userId, password, path, name, email)
+
+            // Update the user with the certificate path
             it.userRepository.updateCert(userId, "$path/$userId.crt")
 
             Pair(userId, certContent)
@@ -54,26 +62,26 @@ class UserService(
      * @param name The user's username
      * @param email The user's email
      * @param password The user's password
-     * @return The user's token
+     * @param ip The user's ip
+     * @param path The path of certificate
+     * @return The user's token and the content of the certificate
      * @throws InvalidCredentialsException if the username or email is not provided
      */
     fun loginUser(name: String?, email: String?, password: String, ip: String, path: String = basePath): Pair<TokenModel, String> {
         val userId: Int
-        val token: TokenModel
-        val tokenModel = when {
+        val tokenModel: TokenModel
+        when {
             name != null -> {
-                token = loginByUsername(name, password, ip)
+                tokenModel = loginByUsername(name, password, ip)
                 userId = tm.run {
                     it.userRepository.getUserByUsername(name).id
                 }
-                token
             }
             email != null -> {
-                token = loginByEmail(email, password, ip)
+                tokenModel = loginByEmail(email, password, ip)
                 userId = tm.run {
                     it.userRepository.getUserByEmail(email).id
                 }
-                token
             }
             else -> throw InvalidCredentialsException("Username or email is required for login")
         }
@@ -84,26 +92,18 @@ class UserService(
 
     /**
      * Get list of users
-     * @param skip The number of users to skip
-     * @param limit The number of users to get
-     * @param orderBy The column to order by
-     * @param sort The sort order
+     * @param usersIds list with users ids
      * @return The list of users
      */
     fun getUsers(usersIds: List<Int>): UsersModel {
         return tm.run { tr ->
             val users = usersIds.mapNotNull { id ->
-                if (tr.userRepository.isUser(id)) {
-                    tr.userRepository.getUser(id)
-                }else
-                    null
+                if (tr.userRepository.isUser(id)) tr.userRepository.getUser(id) else null
             }
-                .map { user ->
-                    val cert = if(user.certificate != null) {
-                        cd.readFile(user.certificate)
-                    } else ""
-                    user.toModel(cert)
-                }
+            .map { user ->
+                val cert = if(user.certificate != null) cd.readFile(user.certificate) else ""
+                user.toModel(cert)
+            }
             UsersModel(users)
         }
     }
@@ -142,9 +142,7 @@ class UserService(
             lastUsedAt = now
         )
         tm.run {
-            requireOrThrow<UserNotFoundException>(it.userRepository.isUser(userId)) {
-                "User was not found"
-            }
+            requireOrThrow<UserNotFoundException>(it.userRepository.isUser(userId)) { "User was not found" }
             it.tokenRepository.createToken(token, domain.maxTokensPerUser)
         }
         return TokenModel(

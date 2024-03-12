@@ -50,11 +50,19 @@ class RouterService(
      * Creates a new router
      * @param ip The ip of the router
      * @param routerCSR The crs of the router
+     * @param path The path of certificate
+     * @return The router's id and the certificate
      */
     fun createRouter(ip: String, routerCSR: String, path: String = basePath): Pair<Int, String> {
         return tm.run {
+
+            //Create the router
             val id = it.routerRepository.createRouter(ip)
+
+            // Certificate need the router's id to be created
             val certContent = cd.createCertCommand(routerCSR, id, ROUTERS_PASSWORD, path, "", "")
+
+            // Update the router with the certificate path
             it.routerRepository.updateCert(id, "$path/$id.crt")
 
             Pair(id, certContent)
@@ -63,6 +71,9 @@ class RouterService(
 
     /**
      * Deletes a router
+     * @param id the router's id
+     * @param path The path of certificate
+     * @return If the router was deleted with success
      */
     fun deleteRouter(id: Int, path: String = basePath): Boolean {
         return tm.run {
