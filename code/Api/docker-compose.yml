@@ -24,7 +24,7 @@ services:
     container_name: nginx
     build:
       context: ..
-      dockerfile: ./jvm/dockerfiles/Dockerfile-nginx
+      dockerfile: /dockerfiles/Dockerfile-nginx
     ports:
       - 8080:8080
     depends_on:

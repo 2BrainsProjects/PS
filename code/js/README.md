@@ -8,7 +8,7 @@ This document contains the frontend internal software organization and the main 
 The frontend application is a single page application built using React and served with Webpack.
 
 The Anonichat API documentation can be found [here](/docs/README.md).
-The backend internal software organization can be found [here](../jvm/README.md).
+The backend internal software organization can be found [here](../Api/README.md).
 
 
 ## Code Organization
