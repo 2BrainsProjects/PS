@@ -10,9 +10,9 @@ import java.security.KeyFactory
 import java.security.spec.PKCS8EncodedKeySpec
 import javax.crypto.Cipher
 
-fun main(args: Array<String>) {
-    require(args.size == 1) { "Missing port number" }
-    val port = args.first().toIntOrNull()
+fun main() {
+//    require(args.size == 1) { "Missing port number" }
+    val port = 8080//args.first().toIntOrNull()
     require(port != null) { "Invalid port" }
     require(port >= 0) { "Port must not be negative" }
 
