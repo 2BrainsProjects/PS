@@ -12,12 +12,15 @@ import javax.crypto.Cipher
 
 fun main() {
 //    require(args.size == 1) { "Missing port number" }
-    val port = 8080//args.first().toIntOrNull()
+    val port = 8080 //args.first().toIntOrNull()
     require(port != null) { "Invalid port" }
     require(port >= 0) { "Port must not be negative" }
 
     val sSocket = ServerSocketChannel.open()
     val selector = Selector.open()
+    sSocket.bind(InetSocketAddress(port))
+    sSocket.configureBlocking(false)
+    sSocket.register(selector, SelectionKey.OP_ACCEPT)
     val sockets = emptyList<SocketChannel>().toMutableList()
 
 //    while (true) {
@@ -86,7 +89,6 @@ private fun handleConnection(selector: Selector, socketsList: MutableList<Socket
                     msg += Charsets.UTF_8.decode(buffer).toString()
                     buffer.clear()
                 }
-                //fazer cenas
                 processMessage(msg, socketsList)
 
                 if (--readyToRead == 0) break
@@ -96,7 +98,6 @@ private fun handleConnection(selector: Selector, socketsList: MutableList<Socket
 }
 
 //                          onion
-
 // adicionar o porto aos routers na db ou aumentar o tamanho do ip
 private fun processMessage(msg:String, socketsList: MutableList<SocketChannel>){
     val keyPath = System.getProperty("user.dir") + "\\key"
