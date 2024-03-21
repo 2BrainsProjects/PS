@@ -20,14 +20,37 @@ fun main() {
     val selector = Selector.open()
     val sockets = emptyList<SocketChannel>().toMutableList()
 
+//    while (true) {
+//        selector.select()
+//        val selectedKeys = selector.selectedKeys()
+//        val iterator = selectedKeys.iterator()
+//
+//        while (iterator.hasNext()) {
+//            val key = iterator.next()
+//            iterator.remove()
+//
+//            if (key.isAcceptable) {
+//                println("aaaaaaaaaaaaaaaaaaaaaa")
+//                val clientSocket = sSocket.accept()
+//                clientSocket.configureBlocking(false)
+//                clientSocket.register(selector, SelectionKey.OP_READ)
+//                sockets.add(clientSocket)
+//            }
+//            if(key.isReadable){
+//                handleConnection(selector, sockets)
+//            }
+//        }
+//    }
     try {
-        sSocket.socket().bind(InetSocketAddress(port))
+        sSocket.bind(InetSocketAddress(port))
+        sSocket.configureBlocking(false)
+        sSocket.register(selector, SelectionKey.OP_ACCEPT)
         println("passing to thread")
-        Thread{ handleConnection(selector, sockets) }.start()
+        Thread{
+            handleConnection(selector, sockets)
+        }.start()
         while(true){
-
             val clientSocket = sSocket.accept()
-
             clientSocket.configureBlocking(false)
             clientSocket.register(selector, SelectionKey.OP_READ)
             sockets.add(clientSocket)
@@ -42,7 +65,11 @@ fun main() {
 
 private fun handleConnection(selector: Selector, socketsList: MutableList<SocketChannel>) {
     while (true){
+
+        println("oioioioioioioioioi")
         var readyToRead = selector.select()
+        println(readyToRead)
+        println("oioioioioioioioioi")
 
         if(readyToRead == 0) continue
         val keys = selector.keys()
