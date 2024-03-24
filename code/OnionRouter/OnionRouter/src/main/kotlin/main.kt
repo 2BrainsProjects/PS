@@ -13,7 +13,7 @@ import javax.crypto.Cipher
 
 fun main() {
 //    require(args.size == 1) { "Missing port number" }
-    val port = 8082 //args.first().toIntOrNull()
+    val port = 8080 //args.first().toIntOrNull()
     require(port != null) { "Invalid port" }
     require(port >= 0) { "Port must not be negative" }
 
@@ -45,12 +45,9 @@ fun main() {
 private fun handleConnection(selector: Selector, socketsList: MutableList<SocketChannel>) {
     println("entered handleConnection")
     while (true){
-        var readyToRead = selector.select(1000)
+        var readyToRead = selector.select()
 
-        if(readyToRead == 0) {
-            selector.wakeup()
-            continue
-        }
+        if(readyToRead == 0) continue
         val keys = selector.selectedKeys()
         println(keys.size)
         val iterator = keys.iterator()

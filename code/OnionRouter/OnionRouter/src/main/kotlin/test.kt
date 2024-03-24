@@ -9,9 +9,10 @@ fun main(){
 
     val output = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE)
     output.clear()
-    output.put ("hello||127.0.0.1:8083||127.0.0.1:8082".toByteArray(Charsets.UTF_8))
+    output.put ("hello||127.0.0.1:8082".toByteArray(Charsets.UTF_8))
     output.flip()    // reset the buffer position to forward data
     socketChannel.write(output)
+    output.clear()
 
     socketChannel.close()
 }
