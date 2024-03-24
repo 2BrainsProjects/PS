@@ -6,13 +6,14 @@ import java.nio.channels.SelectionKey
 import java.nio.channels.Selector
 import java.nio.channels.ServerSocketChannel
 import java.nio.channels.SocketChannel
+import java.nio.charset.StandardCharsets
 import java.security.KeyFactory
 import java.security.spec.PKCS8EncodedKeySpec
 import javax.crypto.Cipher
 
 fun main() {
 //    require(args.size == 1) { "Missing port number" }
-    val port = 8080 //args.first().toIntOrNull()
+    val port = 8082 //args.first().toIntOrNull()
     require(port != null) { "Invalid port" }
     require(port >= 0) { "Port must not be negative" }
 
@@ -20,41 +21,20 @@ fun main() {
     val cSelector = Selector.open()
     sSocket.socket().bind(InetSocketAddress(port))
     val sockets = emptyList<SocketChannel>().toMutableList()
-
-//    while (true) {
-//        selector.select()
-//        val selectedKeys = selector.selectedKeys()
-//        val iterator = selectedKeys.iterator()
-//
-//        while (iterator.hasNext()) {
-//            val key = iterator.next()
-//            iterator.remove()
-//
-//            if (key.isAcceptable) {
-//                println("aaaaaaaaaaaaaaaaaaaaaa")
-//                val clientSocket = sSocket.accept()
-//                clientSocket.configureBlocking(false)
-//                clientSocket.register(selector, SelectionKey.OP_READ)
-//                sockets.add(clientSocket)
-//            }
-//            if(key.isReadable){
-//                handleConnection(selector, sockets)
-//            }
-//        }
-//    }
     try {
         println("passing to thread")
         Thread{
             handleConnection(cSelector, sockets)
         }.start()
         while(true){
+            println("waiting to accept")
             val clientSocket = sSocket.accept()
             clientSocket.configureBlocking(false)
             clientSocket.register(cSelector, SelectionKey.OP_READ)
             sockets.add(clientSocket)
+            println("waking up selector")
             cSelector.wakeup()
         }
-
     } catch(e: IOException) {
         println(e.message)
     } finally {
@@ -63,10 +43,14 @@ fun main() {
 }
 
 private fun handleConnection(selector: Selector, socketsList: MutableList<SocketChannel>) {
+    println("entered handleConnection")
     while (true){
-        var readyToRead = selector.select()
+        var readyToRead = selector.select(1000)
 
-        if(readyToRead == 0) continue
+        if(readyToRead == 0) {
+            selector.wakeup()
+            continue
+        }
         val keys = selector.selectedKeys()
         println(keys.size)
         val iterator = keys.iterator()
@@ -78,17 +62,19 @@ private fun handleConnection(selector: Selector, socketsList: MutableList<Socket
             if (key.isReadable) {
                 val client = key.channel() as SocketChannel
                 val buffer = ByteBuffer.allocate(1024)
+                buffer.clear()
                 var msg = ""
                 while (client.read(buffer) > 0) {
+                    val bbOutput = String(buffer.array(), 0, buffer.position(), StandardCharsets.UTF_8)
+                    msg += bbOutput
                     buffer.flip()
-                    msg += Charsets.UTF_8.decode(buffer).toString()
                     buffer.clear()
                 }
 
                 println("Processing msg: $msg")
                 processMessage(msg, socketsList)
+                println("Passed processMsg")
 
-                client.close()
                 if (--readyToRead == 0) break
             }
         }
@@ -98,6 +84,7 @@ private fun handleConnection(selector: Selector, socketsList: MutableList<Socket
 //                          onion
 // adicionar o porto aos routers na db ou aumentar o tamanho do ip
 private fun processMessage(msg:String, socketsList: MutableList<SocketChannel>){
+    println("entered processMsg")
     if(msg.isBlank() || msg.isEmpty()) return
 //    val keyPath = System.getProperty("user.dir") + "\\key"
 //    // leitura da chave privada
@@ -118,7 +105,13 @@ private fun processMessage(msg:String, socketsList: MutableList<SocketChannel>){
     val newMsg = plaintext.dropLastWhile { it != '|' }.dropLast(2)
     var newMsgBytes = newMsg.toByteArray(Charsets.UTF_8)
 
-    // verfificar se existe/estabelecer ligação ao nexNode
+    socketsList.removeIf { !it.isOpen }
+
+    socketsList.forEach{
+        println(it.toString())
+    }
+
+    // verfificar se existe/estabelecer ligação ao nextNode
     if(!socketsList.any { it.remoteAddress.toString().drop(1) == addr }){
         val splittedAddr = addr.split(':')
         println(addr)
@@ -133,6 +126,7 @@ private fun processMessage(msg:String, socketsList: MutableList<SocketChannel>){
     val byteBuffer = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE)
     var msgSize = newMsgBytes.size
     while (msgSize > 0){
+        println("cicle processMsg")
         // minimum size between msgSize and DEFAULT_BUFFER_SIZE
         val min = minOf(msgSize, DEFAULT_BUFFER_SIZE)
         val chunk = newMsgBytes.copyOf(min)
