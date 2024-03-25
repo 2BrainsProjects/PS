@@ -1,4 +1,3 @@
-import java.io.FileInputStream
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
@@ -7,9 +6,6 @@ import java.nio.channels.Selector
 import java.nio.channels.ServerSocketChannel
 import java.nio.channels.SocketChannel
 import java.nio.charset.StandardCharsets
-import java.security.KeyFactory
-import java.security.spec.PKCS8EncodedKeySpec
-import javax.crypto.Cipher
 
 fun main() {
 //    require(args.size == 1) { "Missing port number" }
@@ -61,11 +57,18 @@ private fun handleConnection(selector: Selector, socketsList: MutableList<Socket
                 val buffer = ByteBuffer.allocate(1024)
                 buffer.clear()
                 var msg = ""
-                while (client.read(buffer) > 0) {
+                var size:Int = client.read(buffer)
+                if(size == -1) {
+                    client.close()
+                    socketsList.removeIf { !it.isOpen }
+                    continue
+                }
+                while (size > 0) {
                     val bbOutput = String(buffer.array(), 0, buffer.position(), StandardCharsets.UTF_8)
                     msg += bbOutput
                     buffer.flip()
                     buffer.clear()
+                    size = client.read(buffer)
                 }
 
                 println("Processing msg: $msg")
