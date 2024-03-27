@@ -50,14 +50,13 @@ private fun handleConnection(selector: Selector, socketsList: MutableList<Socket
 
         while(iterator.hasNext()) {
             val key = iterator.next()
-            iterator.remove()
 
             if (key.isReadable) {
                 val client = key.channel() as SocketChannel
                 val buffer = ByteBuffer.allocate(1024)
                 buffer.clear()
                 var msg = ""
-                var size:Int = client.read(buffer)
+                var size: Int = client.read(buffer)
                 if(size == -1) {
                     client.close()
                     socketsList.removeIf { !it.isOpen }
@@ -105,10 +104,9 @@ private fun processMessage(msg:String, socketsList: MutableList<SocketChannel>){
     val newMsg = plaintext.dropLastWhile { it != '|' }.dropLast(2)
     var newMsgBytes = newMsg.toByteArray(Charsets.UTF_8)
 
-    socketsList.removeIf { !it.isOpen }
-
-    socketsList.forEach{
-        println(it.toString())
+    socketsList.removeAll {
+        it.close()
+        !it.isOpen
     }
 
     // verfificar se existe/estabelecer ligação ao nextNode
