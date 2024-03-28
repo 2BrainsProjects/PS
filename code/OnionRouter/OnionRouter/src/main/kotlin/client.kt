@@ -48,28 +48,31 @@ private fun handleConnection(selector: Selector) {
 
             if (key.isReadable) {
                 val client = key.channel() as SocketChannel
-                val buffer = ByteBuffer.allocate(1024)
-                buffer.clear()
-                var msg = ""
-                var size:Int = client.read(buffer)
-                if(size == -1) {
-                    client.close()
-                    continue
-                }
-                println("reading")
-                while (size > 0) {
-                    val bbOutput = String(buffer.array(), 0, buffer.position(), StandardCharsets.UTF_8)
-                    buffer.flip()
-                    msg += bbOutput
-                    buffer.clear()
-                    size = client.read(buffer)
-                }
-
-                println(msg)
-                println("____________________")
+                readFromClient(client)
 
                 if (--readyToRead == 0) break
             }
         }
     }
+}
+
+private fun readFromClient(client: SocketChannel){
+    val buffer = ByteBuffer.allocate(1024)
+    buffer.clear()
+    var msg = ""
+    var size:Int = client.read(buffer)
+    if(size == -1) {
+        client.close()
+        return
+    }
+    println("reading")
+    while (size > 0) {
+        val bbOutput = String(buffer.array(), 0, buffer.position(), StandardCharsets.UTF_8)
+        buffer.flip()
+        msg += bbOutput
+        buffer.clear()
+        size = client.read(buffer)
+    }
+    println(msg)
+    println("____________________")
 }
