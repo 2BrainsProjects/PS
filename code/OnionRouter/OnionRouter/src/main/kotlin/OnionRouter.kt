@@ -15,13 +15,17 @@ class OnionRouter(private val port : Int){
 
     private val selector = Selector.open()
     private val socketsList = emptyList<SocketChannel>().toMutableList()
+    private val crypto = Crypto()
 
     fun start(){
         val sSocket = ServerSocketChannel.open()
         sSocket.socket().bind(InetSocketAddress(port))
 
-        // generateKeyPair(sSocket.localAddress)
-        // createCSR(sSocket.localAddress)
+        val csr = crypto.generateClientCSR(port, sSocket.localAddress.toString(), "password")
+        crypto.tempGeneratePubKey(port)
+
+        // gerar chave pública e privada
+
 
         try {
             Thread{
@@ -87,23 +91,10 @@ class OnionRouter(private val port : Int){
         println("entered processMsg")
         if(msg.isBlank() || msg.isEmpty()) return
 
-        // val keyPath = System.getProperty("user.dir") + "\\key"
-        // // leitura da chave privada
-        // val keyStream = FileInputStream(keyPath)
-        // val keyBytes = keyStream.readBytes()
-        // val privateKeySpec = PKCS8EncodedKeySpec(keyBytes)
-        // val keyFactory = KeyFactory.getInstance("RSA")
-        // val privateKey = keyFactory.generatePrivate(privateKeySpec)
-        //
-        // val cipher = Cipher.getInstance("RSA/CBC/PKCS1Padding")
-        // cipher.init(Cipher.DECRYPT_MODE, privateKey)
-        //
-        // // decifrar a mensagem
-        // val decryptedMsg = cipher.doFinal(msg.toByteArray())
+        val plainText = crypto.decryptMessage(port, msg)
 
-        val plaintext = msg //decryptedMsg.decodeToString()
-        val addr = plaintext.split("||").last() // onion || 234 325 345 234:4363
-        val newMsg = plaintext.dropLastWhile { it != '|' }.dropLast(2)
+        val addr = plainText.split("||").last() // onion || 234 325 345 234:4363
+        val newMsg = plainText.dropLastWhile { it != '|' }.dropLast(2)
         val newMsgBytes = newMsg.toByteArray(Charsets.UTF_8)
 
         socketsList.removeAll {
