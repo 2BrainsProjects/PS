@@ -33,16 +33,16 @@ fun main() {
     }
 }
 
-private fun handleConnection(selector: Selector){
-    while (true){
+private fun handleConnection(selector: Selector) {
+    while (true) {
         var readyToRead = selector.select()
 
-        if(readyToRead == 0) continue
+        if (readyToRead == 0) continue
         val keys = selector.selectedKeys()
 
         val iterator = keys.iterator()
 
-        while(iterator.hasNext()) {
+        while (iterator.hasNext()) {
             val key = iterator.next()
             iterator.remove()
 

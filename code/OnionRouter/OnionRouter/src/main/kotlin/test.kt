@@ -14,8 +14,6 @@ fun main(){
         output.flip()    // reset the buffer position to forward data
         socketChannel.write(output)
         output.clear()
-
-        readln()
     }
 }
 
