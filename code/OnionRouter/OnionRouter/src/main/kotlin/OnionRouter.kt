@@ -22,10 +22,9 @@ class OnionRouter(private val port : Int){
         sSocket.socket().bind(InetSocketAddress(port))
 
         val csr = crypto.generateClientCSR(port, sSocket.localAddress.toString(), "password")
-        crypto.tempGeneratePubKey(port)
+        crypto.generatePubKey(port)
 
         // gerar chave pública e privada
-
 
         try {
             Thread{
@@ -113,6 +112,7 @@ class OnionRouter(private val port : Int){
 
     private fun putConnectionIfAbsent(addr: String){
         if(!socketsList.any { it.remoteAddress.toString().drop(1) == addr }){
+            println(addr)
             val splitAddr = addr.split(':')
             val newAddr = InetSocketAddress(splitAddr[0], splitAddr[1].toInt())
             val nextNode = SocketChannel.open(newAddr)
@@ -124,7 +124,7 @@ class OnionRouter(private val port : Int){
         val buffer = ByteBuffer.allocate(1024)
         buffer.clear()
         var msg = ""
-        var size:Int = client.read(buffer)
+        var size: Int = client.read(buffer)
         if(size == -1) {
             client.close()
             socketsList.removeIf { !it.isOpen }
