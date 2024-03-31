@@ -11,8 +11,9 @@ import javax.crypto.Cipher
 
 class Crypto {
     fun generateClientCSR(port: Int, ip: String, pwd: String, basePath: String = path): List<String> {
+        generatePrivateKey(port, basePath)
         answeringCSRCreation(port, ip, pwd)
-        generatePubKey(port, basePath)
+        generatePublicKey(port, basePath)
         BufferedReader(InputStreamReader(FileInputStream("$basePath/$port.csr"))).use {
             return it.readLines().drop(1).dropLast(1)
         }
@@ -20,7 +21,7 @@ class Crypto {
 
     private fun answeringCSRCreation(port: Int, ip: String, password: String, basePath: String = path) {
         val command =
-            "openssl req -out $basePath/$port.csr -new -newkey rsa:2048 -nodes -keyout $basePath/$port.key"
+            "openssl req -out CSR.csr -key $basePath/priv$port.pem -new"
         try {
             val process = ProcessBuilder(command.split(" "))
                 .redirectErrorStream(true)
@@ -48,22 +49,26 @@ class Crypto {
         }
     }
 
-    fun generatePubKey(port: Int, basePath: String = path){
-        val command = "openssl rsa -pubout -in $basePath/$port.key -out $basePath/$port.pub"
+    private fun generatePrivateKey(port: Int, basePath: String = path){
+        val command = "openssl genrsa -out $basePath/priv$port.pem 2048"
+        runCommand(command)
+    }
+
+    private fun generatePublicKey(port: Int, basePath: String = path){
+        val command = "openssl rsa -pubout -in $basePath/priv$port.pem -out $basePath/pub$port.pem"
         runCommand(command)
     }
 
     fun decryptMessage(port: Int, encMsg: String , basePath: String = path): String {
         println("entered decryptMessage")
-        val file = File("$basePath\\tempdec$port.enc")
+        val file = File("$basePath\\$port.enc")
         file.createNewFile()
         file.writeText(encMsg)
         println("encMsg: $encMsg")
-        // problema está aqui
         val command =
-                "openssl rsautl -decrypt -inkey $basePath\\$port.key -in $basePath\\tempdec$port.txt > $basePath\\temp$port.txt"
+                "openssl rsautl -decrypt -inkey $basePath\\priv$port.pem -in $basePath\\$port.enc > $basePath\\$port.txt"
         runCommand(command)
-        val tempFile = File("$basePath\\temp$port.txt")
+        val tempFile = File("$basePath\\$port.txt")
         val msg = tempFile.readText()
         println("msg: $msg")
         //tempFile.delete()
@@ -73,14 +78,14 @@ class Crypto {
 
     fun encryptMessage(port: Int, msg: String , basePath: String = path): String {
         println("entered encryptMessage")
-        val file = File("$basePath\\tempenc$port.txt")
+        val file = File("$basePath\\$port.txt")
         file.createNewFile()
         file.writeText(msg)
         println("msg: $msg")
         val command =
-            "openssl rsautl -encrypt -inkey $basePath\\$port.pub -pubin -in $basePath\\tempenc$port.txt > $basePath\\tempdec$port.enc"
+            "openssl rsautl -encrypt -inkey $basePath\\pub$port.pem -pubin -in $basePath\\$port.txt -out $basePath\\$port.enc"
         runCommand(command)
-        val tempFile = File("$basePath\\tempdec$port.enc")
+        val tempFile = File("$basePath\\$port.enc")
         val encMsg = tempFile.readText()
         println("encMsg: $encMsg")
         //tempFile.delete()

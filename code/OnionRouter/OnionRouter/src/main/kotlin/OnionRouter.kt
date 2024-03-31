@@ -22,7 +22,6 @@ class OnionRouter(private val port : Int){
         sSocket.socket().bind(InetSocketAddress(port))
 
         val csr = crypto.generateClientCSR(port, sSocket.localAddress.toString(), "password")
-        crypto.generatePubKey(port)
 
         // gerar chave pública e privada
 

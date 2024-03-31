@@ -12,6 +12,9 @@ fun main(){
     println("started")
     val socketChannel = SocketChannel.open(InetSocketAddress(8080))
     val crypto = Crypto()
+    val ip = socketChannel.socket().localAddress.toString()
+    val pwd = "password"
+    crypto.generateClientCSR(socketChannel.socket().port, ip, pwd)
 
     val msg = "hello"
     val nodes = listOf("127.0.0.1:8082")
