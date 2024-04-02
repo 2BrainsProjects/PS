@@ -7,13 +7,15 @@ import java.io.OutputStreamWriter
 import java.security.KeyFactory
 import java.security.KeyPairGenerator
 import java.security.spec.PKCS8EncodedKeySpec
+import java.security.spec.X509EncodedKeySpec
 import javax.crypto.Cipher
 
 class Crypto {
+    val cipher = Cipher.getInstance("RSA")
+    val keyFactory = KeyFactory.getInstance("RSA")
     fun generateClientCSR(port: Int, ip: String, pwd: String, basePath: String = path): List<String> {
-        generatePrivateKey(port, basePath)
+        generateKeys(port, basePath)
         answeringCSRCreation(port, ip, pwd)
-        generatePublicKey(port, basePath)
         BufferedReader(InputStreamReader(FileInputStream("$basePath/$port.csr"))).use {
             return it.readLines().drop(1).dropLast(1)
         }
@@ -21,7 +23,7 @@ class Crypto {
 
     private fun answeringCSRCreation(port: Int, ip: String, password: String, basePath: String = path) {
         val command =
-            "openssl req -out CSR.csr -key $basePath/priv$port.pem -new"
+            "openssl req -out $basePath/$port.csr -key $basePath/priv$port.pem -new"
         try {
             val process = ProcessBuilder(command.split(" "))
                 .redirectErrorStream(true)
@@ -49,48 +51,45 @@ class Crypto {
         }
     }
 
-    private fun generatePrivateKey(port: Int, basePath: String = path){
-        val command = "openssl genrsa -out $basePath/priv$port.pem 2048"
-        runCommand(command)
-    }
+    private fun generateKeys(port: Int, basePath: String = path){
+        val keyPairGenerator = KeyPairGenerator.getInstance("RSA")
+        keyPairGenerator.initialize(2048)
+        val keyPair = keyPairGenerator.generateKeyPair()
+        val privateKey = keyPair.private.encoded
+        val file = File("$basePath/priv$port.pem")
+        file.createNewFile()
+        file.writeBytes(privateKey)
 
-    private fun generatePublicKey(port: Int, basePath: String = path){
-        val command = "openssl rsa -pubout -in $basePath/priv$port.pem -out $basePath/pub$port.pem"
-        runCommand(command)
+        val publicKey = keyPair.public.encoded
+        val file2 = File("$basePath/pub$port.pem")
+        file2.createNewFile()
+        file2.writeBytes(publicKey)
     }
 
     fun decryptMessage(port: Int, encMsg: String , basePath: String = path): String {
         println("entered decryptMessage")
-        val file = File("$basePath\\$port.enc")
-        file.createNewFile()
-        file.writeText(encMsg)
-        println("encMsg: $encMsg")
-        val command =
-                "openssl rsautl -decrypt -inkey $basePath\\priv$port.pem -in $basePath\\$port.enc > $basePath\\$port.txt"
-        runCommand(command)
-        val tempFile = File("$basePath\\$port.txt")
-        val msg = tempFile.readText()
-        println("msg: $msg")
-        //tempFile.delete()
-        //file.delete()
-        return msg
+        val privateKey = keyFactory.generatePrivate(PKCS8EncodedKeySpec(File("$basePath\\priv$port.pem").readBytes()))
+        cipher.init(Cipher.DECRYPT_MODE, privateKey)
+        var resultByteArray = ByteArray(0)
+        var encMsgByteArray = encMsg.toByteArray(Charsets.UTF_8)
+        while(encMsgByteArray.size >= 256){
+            val window = encMsgByteArray.take(255).toByteArray()
+            resultByteArray += cipher.update(window)
+            encMsgByteArray = encMsgByteArray.drop(255).toByteArray()
+        }
+        val decrypted = cipher.doFinal(encMsgByteArray)
+        resultByteArray += decrypted
+
+        return String(resultByteArray, Charsets.UTF_8)
     }
 
-    fun encryptMessage(port: Int, msg: String , basePath: String = path): String {
+    fun encryptMessage(port: Int, msg: String , basePath: String = path): ByteArray {
         println("entered encryptMessage")
-        val file = File("$basePath\\$port.txt")
-        file.createNewFile()
-        file.writeText(msg)
-        println("msg: $msg")
-        val command =
-            "openssl rsautl -encrypt -inkey $basePath\\pub$port.pem -pubin -in $basePath\\$port.txt -out $basePath\\$port.enc"
-        runCommand(command)
-        val tempFile = File("$basePath\\$port.enc")
-        val encMsg = tempFile.readText()
-        println("encMsg: $encMsg")
-        //tempFile.delete()
-        //file.delete()
-        return encMsg
+        val publicKey = keyFactory.generatePublic(X509EncodedKeySpec(File("$basePath\\pub$port.pem").readBytes()))
+        cipher.init(Cipher.ENCRYPT_MODE, publicKey)
+        val encrypted = cipher.doFinal(msg.toByteArray(Charsets.UTF_8))
+
+        return encrypted
     }
 
     private fun runCommand(command: String){

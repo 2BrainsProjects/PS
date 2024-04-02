@@ -20,22 +20,6 @@ fun main(){
     val nodes = listOf("127.0.0.1:8082")
     val finalMsg = msg + "||" + nodes.joinToString("||")
 
-    // simulating API request
-
-//    file.readLines().joinToString("\n").toByteArray(Charsets.UTF_8)
-//    println(file.readLines().joinToString("\n"))
-
-    // USAR JCA PARA GERAR AS CHAVES
-    // erro ao usar uma chave gerada pelo openssl para encriptar com JCA
-    // criar CSR com a chave privada gerada: openssl req -key a.key -new -out a.csr
-
-//    // [B@2a3046da
-//    val keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair()
-//    val private = keyPair.private.encoded
-//    val public = keyPair.public
-//    println(private)
-    //val publicKey = KeyFactory.getInstance("RSA").generatePublic(X509EncodedKeySpec(file.readBytes()))
-    //cipher.init(Cipher.ENCRYPT_MODE, publicKey)
     val encMsg = crypto.encryptMessage(8080, finalMsg)
 
     /*
@@ -46,7 +30,7 @@ fun main(){
     socketChannel.use {
         val output = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE)
         output.clear()
-        output.put(encMsg.toByteArray(Charsets.UTF_8))
+        output.put(encMsg)
         output.flip()    // reset the buffer position to forward data
         socketChannel.write(output)
         output.clear()
