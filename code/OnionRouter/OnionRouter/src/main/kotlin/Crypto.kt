@@ -17,14 +17,10 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashSet
 
 class Crypto {
-    val sCipher = Cipher.getInstance("AES/GCM/NoPadding")
-    val aCipher = Cipher.getInstance("RSA")
-    val keyFactory = KeyFactory.getInstance("RSA")
 
-    private val MARK_SIZE = 128
-    private val KEY_SIZE = 256
-    private val PASSWORD = "changeit" // do not change it
-    private val JWE_HEADER = "{\"alg\":\"RSA\",\"enc\":\"AES/GCM/NoPadding\"}"
+    private val sCipher = Cipher.getInstance("AES/GCM/NoPadding")
+    private val aCipher = Cipher.getInstance(ALG_ASYMMETRIC)
+    private val keyFactory = KeyFactory.getInstance(ALG_ASYMMETRIC)
 
     fun generateClientCSR(port: Int, ip: String, pwd: String, basePath: String = path): List<String> {
         generateKeys(port, basePath)
@@ -48,14 +44,10 @@ class Crypto {
                 writer.write("\n")
                 writer.flush()
             }
-            writer.write("$ip\n")
-            writer.flush()
-            writer.write("\n")
-            writer.flush()
-            writer.write("$password\n")
-            writer.flush()
-            writer.write("\n")
-            writer.flush()
+            listOf("$ip\n", "\n", "$password\n", "\n").forEach {
+                writer.write(it)
+                writer.flush()
+            }
             writer.close()
 
             process.waitFor()
@@ -66,18 +58,21 @@ class Crypto {
     }
 
     private fun generateKeys(port: Int, basePath: String = path){
-        val keyPairGenerator = KeyPairGenerator.getInstance("RSA")
+        val keyPairGenerator = KeyPairGenerator.getInstance(ALG_ASYMMETRIC)
         keyPairGenerator.initialize(2048)
         val keyPair = keyPairGenerator.generateKeyPair()
+
         val privateKey = keyPair.private.encoded
-        val file = File("$basePath/priv$port.pem")
-        file.createNewFile()
-        file.writeBytes(privateKey)
+        createAndWriteFile(privateKey, "$basePath/priv$port.pem")
 
         val publicKey = keyPair.public.encoded
-        val file2 = File("$basePath/pub$port.pem")
+        createAndWriteFile(publicKey, "$basePath/pub$port.pem")
+    }
+
+    private fun createAndWriteFile(key: ByteArray, filePath: String){
+        val file2 = File(filePath)
         file2.createNewFile()
-        file2.writeBytes(publicKey)
+        file2.writeBytes(key)
     }
 
      fun encipher(plain: String, port:Int, certificatePaths: List<String> = List(1){ path }):String {
@@ -182,11 +177,7 @@ class Crypto {
 
         val parts = cipheredText.split(".").map { s -> Base64.getDecoder().decode(s) }
 
-        val header = parts[0]
-        val encryptedKeyStr = parts[1]
-        val ivStr = parts[2]
-        val encryptedMsg = parts[3]
-        val markStr = parts[4]
+        val (header, encryptedKeyStr, ivStr, encryptedMsg, markStr) = parts
 
         val headerParts = String(header).split(",\"").toMutableList()
 
@@ -230,5 +221,13 @@ class Crypto {
         private val path
             get() = path()
         private fun path() = System.getProperty("user.dir") + "\\crypto"
+
+        private const val ALG_SYMMETRIC = "AES"
+        private const val ALG_ASYMMETRIC = "RSA"
+        private const val STD_CERTIFICATE = "X.509"
+        private const val MARK_SIZE = 128
+        private const val KEY_SIZE = 256
+        private const val PASSWORD = "changeit" // do not change it
+        private const val JWE_HEADER = "{\"alg\":\"RSA\",\"enc\":\"AES/GCM/NoPadding\"}"
     }
 }

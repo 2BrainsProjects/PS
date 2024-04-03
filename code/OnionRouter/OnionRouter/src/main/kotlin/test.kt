@@ -43,6 +43,3 @@ fun main(){
         socketChannel.close()
     }
 }
-
-// u1 -> on1 -> u2
-// u1 -> on1 -> on2

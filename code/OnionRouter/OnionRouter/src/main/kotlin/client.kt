@@ -7,8 +7,10 @@ import java.nio.channels.SocketChannel
 import java.nio.charset.StandardCharsets
 
 fun main() {
+    val crypto = Crypto()
+    val port = 8082
     val lastClient = ServerSocketChannel.open()
-    lastClient.socket().bind(InetSocketAddress(8082))
+    lastClient.socket().bind(InetSocketAddress(port))
     var socket : SocketChannel? = null
 
     val csr = crypto.generateClientCSR(port, lastClient.localAddress.toString(), "password")
