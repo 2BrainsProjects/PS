@@ -11,6 +11,8 @@ fun main() {
     lastClient.socket().bind(InetSocketAddress(8082))
     var socket : SocketChannel? = null
 
+    val csr = crypto.generateClientCSR(port, lastClient.localAddress.toString(), "password")
+
     val selector = Selector.open()
 
     Thread{
@@ -73,6 +75,7 @@ private fun readFromClient(client: SocketChannel){
         buffer.clear()
         size = client.read(buffer)
     }
-    println(msg)
+    val decipherMsg = Crypto().decipher(msg, 8082)
+    println(decipherMsg)
     println("____________________")
 }

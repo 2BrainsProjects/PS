@@ -10,33 +10,37 @@ import javax.crypto.Cipher
 fun main(){
 
     println("started")
-    val socketChannel = SocketChannel.open(InetSocketAddress(8080))
-    val crypto = Crypto()
-    val ip = socketChannel.socket().localAddress.toString()
-    val pwd = "password"
-    crypto.generateClientCSR(socketChannel.socket().port, ip, pwd)
+    val serverPort = 8080
+    val socketChannel = SocketChannel.open(InetSocketAddress(serverPort))
 
-    val msg = "hello"
-    val nodes = listOf("127.0.0.1:8082")
+    try {
+        val crypto = Crypto()
+        val ip = socketChannel.socket().localAddress.toString()
+        val pwd = "password"
+        crypto.generateClientCSR(socketChannel.socket().port, ip, pwd)
 
-    /*
-    encriptar a msg
-    adiconar ip
-    e.g. ...Enc8082("hello")||127.0.0.1:8082..
-    */
-    val finalMsg = msg + "||" + nodes.joinToString("||")
+        val msg = "hello"
+        val nodes = listOf("127.0.0.1:8081", "127.0.0.1:8082")
+        var finalMsg = msg
 
-    val encMsg = crypto.encipher(finalMsg).toByteArray(Charsets.UTF_8)
-    /*
-    iterar sobre todos os ips para formar as várias camadas de encriptação
-     */
-    socketChannel.use {
-        val output = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE)
-        output.clear()
-        output.put(encMsg)
-        output.flip()    // reset the buffer position to forward data
-        socketChannel.write(output)
-        output.clear()
+        nodes.reversed().forEach{
+            val port = it.split(":")[1].toInt()
+            finalMsg = crypto.encipher(finalMsg, port)
+            finalMsg += "||$it"
+        }
+
+        finalMsg = crypto.encipher(finalMsg, serverPort)
+
+        socketChannel.use {
+            val output = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE)
+            output.clear()
+            output.put(finalMsg.toByteArray(Charsets.UTF_8))
+            output.flip()    // reset the buffer position to forward data
+            socketChannel.write(output)
+            output.clear()
+        }
+    } finally {
+        socketChannel.close()
     }
 }
 

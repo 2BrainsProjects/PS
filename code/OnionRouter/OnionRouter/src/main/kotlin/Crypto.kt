@@ -80,15 +80,14 @@ class Crypto {
         file2.writeBytes(publicKey)
     }
 
-     fun encipher(plain: String, certificatePaths: List<String> = List(1){ path }):String {
+     fun encipher(plain: String, port:Int, certificatePaths: List<String> = List(1){ path }):String {
         try {
-            val pubKeyBytes = File("$path\\pub8080.pem").readBytes()
+            val pubKeyBytes = File("$path\\pub$port.pem").readBytes()
             val keySpec = X509EncodedKeySpec(pubKeyBytes)
-            val keyFactory = KeyFactory.getInstance("RSA")
             val publicKey = keyFactory.generatePublic(keySpec)
             //val publicKey = getPublicKeyFromCertificate(certificatePaths)
 
-            val keyGenerator = KeyGenerator.getInstance("AES")
+            val keyGenerator = KeyGenerator.getInstance(ALG_SYMMETRIC)
             keyGenerator.init(KEY_SIZE)
             val symmetricKey = keyGenerator.generateKey()
             val iv = IvParameterSpec(PASSWORD.toByteArray())
@@ -107,7 +106,7 @@ class Crypto {
                 if (certificatePaths[i].contains("trust-anchors")) {
                     rootCertIndex = i
                 }
-                val factory = CertificateFactory.getInstance("X.509")
+                val factory = CertificateFactory.getInstance(STD_CERTIFICATE)
                 val fis = FileInputStream(certificatePath)
                 val cert: X509Certificate = factory.generateCertificate(fis) as X509Certificate
                 fis.close()
@@ -115,7 +114,7 @@ class Crypto {
             }
             require(rootCertIndex != -1) { "No root certificate found in certificate chain" }
 
-            val factory = CertificateFactory.getInstance("X.509")
+            val factory = CertificateFactory.getInstance(STD_CERTIFICATE)
             val certPath = factory.generateCertPath(certList)
 
             val trustAnchorSet: MutableSet<TrustAnchor> = HashSet()
@@ -136,7 +135,6 @@ class Crypto {
     private fun getPrivateKey(filePath: String = path): PrivateKey {
         val privKeyBytes = File(filePath).readBytes()
         val keySpec = PKCS8EncodedKeySpec(privKeyBytes)
-        val keyFactory = KeyFactory.getInstance("RSA")
         return keyFactory.generatePrivate(keySpec)
     }
 
@@ -162,10 +160,8 @@ class Crypto {
 
         val encryptedMsg: String = Base64.getEncoder().encodeToString(encryptedByteMsg)
 
-        val keyCipher = Cipher.getInstance("RSA")
-
-        keyCipher.init(Cipher.ENCRYPT_MODE, publicKey)
-        val encryptedKey = keyCipher.doFinal(symmetricKey.encoded)
+        aCipher.init(Cipher.ENCRYPT_MODE, publicKey)
+        val encryptedKey = aCipher.doFinal(symmetricKey.encoded)
         val encryptedKeyStr: String = Base64.getEncoder().encodeToString(encryptedKey)
 
         val header: String = Base64.getEncoder().encodeToString(aditionalData.toByteArray())
@@ -174,7 +170,6 @@ class Crypto {
         val ivStr: String = Base64.getEncoder().encodeToString(iv.iv)
 
         val jweToken = String.format("%s.%s.%s.%s.%s", header, encryptedKeyStr, ivStr, encryptedMsg, markStr)
-        println(jweToken)
         return jweToken
     }
 
@@ -208,7 +203,7 @@ class Crypto {
             keyCipher.init(Cipher.DECRYPT_MODE, privateKey)
 
             val decipherKey = keyCipher.doFinal(encryptedKeyStr)
-            val symmetricKey: SecretKey = SecretKeySpec(decipherKey, 0, decipherKey.size, "AES")
+            val symmetricKey: SecretKey = SecretKeySpec(decipherKey, 0, decipherKey.size, ALG_SYMMETRIC)
 
             val textCipher = Cipher.getInstance(headerArgs[1])
             val gcmParameterSpec = GCMParameterSpec(markStr.size * 8, ivStr)
