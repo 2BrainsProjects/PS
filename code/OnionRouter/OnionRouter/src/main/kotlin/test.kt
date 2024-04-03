@@ -20,8 +20,7 @@ fun main(){
     val nodes = listOf("127.0.0.1:8082")
     val finalMsg = msg + "||" + nodes.joinToString("||")
 
-    val encMsg = crypto.encryptMessage(8080, finalMsg)
-
+    val encMsg = crypto.encipher(finalMsg).toByteArray(Charsets.UTF_8)
     /*
     private fun signedCertificateCommand(clientId: Int, path: String, pathServer: String): String =
         "openssl x509 -req -days 365 -in $path/$clientId.csr -CA $pathServer/certificate.crt -CAkey $pathServer/privateKey.key -out $path/$clientId.crt"

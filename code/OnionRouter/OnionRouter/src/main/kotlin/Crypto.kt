@@ -1,14 +1,20 @@
-import java.io.BufferedReader
-import java.io.BufferedWriter
-import java.io.File
-import java.io.FileInputStream
-import java.io.InputStreamReader
-import java.io.OutputStreamWriter
+import java.io.*
 import java.security.KeyFactory
 import java.security.KeyPairGenerator
+import java.security.PrivateKey
+import java.security.PublicKey
+import java.security.cert.*
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
+import java.util.*
 import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
+import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.IvParameterSpec
+import javax.crypto.spec.SecretKeySpec
+import kotlin.collections.ArrayList
+import kotlin.collections.HashSet
 
 class Crypto {
     val cipher = Cipher.getInstance("RSA")
@@ -46,6 +52,7 @@ class Crypto {
             writer.close()
 
             process.waitFor()
+
         } catch (e: Exception) {
             throw IllegalStateException(e.message)
         }
@@ -66,30 +73,154 @@ class Crypto {
         file2.writeBytes(publicKey)
     }
 
-    fun decryptMessage(port: Int, encMsg: String , basePath: String = path): String {
-        println("entered decryptMessage")
-        val privateKey = keyFactory.generatePrivate(PKCS8EncodedKeySpec(File("$basePath\\priv$port.pem").readBytes()))
-        cipher.init(Cipher.DECRYPT_MODE, privateKey)
-        var resultByteArray = ByteArray(0)
-        var encMsgByteArray = encMsg.toByteArray(Charsets.UTF_8)
-        while(encMsgByteArray.size >= 256){
-            val window = encMsgByteArray.take(255).toByteArray()
-            resultByteArray += cipher.update(window)
-            encMsgByteArray = encMsgByteArray.drop(255).toByteArray()
-        }
-        val decrypted = cipher.doFinal(encMsgByteArray)
-        resultByteArray += decrypted
+     fun encipher(plain: String, certificatePaths: List<String> = List(1){ path }):String {
+        try {
+            val pubKeyBytes = File("$path\\pub8080.pem").readBytes()
+            val keySpec = X509EncodedKeySpec(pubKeyBytes)
+            val keyFactory = KeyFactory.getInstance("RSA")
+            val publicKey = keyFactory.generatePublic(keySpec)
+            //val publicKey = getPublicKeyFromCertificate(certificatePaths)
 
-        return String(resultByteArray, Charsets.UTF_8)
+            val keyGenerator = KeyGenerator.getInstance("AES")
+            keyGenerator.init(KEY_SIZE)
+            val symmetricKey = keyGenerator.generateKey()
+            val iv = IvParameterSpec(PASSWORD.toByteArray())
+            return encipherString(plain, JWE_HEADER, symmetricKey, publicKey, iv, MARK_SIZE)
+        } catch (e: Exception) {
+            throw RuntimeException(e)
+        }
     }
 
-    fun encryptMessage(port: Int, msg: String , basePath: String = path): ByteArray {
-        println("entered encryptMessage")
-        val publicKey = keyFactory.generatePublic(X509EncodedKeySpec(File("$basePath\\pub$port.pem").readBytes()))
-        cipher.init(Cipher.ENCRYPT_MODE, publicKey)
-        val encrypted = cipher.doFinal(msg.toByteArray(Charsets.UTF_8))
+    private fun getPublicKeyFromCertificate(certificatePaths: List<String> = List(1){ path }): PublicKey {
+        try {
+            val certList: ArrayList<X509Certificate> = ArrayList()
+            var rootCertIndex = -1
+            for (i in certificatePaths.indices) {
+                val certificatePath = getCertificatePath(certificatePaths[i])
+                if (certificatePaths[i].contains("trust-anchors")) {
+                    rootCertIndex = i
+                }
+                val factory = CertificateFactory.getInstance("X.509")
+                val fis = FileInputStream(certificatePath)
+                val cert: X509Certificate = factory.generateCertificate(fis) as X509Certificate
+                fis.close()
+                certList.add(cert)
+            }
+            require(rootCertIndex != -1) { "No root certificate found in certificate chain" }
 
-        return encrypted
+            val factory = CertificateFactory.getInstance("X.509")
+            val certPath = factory.generateCertPath(certList)
+
+            val trustAnchorSet: MutableSet<TrustAnchor> = HashSet()
+            trustAnchorSet.add(TrustAnchor(certList[rootCertIndex], null))
+
+            val params: CertPathParameters = PKIXParameters(trustAnchorSet)
+            (params as PKIXParameters).isRevocationEnabled = false
+
+            // performs the certificate validation
+            val certPathValidator = CertPathValidator.getInstance("PKIX")
+            certPathValidator.validate(certPath, params)
+            return certList[0].publicKey
+        } catch (e: Exception) {
+            throw RuntimeException(e)
+        }
+    }
+
+    private fun getPrivateKey(filePath: String = path): PrivateKey {
+        val privKeyBytes = File(filePath).readBytes()
+        val keySpec = PKCS8EncodedKeySpec(privKeyBytes)
+        val keyFactory = KeyFactory.getInstance("RSA")
+        return keyFactory.generatePrivate(keySpec)
+    }
+
+    @Throws(Exception::class)
+    private fun encipherString(
+        strToCypher: String,
+        aditionalData: String,
+        symmetricKey: SecretKey,
+        publicKey: PublicKey,
+        iv: IvParameterSpec,
+        markSize: Int
+    ):String {
+
+        val gcmParameterSpec = GCMParameterSpec(markSize, iv.iv)
+
+        sCipher.init(Cipher.ENCRYPT_MODE, symmetricKey, gcmParameterSpec)
+
+        val encrypted = sCipher.doFinal(strToCypher.toByteArray())
+
+        val encryptedByteMsg = encrypted.copyOf(encrypted.size - (markSize / 8))
+
+        val mark = Arrays.copyOfRange(encrypted, encrypted.size - (markSize / 8), encrypted.size)
+
+        val encryptedMsg: String = Base64.getEncoder().encodeToString(encryptedByteMsg)
+
+        val keyCipher = Cipher.getInstance("RSA")
+
+        keyCipher.init(Cipher.ENCRYPT_MODE, publicKey)
+        val encryptedKey = keyCipher.doFinal(symmetricKey.encoded)
+        val encryptedKeyStr: String = Base64.getEncoder().encodeToString(encryptedKey)
+
+        val header: String = Base64.getEncoder().encodeToString(aditionalData.toByteArray())
+
+        val markStr: String = Base64.getEncoder().encodeToString(mark)
+        val ivStr: String = Base64.getEncoder().encodeToString(iv.iv)
+
+        val jweToken = String.format("%s.%s.%s.%s.%s", header, encryptedKeyStr, ivStr, encryptedMsg, markStr)
+        println(jweToken)
+        return jweToken
+    }
+
+    private fun getCertificatePath(certificateName: String, certificatePath: String = path): String {
+        return "$certificatePath/$certificateName"
+    }
+
+    @Throws(Exception::class)
+    fun decipher(cipheredText: String, port: Int, keyPath: String = path):String {
+
+        val parts = cipheredText.split(".").map { s -> Base64.getDecoder().decode(s) }
+
+        val header = parts[0]
+        val encryptedKeyStr = parts[1]
+        val ivStr = parts[2]
+        val encryptedMsg = parts[3]
+        val markStr = parts[4]
+
+        val headerParts = String(header).split(",\"").toMutableList()
+
+        headerParts[0] = headerParts[0].substring(2)
+        val headerArgs = emptyList<String>().toMutableList()
+        for (i in headerParts.indices) {
+            headerArgs.add(headerParts[i].split("\"")[2])
+        }
+        var toReturn = ""
+        try {
+            val privateKey = getPrivateKey("$keyPath\\priv$port.pem")
+            val keyCipher = Cipher.getInstance(headerArgs[0])
+
+            keyCipher.init(Cipher.DECRYPT_MODE, privateKey)
+
+            val decipherKey = keyCipher.doFinal(encryptedKeyStr)
+            val symmetricKey: SecretKey = SecretKeySpec(decipherKey, 0, decipherKey.size, "AES")
+
+            val textCipher = Cipher.getInstance(headerArgs[1])
+            val gcmParameterSpec = GCMParameterSpec(markStr.size * 8, ivStr)
+
+            textCipher.init(Cipher.DECRYPT_MODE, symmetricKey, gcmParameterSpec)
+
+            val outputStream = ByteArrayOutputStream()
+            outputStream.write(encryptedMsg)
+            outputStream.write(markStr)
+
+            val decipherText = outputStream.toByteArray()
+
+            // nas teoricas ver uma regra do perfil PKIX que verifica se existe mais do que 1 certificado folha na cadeia
+            val decipheredText = textCipher.doFinal(decipherText)
+            toReturn = (String(decipheredText))
+        } catch (e: Exception) {
+            println(e.message)
+        }
+        return toReturn
     }
 
     private fun runCommand(command: String){

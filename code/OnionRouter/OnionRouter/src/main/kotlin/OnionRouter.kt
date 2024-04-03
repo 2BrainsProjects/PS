@@ -45,15 +45,6 @@ class OnionRouter(private val port : Int){
         }
     }
 
-    // para o cliente encriptar com a chave pública
-    private fun generateKeyPair(localAddress: InetSocketAddress){
-        TODO("Not yet implemented")
-    }
-
-    private fun createCSR(localAddress: InetSocketAddress){
-        TODO("Not yet implemented")
-    }
-
     private fun handleConnection() {
         println("entered handleConnection")
         while (true){
@@ -89,7 +80,7 @@ class OnionRouter(private val port : Int){
         println("entered processMsg")
         if(msg.isBlank() || msg.isEmpty()) return
 
-        val plainText = crypto.decryptMessage(port, msg)
+        val plainText = crypto.decipher(msg, port)
 
         val addr = plainText.split("||").last() // onion || 234 325 345 234:4363
         val newMsg = plainText.dropLastWhile { it != '|' }.dropLast(2)
