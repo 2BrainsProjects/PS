@@ -18,13 +18,17 @@ fun main(){
 
     val msg = "hello"
     val nodes = listOf("127.0.0.1:8082")
+
+    /*
+    encriptar a msg
+    adiconar ip
+    e.g. ...Enc8082("hello")||127.0.0.1:8082..
+    */
     val finalMsg = msg + "||" + nodes.joinToString("||")
 
     val encMsg = crypto.encipher(finalMsg).toByteArray(Charsets.UTF_8)
     /*
-    private fun signedCertificateCommand(clientId: Int, path: String, pathServer: String): String =
-        "openssl x509 -req -days 365 -in $path/$clientId.csr -CA $pathServer/certificate.crt -CAkey $pathServer/privateKey.key -out $path/$clientId.crt"
-
+    iterar sobre todos os ips para formar as várias camadas de encriptação
      */
     socketChannel.use {
         val output = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE)

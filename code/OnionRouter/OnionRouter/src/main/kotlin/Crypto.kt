@@ -17,8 +17,15 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashSet
 
 class Crypto {
-    val cipher = Cipher.getInstance("RSA")
+    val sCipher = Cipher.getInstance("AES/GCM/NoPadding")
+    val aCipher = Cipher.getInstance("RSA")
     val keyFactory = KeyFactory.getInstance("RSA")
+
+    private val MARK_SIZE = 128
+    private val KEY_SIZE = 256
+    private val PASSWORD = "changeit" // do not change it
+    private val JWE_HEADER = "{\"alg\":\"RSA\",\"enc\":\"AES/GCM/NoPadding\"}"
+
     fun generateClientCSR(port: Int, ip: String, pwd: String, basePath: String = path): List<String> {
         generateKeys(port, basePath)
         answeringCSRCreation(port, ip, pwd)
@@ -223,17 +230,6 @@ class Crypto {
         return toReturn
     }
 
-    private fun runCommand(command: String){
-        try {
-            val process = ProcessBuilder(command.split(" "))
-                .redirectErrorStream(true)
-                .start()
-
-            process.waitFor()
-        } catch (e: Exception) {
-            throw IllegalStateException(e.message)
-        }
-    }
 
     companion object{
         private val path
