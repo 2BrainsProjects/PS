@@ -37,9 +37,10 @@ fun clientSender(
             output.clear()
             output.put(finalMsg.toByteArray(Charsets.UTF_8))
             output.flip()    // reset the buffer position to forward data
-            socketChannel.write(output)
+            bytesWritten = socketChannel.write(output)
             output.clear()
         }
+        return bytesWritten
     } finally {
         socketChannel.close()
     }

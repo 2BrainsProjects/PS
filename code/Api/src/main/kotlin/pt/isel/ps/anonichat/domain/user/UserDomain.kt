@@ -22,6 +22,7 @@ class UserDomain(
 
     fun verifyPassword(password: String, hashedPassword: String) = passwordEncoder.matches(password, hashedPassword)
 
+    // encode receives a rawPwd and adds a random salt, returning the hashedPwd with salt
     fun encodePassword(password: String): String = passwordEncoder.encode(password)
 
     fun hashToken(token: String): String = tokenEncoder.hash(token)

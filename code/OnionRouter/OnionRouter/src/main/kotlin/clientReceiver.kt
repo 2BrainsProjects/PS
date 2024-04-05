@@ -19,7 +19,7 @@ fun main() {
     val selector = Selector.open()
 
     Thread{
-        handleConnection(selector)
+        handleConnection(selector, ip.port)
     }.start()
     try {
         while (true) {
@@ -38,7 +38,7 @@ fun main() {
     }
 }
 
-private fun handleConnection(selector: Selector) {
+private fun handleConnection(selector: Selector, port: Int): String {
     while (true) {
         var readyToRead = selector.select()
 

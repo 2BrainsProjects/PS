@@ -28,7 +28,7 @@ class Crypto {
         }
     }
 
-    private fun answeringCSRCreation(port: Int, ip: String, password: String, basePath: String = path) {
+    private fun answeringCSRCreation(port: Int, ip: String, password: String, basePath: String) {
         val command =
             "openssl req -out $basePath/$port.csr -key $basePath/priv$port.pem -new"
         try {
@@ -55,7 +55,7 @@ class Crypto {
         }
     }
 
-    private fun generateKeys(port: Int, basePath: String = path){
+    fun generateKeys(port: Int, basePath: String){
         val keyPairGenerator = KeyPairGenerator.getInstance(ALG_ASYMMETRIC)
         keyPairGenerator.initialize(2048)
         val keyPair = keyPairGenerator.generateKeyPair()
@@ -73,7 +73,7 @@ class Crypto {
         file2.writeBytes(key)
     }
 
-     fun encipher(plain: String, port:Int, certificatePaths: List<String> = List(1){ path }):String {
+    fun encipher(plain: String, port:Int, certificatePath: String = path):String {
         try {
             val pubKeyBytes = File("$certificatePath\\pub$port.pem").readBytes()
             val keySpec = X509EncodedKeySpec(pubKeyBytes)
