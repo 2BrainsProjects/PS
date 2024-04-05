@@ -13,8 +13,6 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
-import kotlin.collections.ArrayList
-import kotlin.collections.HashSet
 
 class Crypto {
 
@@ -24,7 +22,7 @@ class Crypto {
 
     fun generateClientCSR(port: Int, ip: String, pwd: String, basePath: String = path): List<String> {
         generateKeys(port, basePath)
-        answeringCSRCreation(port, ip, pwd)
+        answeringCSRCreation(port, ip, pwd, basePath)
         BufferedReader(InputStreamReader(FileInputStream("$basePath/$port.csr"))).use {
             return it.readLines().drop(1).dropLast(1)
         }
@@ -77,10 +75,10 @@ class Crypto {
 
      fun encipher(plain: String, port:Int, certificatePaths: List<String> = List(1){ path }):String {
         try {
-            val pubKeyBytes = File("$path\\pub$port.pem").readBytes()
+            val pubKeyBytes = File("$certificatePath\\pub$port.pem").readBytes()
             val keySpec = X509EncodedKeySpec(pubKeyBytes)
             val publicKey = keyFactory.generatePublic(keySpec)
-            //val publicKey = getPublicKeyFromCertificate(certificatePaths)
+            //val publicKey = getPublicKeyFromCertificate(certificatePath)
 
             val keyGenerator = KeyGenerator.getInstance(ALG_SYMMETRIC)
             keyGenerator.init(KEY_SIZE)
@@ -92,42 +90,15 @@ class Crypto {
         }
     }
 
-    private fun getPublicKeyFromCertificate(certificatePaths: List<String> = List(1){ path }): PublicKey {
-        try {
-            val certList: ArrayList<X509Certificate> = ArrayList()
-            var rootCertIndex = -1
-            for (i in certificatePaths.indices) {
-                val certificatePath = getCertificatePath(certificatePaths[i])
-                if (certificatePaths[i].contains("trust-anchors")) {
-                    rootCertIndex = i
-                }
-                val factory = CertificateFactory.getInstance(STD_CERTIFICATE)
-                val fis = FileInputStream(certificatePath)
-                val cert: X509Certificate = factory.generateCertificate(fis) as X509Certificate
-                fis.close()
-                certList.add(cert)
-            }
-            require(rootCertIndex != -1) { "No root certificate found in certificate chain" }
-
-            val factory = CertificateFactory.getInstance(STD_CERTIFICATE)
-            val certPath = factory.generateCertPath(certList)
-
-            val trustAnchorSet: MutableSet<TrustAnchor> = HashSet()
-            trustAnchorSet.add(TrustAnchor(certList[rootCertIndex], null))
-
-            val params: CertPathParameters = PKIXParameters(trustAnchorSet)
-            (params as PKIXParameters).isRevocationEnabled = false
-
-            // performs the certificate validation
-            val certPathValidator = CertPathValidator.getInstance("PKIX")
-            certPathValidator.validate(certPath, params)
-            return certList[0].publicKey
-        } catch (e: Exception) {
-            throw RuntimeException(e)
-        }
+    private fun getPublicKeyFromCertificate(certificatePath: String): PublicKey {
+        val factory = CertificateFactory.getInstance(STD_CERTIFICATE)
+        val fis = FileInputStream(certificatePath)
+        val cert: X509Certificate = factory.generateCertificate(fis) as X509Certificate
+        fis.close()
+        return cert.publicKey
     }
 
-    private fun getPrivateKey(filePath: String = path): PrivateKey {
+    private fun getPrivateKey(filePath: String): PrivateKey {
         val privKeyBytes = File(filePath).readBytes()
         val keySpec = PKCS8EncodedKeySpec(privKeyBytes)
         return keyFactory.generatePrivate(keySpec)
@@ -168,7 +139,7 @@ class Crypto {
         return jweToken
     }
 
-    private fun getCertificatePath(certificateName: String, certificatePath: String = path): String {
+    private fun getCertificatePath(certificateName: String, certificatePath: String): String {
         return "$certificatePath/$certificateName"
     }
 

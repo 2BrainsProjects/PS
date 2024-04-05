@@ -7,13 +7,14 @@ import java.nio.channels.SocketChannel
 import java.nio.charset.StandardCharsets
 
 fun main() {
+    //port, pwd
     val crypto = Crypto()
-    val port = 8082
+    val ip = InetSocketAddress(8082)
     val lastClient = ServerSocketChannel.open()
-    lastClient.socket().bind(InetSocketAddress(port))
+    lastClient.socket().bind(ip)
     var socket : SocketChannel? = null
 
-    val csr = crypto.generateClientCSR(port, lastClient.localAddress.toString(), "password")
+    val csr = crypto.generateClientCSR(ip.port, lastClient.localAddress.toString(), "password")
 
     val selector = Selector.open()
 
@@ -52,7 +53,7 @@ private fun handleConnection(selector: Selector) {
 
             if (key.isReadable) {
                 val client = key.channel() as SocketChannel
-                readFromClient(client)
+                readFromClient(client, port)
 
                 if (--readyToRead == 0) break
             }
@@ -60,14 +61,14 @@ private fun handleConnection(selector: Selector) {
     }
 }
 
-private fun readFromClient(client: SocketChannel){
+private fun readFromClient(client: SocketChannel, port: Int): String{
     val buffer = ByteBuffer.allocate(1024)
     buffer.clear()
     var msg = ""
-    var size:Int = client.read(buffer)
+    var size: Int = client.read(buffer)
     if(size == -1) {
         client.close()
-        return
+        return msg
     }
     println("reading")
     while (size > 0) {
@@ -77,7 +78,8 @@ private fun readFromClient(client: SocketChannel){
         buffer.clear()
         size = client.read(buffer)
     }
-    val decipherMsg = Crypto().decipher(msg, 8082)
+    val decipherMsg = Crypto().decipher(msg, port)
     println(decipherMsg)
     println("____________________")
+    return decipherMsg
 }
