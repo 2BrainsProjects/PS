@@ -7,7 +7,7 @@ import java.nio.channels.ServerSocketChannel
 import java.nio.channels.SocketChannel
 import java.nio.charset.StandardCharsets
 
-class OnionRouter(private val port : Int){
+class OnionRouter(private val port : Int, path: String = System.getProperty("user.dir") + "\\crypto"){
 
     init {
         require(port >= 0) { "Port must not be negative" }
@@ -79,7 +79,6 @@ class OnionRouter(private val port : Int){
     private fun processMessage(msg:String, socketsList: MutableList<SocketChannel>){
         println("entered processMsg")
         if(msg.isBlank() || msg.isEmpty()) return
-
         val plainText = crypto.decipher(msg, port)
 
         val addr = plainText.split("||").last() // onion || 234 325 345 234:4363
@@ -95,9 +94,10 @@ class OnionRouter(private val port : Int){
         putConnectionIfAbsent(addr)
 
         // socket com o próximo node                           removing prefix '/'  e.g. /127.0.0.1
-        val socket = socketsList.first { it.remoteAddress.toString().drop(1) == addr }
+        val socket = socketsList.firstOrNull { it.remoteAddress.toString().drop(1) == addr }
 
-        writeFromClient(newMsgBytes, socket)
+        if(socket != null)
+            writeToClient(newMsgBytes, socket)
     }
 
     private fun putConnectionIfAbsent(addr: String){

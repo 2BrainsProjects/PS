@@ -6,9 +6,12 @@ import java.nio.channels.ServerSocketChannel
 import java.nio.channels.SocketChannel
 import java.nio.charset.StandardCharsets
 
+
+
 fun main() {
     //port, pwd
-    val crypto = Crypto()
+    val path: String = System.getProperty("user.dir") + "\\crypto"
+    val crypto = Crypto(path)
     val ip = InetSocketAddress(8082)
     val lastClient = ServerSocketChannel.open()
     lastClient.socket().bind(ip)
@@ -62,6 +65,7 @@ private fun handleConnection(selector: Selector, port: Int): String {
 }
 
 private fun readFromClient(client: SocketChannel, port: Int): String{
+    val path: String = System.getProperty("user.dir") + "\\crypto"
     val buffer = ByteBuffer.allocate(1024)
     buffer.clear()
     var msg = ""
@@ -78,8 +82,9 @@ private fun readFromClient(client: SocketChannel, port: Int): String{
         buffer.clear()
         size = client.read(buffer)
     }
-    val decipherMsg = Crypto().decipher(msg, port)
-    println(decipherMsg)
-    println("____________________")
+    println("received message: $msg")
+    println("deciphering message...")
+    val decipherMsg = Crypto(path).decipher(msg, port)
+    println("deciphered message: $decipherMsg")
     return decipherMsg
 }

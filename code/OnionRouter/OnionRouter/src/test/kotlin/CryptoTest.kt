@@ -3,8 +3,8 @@ import kotlin.random.Random
 import kotlin.test.*
 
 class CryptoTest {
-    private val crypto = Crypto()
     private val path = System.getProperty("user.dir") + "\\src\\test\\resources"
+    private val crypto = Crypto(path)
 
     private fun generateRandomPort() = Random.nextInt(7000, 9000)
     private fun generateIp() = listOf("", "", "", "").joinToString(".") { it + Random.nextInt(0, 256) }
@@ -12,7 +12,7 @@ class CryptoTest {
     @Test
     fun `can generate keys`(){
         val port = generateRandomPort()
-        crypto.generateKeys(port, path)
+        crypto.generateKeys(port)
 
         val privKeyFile = File("$path\\priv$port.pem")
         val pubKeyFile = File("$path\\pub$port.pem")
@@ -35,7 +35,7 @@ class CryptoTest {
         val port = generateRandomPort()
         val ip = "localhost:" + generateIp()
         val pwd = "P4\$\$w0rd"
-        crypto.generateClientCSR(port, ip, pwd, path)
+        crypto.generateClientCSR(port, ip, pwd)
 
         val csrFile = File("$path\\$port.csr")
 
@@ -50,14 +50,14 @@ class CryptoTest {
     @Test
     fun `can encipher and decipher a message`() {
         val port = generateRandomPort()
-        crypto.generateKeys(port, path)
+        crypto.generateKeys(port)
 
         val message = "Hello, World!"
 
-        val encMsg = crypto.encipher(message, port, path)
+        val encMsg = crypto.encipher(message, port)
         assertEquals(5, encMsg.split(".").size)
 
-        val decMsg = crypto.decipher(encMsg, port, path)
+        val decMsg = crypto.decipher(encMsg, port)
         assertEquals(message, decMsg)
     }
 
@@ -66,15 +66,15 @@ class CryptoTest {
         val port1 = generateRandomPort()
         val port2 = generateRandomPort()
 
-        crypto.generateKeys(port1, path)
-        crypto.generateKeys(port2, path)
+        crypto.generateKeys(port1)
+        crypto.generateKeys(port2)
 
         val message = "Hello, World!"
 
-        val encMsg = crypto.encipher(message, port1, path)
+        val encMsg = crypto.encipher(message, port1)
         assertEquals(5, encMsg.split(".").size)
 
-        val decMsg = crypto.decipher(encMsg, port2, path)
+        val decMsg = crypto.decipher(encMsg, port2)
         assertNotEquals(message, decMsg)
     }
 }

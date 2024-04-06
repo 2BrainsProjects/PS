@@ -18,19 +18,19 @@ fun clientSender(
     var bytesWritten: Int
 
     try {
-        val crypto = Crypto()
+        val crypto = Crypto(certificatePath)
         val ip = socketChannel.socket().localAddress.toString()
         crypto.generateClientCSR(socketChannel.socket().port, ip, pwd)
 
         var finalMsg = msg
-
         nodes.reversed().forEach{
             val port = it.split(":")[1].toInt()
             finalMsg = crypto.encipher(finalMsg, port)
             finalMsg += "||$it"
         }
 
-        finalMsg = crypto.encipher(finalMsg, serverPort.port, certificatePath)
+        finalMsg = crypto.encipher(finalMsg, serverIp.port)
+        println(finalMsg)
 
         socketChannel.use {
             val output = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE)

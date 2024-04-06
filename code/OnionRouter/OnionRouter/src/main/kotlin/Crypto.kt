@@ -14,21 +14,21 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-class Crypto {
+class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\crypto") {
 
     private val sCipher = Cipher.getInstance("AES/GCM/NoPadding")
     private val aCipher = Cipher.getInstance(ALG_ASYMMETRIC)
     private val keyFactory = KeyFactory.getInstance(ALG_ASYMMETRIC)
 
-    fun generateClientCSR(port: Int, ip: String, pwd: String, basePath: String = path): List<String> {
-        generateKeys(port, basePath)
-        answeringCSRCreation(port, ip, pwd, basePath)
+    fun generateClientCSR(port: Int, ip: String, pwd: String): List<String> {
+        generateKeys(port)
+        answeringCSRCreation(port, ip, pwd)
         BufferedReader(InputStreamReader(FileInputStream("$basePath/$port.csr"))).use {
             return it.readLines().drop(1).dropLast(1)
         }
     }
 
-    private fun answeringCSRCreation(port: Int, ip: String, password: String, basePath: String) {
+    private fun answeringCSRCreation(port: Int, ip: String, password: String) {
         val command =
             "openssl req -out $basePath/$port.csr -key $basePath/priv$port.pem -new"
         try {
@@ -55,7 +55,7 @@ class Crypto {
         }
     }
 
-    fun generateKeys(port: Int, basePath: String){
+    fun generateKeys(port: Int){
         val keyPairGenerator = KeyPairGenerator.getInstance(ALG_ASYMMETRIC)
         keyPairGenerator.initialize(2048)
         val keyPair = keyPairGenerator.generateKeyPair()
@@ -73,12 +73,12 @@ class Crypto {
         file2.writeBytes(key)
     }
 
-    fun encipher(plain: String, port:Int, certificatePath: String = path):String {
+    fun encipher(plain: String, port:Int):String {
         try {
-            val pubKeyBytes = File("$certificatePath\\pub$port.pem").readBytes()
+            val pubKeyBytes = File("$basePath\\pub$port.pem").readBytes()
             val keySpec = X509EncodedKeySpec(pubKeyBytes)
             val publicKey = keyFactory.generatePublic(keySpec)
-            //val publicKey = getPublicKeyFromCertificate(certificatePath)
+            //val publicKey = getPublicKeyFromCertificate(basePath)
 
             val keyGenerator = KeyGenerator.getInstance(ALG_SYMMETRIC)
             keyGenerator.init(KEY_SIZE)
@@ -144,7 +144,7 @@ class Crypto {
     }
 
     @Throws(Exception::class)
-    fun decipher(cipheredText: String, port: Int, keyPath: String = path):String {
+    fun decipher(cipheredText: String, port: Int):String {
 
         val parts = cipheredText.split(".").map { s -> Base64.getDecoder().decode(s) }
 
@@ -159,7 +159,7 @@ class Crypto {
         }
         var toReturn = ""
         try {
-            val privateKey = getPrivateKey("$keyPath\\priv$port.pem")
+            val privateKey = getPrivateKey("$basePath\\priv$port.pem")
             val keyCipher = Cipher.getInstance(headerArgs[0])
 
             keyCipher.init(Cipher.DECRYPT_MODE, privateKey)
@@ -189,10 +189,6 @@ class Crypto {
 
 
     companion object{
-        private val path
-            get() = path()
-        private fun path() = System.getProperty("user.dir") + "\\crypto"
-
         private const val ALG_SYMMETRIC = "AES"
         private const val ALG_ASYMMETRIC = "RSA"
         private const val STD_CERTIFICATE = "X.509"
