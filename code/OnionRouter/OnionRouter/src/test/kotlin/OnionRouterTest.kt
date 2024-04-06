@@ -1,3 +1,4 @@
+import org.junit.jupiter.api.RepeatedTest
 import org.junit.jupiter.api.Test
 import java.net.InetSocketAddress
 import java.util.concurrent.atomic.AtomicReference
@@ -29,4 +30,41 @@ class OnionRouterTest {
         val bytesWritten = clientSender(serverIp, pwd, msg, nodes, path)
         assertTrue(bytesWritten > 0)
     }
+
+    /*
+    @Test
+    fun `one client can communicate with another`(){
+        val serverPort = generateRandomPort()
+        println("serverPort: $serverPort")
+        val onionRouter = OnionRouter(serverPort, path)
+
+        Thread{
+            onionRouter.start()
+        }.start()
+
+        val lastClientIp = InetSocketAddress(generateRandomPort())
+        val pwdClient = "P4\$\$w0rd"
+        val finalMsg: AtomicReference<String> = AtomicReference("")
+
+        Thread.sleep(DELAY_TO_SET_NETWORK)
+
+        val t = Thread{
+            println("last client ip ${lastClientIp.port}")
+            finalMsg.set(clientReceiver(lastClientIp, pwdClient, path))
+        }
+        t.start()
+
+        val serverIp = InetSocketAddress(serverPort)
+        val pwd = "P4\$\$w0rd"
+        val msg = "hello"
+        val nodes = listOf("127.0.0.1:${lastClientIp.port}")
+
+        Thread{
+            println("sender to server ${serverIp.port}")
+            clientSender(serverIp, pwd, msg, nodes, path)
+        }.start()
+
+        assertEquals(msg, finalMsg.get())
+    }
+    */
 }

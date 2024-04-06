@@ -11,11 +11,12 @@ class OnionRouter(private val port : Int, path: String = System.getProperty("use
 
     init {
         require(port >= 0) { "Port must not be negative" }
+        println("onion router running on port $port")
     }
 
     private val selector = Selector.open()
     private val socketsList = emptyList<SocketChannel>().toMutableList()
-    private val crypto = Crypto()
+    private val crypto = Crypto(path)
 
     fun start(){
         val sSocket = ServerSocketChannel.open()
@@ -30,12 +31,10 @@ class OnionRouter(private val port : Int, path: String = System.getProperty("use
                 handleConnection()
             }.start()
             while(true){
-                println("waiting to accept")
                 val clientSocket = sSocket.accept()
                 clientSocket.configureBlocking(false)
                 clientSocket.register(selector, SelectionKey.OP_READ)
                 socketsList.add(clientSocket)
-                println("waking up selector")
                 selector.wakeup()
             }
         } catch(e: IOException) {
@@ -46,7 +45,6 @@ class OnionRouter(private val port : Int, path: String = System.getProperty("use
     }
 
     private fun handleConnection() {
-        println("entered handleConnection")
         while (true){
             var readyToRead = selector.select()
 
@@ -64,9 +62,8 @@ class OnionRouter(private val port : Int, path: String = System.getProperty("use
 
                     val msg = readFromClient(client) ?: continue
 
-                    //println("Processing msg: $msg")
+                    println("Received message: $msg")
                     processMessage(msg, socketsList)
-                    println("Passed processMsg")
 
                     if (--readyToRead == 0) break
                 }
@@ -77,9 +74,10 @@ class OnionRouter(private val port : Int, path: String = System.getProperty("use
     //                          onion
     // adicionar o porto aos routers na db ou aumentar o tamanho do ip
     private fun processMessage(msg:String, socketsList: MutableList<SocketChannel>){
-        println("entered processMsg")
+        println("processing...")
         if(msg.isBlank() || msg.isEmpty()) return
         val plainText = crypto.decipher(msg, port)
+        println("deciphered message: $plainText")
 
         val addr = plainText.split("||").last() // onion || 234 325 345 234:4363
         val newMsg = plainText.dropLastWhile { it != '|' }.dropLast(2)
@@ -101,8 +99,9 @@ class OnionRouter(private val port : Int, path: String = System.getProperty("use
     }
 
     private fun putConnectionIfAbsent(addr: String){
+        if(!addr.contains(":")) return
         if(!socketsList.any { it.remoteAddress.toString().drop(1) == addr }){
-            println(addr)
+            println("sending to: $addr")
             val splitAddr = addr.split(':')
             val newAddr = InetSocketAddress(splitAddr[0], splitAddr[1].toInt())
             val nextNode = SocketChannel.open(newAddr)
@@ -130,12 +129,11 @@ class OnionRouter(private val port : Int, path: String = System.getProperty("use
         return msg
     }
 
-    private fun writeFromClient(msgBytes: ByteArray, socket: SocketChannel){
+    private fun writeToClient(msgBytes: ByteArray, socket: SocketChannel){
         var newMsgBytes = msgBytes
         val byteBuffer = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE)
         var msgSize = newMsgBytes.size
         while (msgSize > 0){
-            println("cicle processMsg")
             // minimum size between msgSize and DEFAULT_BUFFER_SIZE
             val min = minOf(msgSize, DEFAULT_BUFFER_SIZE)
             val chunk = newMsgBytes.copyOf(min)

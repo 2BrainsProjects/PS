@@ -13,6 +13,7 @@ fun main() {
     val path: String = System.getProperty("user.dir") + "\\crypto"
     val crypto = Crypto(path)
     val ip = InetSocketAddress(8082)
+    println("running on port ${ip.port}")
     val lastClient = ServerSocketChannel.open()
     lastClient.socket().bind(ip)
     var socket : SocketChannel? = null
@@ -26,9 +27,7 @@ fun main() {
     }.start()
     try {
         while (true) {
-            println("waiting to accept")
             socket = lastClient.accept()
-            println("accepted")
             socket.configureBlocking(false)
             socket.register(selector, SelectionKey.OP_READ)
             selector.wakeup()
@@ -74,7 +73,6 @@ private fun readFromClient(client: SocketChannel, port: Int): String{
         client.close()
         return msg
     }
-    println("reading")
     while (size > 0) {
         val bbOutput = String(buffer.array(), 0, buffer.position(), StandardCharsets.UTF_8)
         buffer.flip()

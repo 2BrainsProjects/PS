@@ -187,7 +187,6 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
         return toReturn
     }
 
-
     companion object{
         private const val ALG_SYMMETRIC = "AES"
         private const val ALG_ASYMMETRIC = "RSA"
