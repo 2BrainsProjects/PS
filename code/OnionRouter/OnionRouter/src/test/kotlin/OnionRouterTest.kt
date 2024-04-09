@@ -1,15 +1,26 @@
-import org.junit.jupiter.api.RepeatedTest
 import org.junit.jupiter.api.Test
+import java.net.BindException
 import java.net.InetSocketAddress
-import java.util.concurrent.atomic.AtomicReference
+import java.net.ServerSocket
 import kotlin.random.Random
-import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class OnionRouterTest {
     private val path = System.getProperty("user.dir") + "\\src\\test\\resources"
     private val DELAY_TO_SET_NETWORK = 1000L
     private fun generateRandomPort() = Random.nextInt(7000, 9000)
+
+    @Test
+    fun `can create onion router`(){
+        val serverPort = generateRandomPort()
+        val onionRouter = OnionRouter(serverPort, path)
+        Thread{
+            onionRouter.start()
+        }.start()
+
+        assertFailsWith<BindException> { ServerSocket().bind(InetSocketAddress(serverPort)) }
+    }
 
     @Test
     fun `can connect to the server`(){
