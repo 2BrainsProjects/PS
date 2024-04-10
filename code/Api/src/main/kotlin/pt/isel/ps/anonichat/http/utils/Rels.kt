@@ -7,7 +7,7 @@ object Rels {
 
     object User {
         const val HOME = "user-home"
-        const val REGISTER = "register"
+        const val REGISTER = "register-user"
         const val LOGIN = "login"
         const val LOGOUT = "logout"
         const val USERS = "get-users"
@@ -15,6 +15,7 @@ object Rels {
     }
 
     object Router {
+        const val REGISTER = "register-router"
         const val ROUTERS_COUNT = "get-routers-count"
         const val ROUTERS = "get-routers"
     }

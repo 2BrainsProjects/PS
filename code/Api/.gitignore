@@ -34,8 +34,3 @@ out/
 
 ### VS Code ###
 .vscode/
-
-### Cryptographic Material ###
-*.crt
-*.key
-*.csr

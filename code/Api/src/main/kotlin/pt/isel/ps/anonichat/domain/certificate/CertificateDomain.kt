@@ -12,7 +12,7 @@ import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 
 @Component
-class CertificateDomain {
+class CertificateDomain  {
 
     /**
      * this function requires openssl installed in system's PATH.
@@ -20,6 +20,7 @@ class CertificateDomain {
      * @param clientId user's id
      * @param name user's name
      * @param email user's email
+     * @param path path of the certificate
      * @param password user's password
      */
     fun createCertCommand(
@@ -28,21 +29,20 @@ class CertificateDomain {
         password: String,
         path: String,
         name: String = "",
-        email: String = ""
+        email: String = " "
     ): String {
         createCSRTempFile(clientId, clientCSR, path)
 
-        val certFile = File("$path/$clientId.crt")
+        val certFile = File("$path/$clientId.cer")
         certFile.createNewFile()
 
-        val signedCertificateCommand = signedCertificateCommand(clientId, path, SERVER_PATH)
+        val signedCertificateCommand = signedCertificateCommand(clientId, path)
         execute(signedCertificateCommand)
 
         // wait for the file to be written on
         while(BufferedReader(FileInputStream(certFile).bufferedReader()).readLines().isEmpty()){}
 
-        val crtContent = readFile("$path/$clientId.crt")
-        deleteTempFile("$path/$clientId.csr")
+        val crtContent = readFile("$path/$clientId.cer")
         return crtContent
     }
 
@@ -63,17 +63,10 @@ class CertificateDomain {
         return text
     }
 
-    private fun deleteTempFile(filePath: String) {
-        val file = File(filePath)
-        if (file.exists()) {
-            file.delete()
-        }
-    }
-
     private fun createCSRTempFile(clientId: Int, clientCSR: String, path: String) {
         val dir = File(path)
         if(!dir.exists()) {
-            execute("mkdir $path")
+            dir.mkdir()
         }
         val file = File("$path/$clientId.csr")
         if (!file.exists()) {
@@ -86,8 +79,8 @@ class CertificateDomain {
         }
     }
 
-    private fun signedCertificateCommand(clientId: Int, path: String, pathServer: String): String =
-        "openssl x509 -req -days 365 -in $path/$clientId.csr -CA $pathServer/certificate.crt -CAkey $pathServer/privateKey.key -out $path/$clientId.crt"
+    private fun signedCertificateCommand(clientId: Int, path: String): String =
+        "openssl x509 -req -days 365 -in $path/$clientId.csr -CA $SERVER_PATH/certificate.crt -CAkey $SERVER_PATH/privateKey.key -out $path/$clientId.cer"
 
     companion object{
         private val SERVER_PATH

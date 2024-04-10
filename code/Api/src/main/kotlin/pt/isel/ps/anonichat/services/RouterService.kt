@@ -13,7 +13,7 @@ import pt.isel.ps.anonichat.services.models.UsersModel
 class RouterService(
     private val tm: TransactionManager,
     private val cd: CertificateDomain,
-) {
+    ) {
     /**
      * Gets the routers count
      * @param list The list of id
@@ -51,21 +51,20 @@ class RouterService(
      * @param ip The ip of the router
      * @param routerCSR The crs of the router
      * @param path The path of certificate
-     * @return The router's id and the certificate
+     * @return The router's id
      */
-    fun createRouter(ip: String, routerCSR: String, path: String = basePath): Pair<Int, String> {
+    fun createRouter(ip: String, routerCSR: String, path: String = basePath): Int {
         return tm.run {
-
             //Create the router
             val id = it.routerRepository.createRouter(ip)
 
             // Certificate need the router's id to be created
-            val certContent = cd.createCertCommand(routerCSR, id, ROUTERS_PASSWORD, path, "", "")
+            cd.createCertCommand(routerCSR, id, ROUTERS_PASSWORD, path, ip)
 
             // Update the router with the certificate path
-            it.routerRepository.updateCert(id, "$path/$id.crt")
+            it.routerRepository.updateCert(id, "$path/$id.cer")
 
-            Pair(id, certContent)
+            id
         }
     }
 

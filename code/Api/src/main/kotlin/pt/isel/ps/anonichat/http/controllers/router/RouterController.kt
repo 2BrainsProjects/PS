@@ -3,12 +3,17 @@ package pt.isel.ps.anonichat.http.controllers.router
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import pt.isel.ps.anonichat.domain.utils.Ip
 import pt.isel.ps.anonichat.http.controllers.router.models.GetRouterOutputModel
 import pt.isel.ps.anonichat.http.controllers.router.models.GetRoutersCountOutputModel
 import pt.isel.ps.anonichat.http.controllers.router.models.GetRoutersOutputModel
+import pt.isel.ps.anonichat.http.controllers.router.models.RegisterInputModel
+import pt.isel.ps.anonichat.http.controllers.router.models.RegisterOutputModel
 import pt.isel.ps.anonichat.http.media.siren.SirenEntity
 import pt.isel.ps.anonichat.http.media.siren.SubEntity
 import pt.isel.ps.anonichat.http.utils.Links
@@ -22,6 +27,27 @@ import pt.isel.ps.anonichat.services.RouterService
 class RouterController(
     val services: RouterService
 ) {
+    /**
+     * Handles the request to register a new router
+     * @param body the request body (RegisterInputModel)
+     * @return the response with the user's id
+     */
+    @PostMapping(Uris.Router.REGISTER)
+    fun registerRouter(
+        /**
+         * removed @RequestBody annotation due to spring doesn´t recognize
+         * Content-Type: application/x-www-form-urlencoded as a possible body
+         */
+        body: RegisterInputModel,
+        ip: Ip
+    ): ResponseEntity<*> {
+        val routerId = services.createRouter(ip.ip, body.routerCSR)
+        return SirenEntity(
+            clazz = listOf(Rels.Router.REGISTER),
+            properties = RegisterOutputModel(routerId)
+        ).created(Uris.User.home())
+    }
+
     /**
      * Handles the request to get list of routers
      * @param ids the request body (GetRoutersCountInputModel)

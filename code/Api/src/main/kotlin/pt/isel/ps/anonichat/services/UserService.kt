@@ -22,7 +22,7 @@ class UserService(
     private val tm: TransactionManager,
     private val domain: UserDomain,
     private val cd: CertificateDomain,
-    private val clock: Clock
+    private val clock: Clock,
 ) {
     /**
      * Registers a new user
@@ -51,7 +51,7 @@ class UserService(
             val certContent = cd.createCertCommand(clientCSR, userId, password, path, name, email)
 
             // Update the user with the certificate path
-            it.userRepository.updateCert(userId, "$path/$userId.crt")
+            it.userRepository.updateCert(userId, "$path/$userId.cer")
 
             Pair(userId, certContent)
         }
@@ -85,7 +85,7 @@ class UserService(
             }
             else -> throw InvalidCredentialsException("Username or email is required for login")
         }
-        val certContent: String = cd.readFile("$path/$userId.crt")
+        val certContent: String = cd.readFile("$path/$userId.cer")
 
         return Pair(tokenModel, certContent)
     }

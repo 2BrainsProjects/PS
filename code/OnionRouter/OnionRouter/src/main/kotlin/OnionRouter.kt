@@ -1,3 +1,6 @@
+import okhttp3.FormBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
@@ -9,6 +12,8 @@ import java.nio.charset.StandardCharsets
 
 class OnionRouter(private val port : Int, path: String = System.getProperty("user.dir") + "\\crypto"){
 
+    private val apiUri = "http://localhost:8080/api"
+
     init {
         require(port >= 0) { "Port must not be negative" }
         println("onion router running on port $port")
@@ -19,12 +24,32 @@ class OnionRouter(private val port : Int, path: String = System.getProperty("use
     private val crypto = Crypto(path)
 
     fun start(){
-        val sSocket = ServerSocketChannel.open()
+        val sSocket = ServerSocketChannel.open().bind(InetSocketAddress(port))
         sSocket.socket().bind(InetSocketAddress(port))
 
         val csr = crypto.generateClientCSR(port, sSocket.localAddress.toString(), "password")
 
-        // gerar chave pública e privada
+        val client = OkHttpClient()
+
+        val JSON = "application/json"
+        val url = "$apiUri/routers"
+
+        val body = FormBody.Builder()
+            .add("routerCSR", csr.joinToString("\n"))
+            .build()
+
+        val request = Request.Builder()
+            .header("Content-Type", JSON)
+            .url(url)
+            .post(body)
+            .build()
+
+        val response = client.newCall(request).execute()
+
+        if(response.code != 201) throw Exception("Error creating router")
+
+        val responseBody = response.body?.string()
+        println(responseBody?.split(',')?.get(1)?.dropWhile { !it.isDigit() }?.takeWhile { it.isDigit() })
 
         try {
             Thread{

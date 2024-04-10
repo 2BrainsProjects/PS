@@ -69,7 +69,6 @@ object Actions {
     }
 
     object Router {
-
         fun getRouters() = Action(
             name = Rels.Router.ROUTERS,
             href = Uris.Router.routers(),

@@ -21,7 +21,10 @@ class IpInterceptor : HandlerInterceptor {
      */
     override fun preHandle(request: HttpServletRequest, response: HttpServletResponse, handler: Any): Boolean {
         if (handler is HandlerMethod && handler.hasParameterType<Ip>()) {
-            val ipAddress = request.remoteAddr
+            println(request.remotePort)
+            println(request.localPort)
+            println(request.remoteAddr)
+            val ipAddress = request.remoteAddr + ":" + request.remotePort
             IpArgumentResolver.addIp(Ip(ipAddress), request)
             return true
         }

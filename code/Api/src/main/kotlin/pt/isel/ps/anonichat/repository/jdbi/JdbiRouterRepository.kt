@@ -71,7 +71,7 @@ class JdbiRouterRepository(
     override fun lastRouterId(): Int =
         handle.createQuery("select id from dbo.Router order by id desc limit 1")
             .mapTo<Int>()
-            .single()
+            .singleOrNull() ?: 0
 
     /**
      * Updates a router's certificate

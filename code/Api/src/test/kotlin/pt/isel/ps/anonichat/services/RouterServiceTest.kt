@@ -4,14 +4,16 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class RouterServiceTest : ServicesTest()  {
+class RouterServiceTest : ServicesTest() {
+
+    private val path = basePath + ROUTERS
     @Test
     fun `register a router`() {
         // given: a user
         val (ip, routerCSR) = testRouterData()
 
         // when: registering the user
-        val (routerId) = routersServices.createRouter(ip, routerCSR, basePath + ROUTERS)
+        val (routerId) = routersServices.createRouter(ip, routerCSR, path)
 
         // then: the user is registered
         val (routers) = routersServices.getRouters(listOf(routerId))
@@ -23,10 +25,10 @@ class RouterServiceTest : ServicesTest()  {
     fun `delete a router`() {
         // given: a user
         val (ip, routerCSR) = testRouterData()
-        val (routerId) = routersServices.createRouter(ip, routerCSR, basePath + ROUTERS)
+        val (routerId) = routersServices.createRouter(ip, routerCSR, path)
 
         // when: deleting the user
-        val result = routersServices.deleteRouter(routerId, basePath + ROUTERS)
+        val result = routersServices.deleteRouter(routerId)
 
         // then: the user is deleted
         assertEquals(true, result)
@@ -36,7 +38,7 @@ class RouterServiceTest : ServicesTest()  {
     fun `get a list of routers`() {
         // given: a user
         val (ip, routerCSR) = testRouterData()
-        val (routerId) = routersServices.createRouter(ip, routerCSR, basePath + ROUTERS)
+        val (routerId) = routersServices.createRouter(ip, routerCSR, path)
 
         // when: getting the list of users
         val (routers) = routersServices.getRouters(listOf(routerId))
@@ -50,7 +52,7 @@ class RouterServiceTest : ServicesTest()  {
     fun `get the last router id`() {
         // given: a user
         val (ip, routerCSR) = testRouterData()
-        val (routerId) = routersServices.createRouter(ip, routerCSR, basePath + ROUTERS)
+        val (routerId) = routersServices.createRouter(ip, routerCSR, path)
 
         // when: getting the last user id
         val lastId = routersServices.getLastId()

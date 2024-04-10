@@ -25,6 +25,7 @@ object Uris {
     }
 
     object Router {
+        const val REGISTER = "/routers"
         const val ROUTERS = "/routers"
         const val ROUTERS_COUNT = "/routers/count"
 

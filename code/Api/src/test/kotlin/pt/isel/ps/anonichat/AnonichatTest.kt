@@ -19,13 +19,13 @@ open class AnonichatTest {
         const val USERS = "\\users"
         const val ROUTERS = "\\routers"
 
-        private fun pathBuilder() = System.getProperty("user.dir") + "\\src\\test\\kotlin\\pt\\isel\\ps\\anonichat\\services\\certificates"
+        private fun pathBuilder() = System.getProperty("user.dir") + "\\src\\test\\kotlin\\pt\\isel\\ps\\anonichat\\certificates"
 
         fun testUsername() = "testUser${UUID.randomUUID().toString().substring(0, 6)}"
         fun testPassword() = "Password123!"
         fun testEmail() = "${testUsername()}@gmail.com"
         fun testUserCSR() = generateClientCSR(generateRandomId(), testUsername(), testEmail(), testPassword())
-        private fun testRouterCSR() = generateClientCSR(generateRandomId(), testUsername(), testEmail(), testPassword())
+        private fun testRouterCSR(ip: String) = generateRouterCSR(generateRandomId(), ip, testPassword())
         private fun generateRandomId() = Random().nextInt(Int.MAX_VALUE)
         fun testUserData() = UserTest(
             testUsername(),
@@ -34,17 +34,27 @@ open class AnonichatTest {
             testUserCSR()
         )
 
-        fun testRouterData() = Pair(testIp(), testRouterCSR())
+        fun testRouterData(): Pair<String, String> {
+            val ip = testIp()
+            return Pair(ip, testRouterCSR(ip))
+        }
 
-        private fun generateClientCSR(userId: Int, username: String, email: String, pwd: String): String {
-            answeringCSRCreation(userId, username, email, pwd)
-            BufferedReader(InputStreamReader(FileInputStream("$basePath$USERS/$userId.csr"))).use {
+        private fun generateCSR(id: Int, pseudoname: String, email: String, pwd: String, extraPath: String): String {
+            answeringCSRCreation(id, pseudoname, email, pwd, extraPath)
+            BufferedReader(InputStreamReader(FileInputStream("$basePath$extraPath/$id.csr"))).use {
                 return it.readLines().drop(1).dropLast(1).joinToString("")
             }
         }
 
-        private fun answeringCSRCreation(userId: Int, name: String, email: String, password: String) {
-            val command = "openssl req -out $basePath$USERS/$userId.csr -new -newkey rsa:2048 -nodes -keyout $basePath$USERS/$userId.key"
+        private fun generateClientCSR(userId: Int, username: String, email: String, pwd: String): String =
+            generateCSR(userId, username, email, pwd, USERS)
+
+        private fun generateRouterCSR(userId: Int, username: String, pwd: String): String =
+            generateCSR(userId, username, "", pwd, ROUTERS)
+
+        private fun answeringCSRCreation(id: Int, name: String, email: String, password: String, extraPath: String) {
+            val command =
+                "openssl req -out $basePath$extraPath/$id.csr -new -newkey rsa:2048 -nodes -keyout $basePath$extraPath/$id.key"
             try {
                 val process = ProcessBuilder(command.split(" "))
                     .redirectErrorStream(true)
