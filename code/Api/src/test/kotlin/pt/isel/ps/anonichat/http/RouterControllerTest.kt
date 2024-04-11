@@ -1,12 +1,15 @@
 package pt.isel.ps.anonichat.http
 
+import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.expectBody
+import org.springframework.util.LinkedMultiValueMap
+import org.springframework.util.MultiValueMap
+import org.springframework.web.reactive.function.BodyInserters
 import pt.isel.ps.anonichat.http.controllers.router.models.GetRoutersCountOutputModel
 import pt.isel.ps.anonichat.http.controllers.router.models.GetRoutersOutputModel
 import pt.isel.ps.anonichat.http.controllers.router.models.RegisterOutputModel
 import pt.isel.ps.anonichat.http.hypermedia.SirenEntity
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -15,11 +18,16 @@ class RouterControllerTest : HttpTest() {
     @Test
     fun `register router`() {
 
-        val routerCSR = testRouterData().second
+        val (_, routerCSR, pwd) = testRouterData()
+
+        val body: MultiValueMap<String, String> = LinkedMultiValueMap()
+        body.add("routerCSR", routerCSR)
+        body.add("pwd", pwd)
 
         val router = client.post().uri(api("/routers"))
-            .bodyValue(
-                mapOf("routerCSR" to routerCSR)
+            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+            .body(
+                BodyInserters.fromFormData(body)
             )
             .exchange()
             .expectStatus().isCreated
@@ -27,21 +35,21 @@ class RouterControllerTest : HttpTest() {
             .returnResult().responseBody?.properties
 
         val routerId = router?.routerId
-        val certificateContent = router?.certificateContent
         assertNotNull(routerId)
-        assertNotNull(certificateContent)
         assertTrue(routerId > 0)
-        assertTrue(certificateContent.isNotEmpty())
-        assertTrue(certificateContent.isNotBlank())
     }
 
     @Test
     fun `get routers`() {
-        val routerCSR = testRouterData().second
+        val (_, routerCSR, pwd) = testRouterData()
+
+        val body: MultiValueMap<String, String> = LinkedMultiValueMap()
+        body.add("routerCSR", routerCSR)
+        body.add("pwd", pwd)
 
         val routerId = client.post().uri(api("/routers"))
-            .bodyValue(
-                mapOf("routerCSR" to routerCSR)
+            .body(
+                BodyInserters.fromFormData(body)
             )
             .exchange()
             .expectStatus().isCreated
@@ -66,11 +74,15 @@ class RouterControllerTest : HttpTest() {
             .expectBody<SirenEntity<GetRoutersCountOutputModel>>()
             .returnResult().responseBody?.properties?.maxId
 
-        val routerCSR = testRouterData().second
+        val (_, routerCSR, pwd) = testRouterData()
+
+        val body: MultiValueMap<String, String> = LinkedMultiValueMap()
+        body.add("routerCSR", routerCSR)
+        body.add("pwd", pwd)
 
         val routerId = client.post().uri(api("/routers"))
-            .bodyValue(
-                mapOf("routerCSR" to routerCSR)
+            .body(
+                BodyInserters.fromFormData(body)
             )
             .exchange()
             .expectStatus().isCreated
@@ -89,5 +101,30 @@ class RouterControllerTest : HttpTest() {
         assertTrue(nextMaxId >= routerId)
         assertTrue(routerId > maxId)
         assertTrue(nextMaxId > maxId)
+    }
+
+    @Test
+    fun `delete router`() {
+        val (_, routerCSR, pwd) = testRouterData()
+
+        val body: MultiValueMap<String, String> = LinkedMultiValueMap()
+        body.add("routerCSR", routerCSR)
+        body.add("pwd", pwd)
+
+        val routerId = client.post().uri(api("/routers"))
+            .body(
+                BodyInserters.fromFormData(body)
+            )
+            .exchange()
+            .expectStatus().isCreated
+            .expectBody<SirenEntity<RegisterOutputModel>>()
+            .returnResult().responseBody?.properties?.routerId
+
+        client.delete().uri(api("/routers/$routerId"))
+            .body(
+                BodyInserters.fromFormData(body)
+            )
+            .exchange()
+            .expectStatus().isOk
     }
 }

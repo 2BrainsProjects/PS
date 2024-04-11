@@ -2,13 +2,16 @@ package pt.isel.ps.anonichat.http.controllers.router
 
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import pt.isel.ps.anonichat.domain.utils.Ip
+import pt.isel.ps.anonichat.http.controllers.router.models.DeleteInputModel
 import pt.isel.ps.anonichat.http.controllers.router.models.GetRouterOutputModel
 import pt.isel.ps.anonichat.http.controllers.router.models.GetRoutersCountOutputModel
 import pt.isel.ps.anonichat.http.controllers.router.models.GetRoutersOutputModel
@@ -38,10 +41,10 @@ class RouterController(
          * removed @RequestBody annotation due to spring doesn´t recognize
          * Content-Type: application/x-www-form-urlencoded as a possible body
          */
-        body: RegisterInputModel,
-        ip: Ip
+        body: RegisterInputModel
     ): ResponseEntity<*> {
-        val routerId = services.createRouter(ip.ip, body.routerCSR)
+        println("oioioioioioioioioioioioioioioioioioioioioioioioioioioioioioioioioioioio")
+        val routerId = services.createRouter(body.routerCSR, body.pwd)
         return SirenEntity(
             clazz = listOf(Rels.Router.REGISTER),
             properties = RegisterOutputModel(routerId)
@@ -87,6 +90,19 @@ class RouterController(
             links = listOfNotNull(
                 Links.self(Uris.Router.ROUTERS_COUNT)
             )
+        ).ok()
+    }
+
+    @DeleteMapping(Uris.Router.DELETE)
+    fun deleteRouter(
+        @Valid @PathVariable
+        id: Int,
+        @RequestBody
+        body: DeleteInputModel
+    ): ResponseEntity<*> {
+        services.deleteRouter(id, body.pwd)
+        return SirenEntity<Unit>(
+            clazz = listOf(Rels.Router.DELETE)
         ).ok()
     }
 }

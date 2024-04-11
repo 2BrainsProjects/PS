@@ -48,7 +48,7 @@ class UserService(
             val userId = it.userRepository.registerUser(name, email, passwordHash)
 
             // Certificate need the user's id to be created
-            val certContent = cd.createCertCommand(clientCSR, userId, password, path, name, email)
+            val certContent = cd.createCertCommand(clientCSR, userId, path)
 
             // Update the user with the certificate path
             it.userRepository.updateCert(userId, "$path/$userId.cer")

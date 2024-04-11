@@ -2,6 +2,7 @@ package pt.isel.ps.anonichat.repository
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class RouterRepositoryTest : RepositoryTest() {
@@ -9,14 +10,18 @@ class RouterRepositoryTest : RepositoryTest() {
     @Test
     fun `create a router`() {
         // given: an ip and a certificate
+        val password = testPassword()
         val ip = testIp()
         val certificate = testCertificate()
 
-        val id = routersRepository.createRouter(ip)
-        routersRepository.updateCert(id, certificate)
+        val id = routersRepository.createRouter(password)
+
+        routersRepository.updateRouter(id, ip, certificate)
+
         val router = routersRepository.getRouterByIp(ip)
-        assertEquals(router.ip, ip)
+        assertEquals(router.passwordHash, password)
         assertEquals(router.certificate, certificate)
+        assertEquals(router.ip, ip)
         assertTrue(routersRepository.isRouter(router.id))
 
         val routerById = routersRepository.getRouterById(router.id)
@@ -44,7 +49,7 @@ class RouterRepositoryTest : RepositoryTest() {
 
         val id = routersRepository.createRouter(ip)
 
-        routersRepository.updateCert(id, certificate)
+        routersRepository.updateRouter(id, ip, certificate)
         val router = routersRepository.getRouterByIp(ip)
 
         assertEquals(router.ip, ip)

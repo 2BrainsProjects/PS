@@ -9,47 +9,51 @@ import java.nio.channels.Selector
 import java.nio.channels.ServerSocketChannel
 import java.nio.channels.SocketChannel
 import java.nio.charset.StandardCharsets
+import java.util.UUID
 
 class OnionRouter(private val port : Int, path: String = System.getProperty("user.dir") + "\\crypto"){
 
     private val apiUri = "http://localhost:8080/api"
+    private val selector = Selector.open()
+    private val socketsList = emptyList<SocketChannel>().toMutableList()
+    private val crypto = Crypto(path)
+    private val JSON = "application/json"
+    private val url = "$apiUri/routers"
 
     init {
         require(port >= 0) { "Port must not be negative" }
         println("onion router running on port $port")
     }
 
-    private val selector = Selector.open()
-    private val socketsList = emptyList<SocketChannel>().toMutableList()
-    private val crypto = Crypto(path)
-
-    fun start(){
+    fun start(pwd: String = UUID.randomUUID().toString()){
         val sSocket = ServerSocketChannel.open().bind(InetSocketAddress(port))
-        sSocket.socket().bind(InetSocketAddress(port))
 
-        val csr = crypto.generateClientCSR(port, sSocket.localAddress.toString(), "password")
+        println(sSocket.localAddress.toString())
+
+        val csr = crypto.generateClientCSR(port, sSocket.localAddress.toString(), pwd)
 
         val client = OkHttpClient()
 
-        val JSON = "application/json"
-        val url = "$apiUri/routers"
-
-        val body = FormBody.Builder()
+        val registerBody = FormBody.Builder()
             .add("routerCSR", csr.joinToString("\n"))
+            .add("pwd", pwd)
             .build()
 
-        val request = Request.Builder()
+        val registerRequest = Request.Builder()
             .header("Content-Type", JSON)
             .url(url)
-            .post(body)
+            .post(registerBody)
             .build()
 
-        val response = client.newCall(request).execute()
+        val registerResponse = client.newCall(registerRequest).execute()
 
-        if(response.code != 201) throw Exception("Error creating router")
+        if(registerResponse.code != 201) throw Exception("Error creating router")
 
-        val responseBody = response.body?.string()
-        println(responseBody?.split(',')?.get(1)?.dropWhile { !it.isDigit() }?.takeWhile { it.isDigit() })
+        val responseBody = registerResponse.body?.string()
+
+        val routerId = responseBody?.split(',')?.get(1)?.dropWhile { !it.isDigit() }?.takeWhile { it.isDigit() }
+
+        println(routerId)
 
         try {
             Thread{
@@ -65,6 +69,19 @@ class OnionRouter(private val port : Int, path: String = System.getProperty("use
         } catch(e: IOException) {
             println(e.message)
         } finally {
+            // api request to remove router
+            val deleteBody = FormBody.Builder()
+                .add("pwd", pwd)
+                .build()
+
+            val deleteRequest = Request.Builder()
+                .header("Content-Type", JSON)
+                .url("$url/$routerId")
+                .delete(deleteBody)
+                .build()
+
+            client.newCall(deleteRequest).execute()
+
             finalizeOnionRouter(sSocket)
         }
     }

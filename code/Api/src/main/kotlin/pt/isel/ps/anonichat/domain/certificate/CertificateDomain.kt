@@ -3,7 +3,6 @@ package pt.isel.ps.anonichat.domain.certificate
 import org.springframework.stereotype.Component
 import java.io.BufferedReader
 import java.io.BufferedWriter
-import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -22,16 +21,14 @@ class CertificateDomain  {
      * @param email user's email
      * @param path path of the certificate
      * @param password user's password
+     * @return the path of the certificate
      */
     fun createCertCommand(
         clientCSR: String,
         clientId: Int,
-        password: String,
-        path: String,
-        name: String = "",
-        email: String = " "
+        path: String
     ): String {
-        createCSRTempFile(clientId, clientCSR, path)
+        val csrFile = createCSRTempFile(clientId, clientCSR, path)
 
         val certFile = File("$path/$clientId.cer")
         certFile.createNewFile()
@@ -41,9 +38,17 @@ class CertificateDomain  {
 
         // wait for the file to be written on
         while(BufferedReader(FileInputStream(certFile).bufferedReader()).readLines().isEmpty()){}
+        csrFile.delete()
 
-        val crtContent = readFile("$path/$clientId.cer")
-        return crtContent
+        return "$path/$clientId.cer"
+    }
+
+    fun getCNFromCertificate(certificatePath: String): String {
+        val factory = CertificateFactory.getInstance("X.509")
+        val fis = FileInputStream(certificatePath)
+        val cert: X509Certificate = factory.generateCertificate(fis) as X509Certificate
+        fis.close()
+        return cert.subjectX500Principal.name
     }
 
     private fun execute(command: String) {
@@ -63,7 +68,7 @@ class CertificateDomain  {
         return text
     }
 
-    private fun createCSRTempFile(clientId: Int, clientCSR: String, path: String) {
+    private fun createCSRTempFile(clientId: Int, clientCSR: String, path: String): File {
         val dir = File(path)
         if(!dir.exists()) {
             dir.mkdir()
@@ -77,6 +82,7 @@ class CertificateDomain  {
                 it.write("-----END CERTIFICATE REQUEST-----\n")
             }
         }
+        return file
     }
 
     private fun signedCertificateCommand(clientId: Int, path: String): String =

@@ -1,14 +1,16 @@
 package pt.isel.ps.anonichat.services
 
 import kotlinx.datetime.Clock
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import pt.isel.ps.anonichat.AnonichatTest
 import pt.isel.ps.anonichat.domain.certificate.CertificateDomain
 import pt.isel.ps.anonichat.domain.user.UsersTest
+import pt.isel.ps.anonichat.domain.user.utils.Sha256TokenEncoder
 import pt.isel.ps.anonichat.repository.jdbi.transaction.JdbiTransactionManager
 
 open class ServicesTest : AnonichatTest() {
     val usersServices = UserService(JdbiTransactionManager(jdbi), UsersTest.domain, CertificateDomain(), Clock.System)
-    val routersServices = RouterService(JdbiTransactionManager(jdbi), CertificateDomain())
+    val routersServices = RouterService(BCryptPasswordEncoder(), JdbiTransactionManager(jdbi), CertificateDomain())
 
 //    fun registerAndGetTestUser(): User {
 //

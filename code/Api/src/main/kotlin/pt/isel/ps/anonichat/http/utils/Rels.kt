@@ -16,6 +16,7 @@ object Rels {
 
     object Router {
         const val REGISTER = "register-router"
+        const val DELETE = "delete-router"
         const val ROUTERS_COUNT = "get-routers-count"
         const val ROUTERS = "get-routers"
     }

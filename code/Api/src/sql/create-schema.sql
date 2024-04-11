@@ -19,5 +19,6 @@ create table if not exists dbo.Token(
 create table if not exists dbo.Router(
     id serial primary key,
     ip varchar(64) null,
+    password_hash varchar(60) not null,
     certificate varchar(256) null
 );

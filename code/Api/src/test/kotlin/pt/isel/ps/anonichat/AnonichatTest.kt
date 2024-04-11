@@ -25,7 +25,7 @@ open class AnonichatTest {
         fun testPassword() = "Password123!"
         fun testEmail() = "${testUsername()}@gmail.com"
         fun testUserCSR() = generateClientCSR(generateRandomId(), testUsername(), testEmail(), testPassword())
-        private fun testRouterCSR(ip: String) = generateRouterCSR(generateRandomId(), ip, testPassword())
+        private fun testRouterCSR(ip: String, pwd: String) = generateRouterCSR(generateRandomId(), ip, pwd)
         private fun generateRandomId() = Random().nextInt(Int.MAX_VALUE)
         fun testUserData() = UserTest(
             testUsername(),
@@ -34,9 +34,10 @@ open class AnonichatTest {
             testUserCSR()
         )
 
-        fun testRouterData(): Pair<String, String> {
+        fun testRouterData(): Triple<String, String, String> {
             val ip = testIp()
-            return Pair(ip, testRouterCSR(ip))
+            val pwd = testPassword()
+            return Triple(ip, testRouterCSR(ip, pwd), pwd)
         }
 
         private fun generateCSR(id: Int, pseudoname: String, email: String, pwd: String, extraPath: String): String {

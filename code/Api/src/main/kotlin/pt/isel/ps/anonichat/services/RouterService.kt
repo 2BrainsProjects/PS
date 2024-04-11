@@ -1,16 +1,18 @@
 package pt.isel.ps.anonichat.services
 
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 import pt.isel.ps.anonichat.domain.certificate.CertificateDomain
-import pt.isel.ps.anonichat.domain.router.Router
+import pt.isel.ps.anonichat.domain.exceptions.RouterException.InvalidCredentialsException
+import pt.isel.ps.anonichat.domain.exceptions.requireOrThrow
 import pt.isel.ps.anonichat.repository.transaction.TransactionManager
 import pt.isel.ps.anonichat.services.models.RouterModel.Companion.toModel
 import pt.isel.ps.anonichat.services.models.RoutersModel
-import pt.isel.ps.anonichat.services.models.UserModel.Companion.toModel
-import pt.isel.ps.anonichat.services.models.UsersModel
+import java.io.File
 
 @Component
 class RouterService(
+    private val passwordEncoder: PasswordEncoder,
     private val tm: TransactionManager,
     private val cd: CertificateDomain,
     ) {
@@ -53,16 +55,23 @@ class RouterService(
      * @param path The path of certificate
      * @return The router's id
      */
-    fun createRouter(ip: String, routerCSR: String, path: String = basePath): Int {
+    fun createRouter(routerCSR: String, pwd: String, path: String = basePath): Int {
         return tm.run {
+            // Hash the password
+            val passwordHash = passwordEncoder.encode(pwd)
             //Create the router
-            val id = it.routerRepository.createRouter(ip)
+            val id = it.routerRepository.createRouter(passwordHash)
 
             // Certificate need the router's id to be created
-            cd.createCertCommand(routerCSR, id, ROUTERS_PASSWORD, path, ip)
+            val certPath = cd.createCertCommand(routerCSR, id, path)
+            // generate certificate using JCA
+            val cnContent = cd.getCNFromCertificate(certPath)
+            println(cnContent)
 
-            // Update the router with the certificate path
-            it.routerRepository.updateCert(id, "$path/$id.cer")
+            val ip = cnContent.split("CN=")[1].split(",")[0].takeWhile { c -> c != '/' }
+
+            // Update the router with the certificate path and ip
+            it.routerRepository.updateRouter(id, ip, "$path/$id.cer")
 
             id
         }
@@ -74,14 +83,19 @@ class RouterService(
      * @param path The path of certificate
      * @return If the router was deleted with success
      */
-    fun deleteRouter(id: Int, path: String = basePath): Boolean {
+    fun deleteRouter(id: Int, pwd: String, path: String = basePath): Boolean {
         return tm.run {
+            val hashedPassword = it.routerRepository.getRouterById(id).passwordHash
+            requireOrThrow<InvalidCredentialsException>(passwordEncoder.matches(pwd, hashedPassword)) {
+                "Incorrect password"
+            }
+            val file = File("$path\\$id.cer")
+            file.delete()
             it.routerRepository.deleteRouter(id)
         }
     }
 
     companion object{
-        const val ROUTERS_PASSWORD = "123456789!A"
         private val basePath
             get() = path()
         private fun path() = System.getProperty("user.dir") + "\\certificates\\routers"

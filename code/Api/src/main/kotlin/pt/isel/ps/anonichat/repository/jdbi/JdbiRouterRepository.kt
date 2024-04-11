@@ -11,12 +11,11 @@ class JdbiRouterRepository(
 
     /**
      * Creates a new router
-     * @param ip The router's ip
      * @return The router's id
      */
-    override fun createRouter(ip: String): Int =
-        handle.createUpdate("insert into dbo.Router (ip, certificate) values (:ip, null)")
-            .bind("ip", ip)
+    override fun createRouter(passwordHash: String): Int =
+        handle.createUpdate("insert into dbo.Router (ip, certificate, password_hash) values (null, null, :passwordHash)")
+            .bind("passwordHash", passwordHash)
             .executeAndReturnGeneratedKeys()
             .mapTo<Int>()
             .single()
@@ -76,12 +75,14 @@ class JdbiRouterRepository(
     /**
      * Updates a router's certificate
      * @param id The router's id
+     * @param ip The router's ip
      * @param certPath The router's certificate path
      * @return if the router's certificate was updated
      */
-    override fun updateCert(id: Int, certPath: String) : Boolean =
-        handle.createUpdate("update dbo.Router set certificate = :certPath where id = :id")
+    override fun updateRouter(id: Int, ip: String, certPath: String) : Boolean =
+        handle.createUpdate("update dbo.Router set ip = :ip, certificate = :certPath where id = :id")
             .bind("id", id)
+            .bind("ip", ip)
             .bind("certPath", certPath)
             .execute() == 1
 }
