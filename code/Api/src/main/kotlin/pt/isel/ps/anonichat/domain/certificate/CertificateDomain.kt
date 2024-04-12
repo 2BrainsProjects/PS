@@ -43,14 +43,6 @@ class CertificateDomain  {
         return "$path/$clientId.cer"
     }
 
-    fun getCNFromCertificate(certificatePath: String): String {
-        val factory = CertificateFactory.getInstance("X.509")
-        val fis = FileInputStream(certificatePath)
-        val cert: X509Certificate = factory.generateCertificate(fis) as X509Certificate
-        fis.close()
-        return cert.subjectX500Principal.name
-    }
-
     private fun execute(command: String) {
         try {
             val runtime = Runtime.getRuntime()

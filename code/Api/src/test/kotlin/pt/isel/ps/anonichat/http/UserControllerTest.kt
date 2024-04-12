@@ -52,7 +52,7 @@ class UserControllerTest : HttpTest() {
     @Test
     fun `can create a user, obtain a token, access user home and logout`() {
         // given: a user
-        val (name, email, password) = testUserData()
+        val (name, email, password, _, ip) = testUserData()
         registerTestUserHttp(name, email, password)
 
         // when: creating a token
@@ -61,7 +61,8 @@ class UserControllerTest : HttpTest() {
             .bodyValue(
                 mapOf(
                     "name" to name,
-                    "password" to password
+                    "password" to password,
+                    "ip" to ip
                 )
             )
             .exchange()

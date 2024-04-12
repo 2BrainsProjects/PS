@@ -23,6 +23,7 @@ class RouterControllerTest : HttpTest() {
         val body: MultiValueMap<String, String> = LinkedMultiValueMap()
         body.add("routerCSR", routerCSR)
         body.add("pwd", pwd)
+        body.add("ip", ip)
 
         val router = client.post().uri(api("/routers"))
             .contentType(MediaType.APPLICATION_FORM_URLENCODED)
@@ -46,6 +47,7 @@ class RouterControllerTest : HttpTest() {
         val body: MultiValueMap<String, String> = LinkedMultiValueMap()
         body.add("routerCSR", routerCSR)
         body.add("pwd", pwd)
+        body.add("ip", ip)
 
         val routerId = client.post().uri(api("/routers"))
             .body(
@@ -74,11 +76,12 @@ class RouterControllerTest : HttpTest() {
             .expectBody<SirenEntity<GetRoutersCountOutputModel>>()
             .returnResult().responseBody?.properties?.maxId
 
-        val (_, routerCSR, pwd) = testRouterData()
+        val (ip, routerCSR, pwd) = testRouterData()
 
         val body: MultiValueMap<String, String> = LinkedMultiValueMap()
         body.add("routerCSR", routerCSR)
         body.add("pwd", pwd)
+        body.add("ip", ip)
 
         val routerId = client.post().uri(api("/routers"))
             .body(
@@ -105,7 +108,7 @@ class RouterControllerTest : HttpTest() {
 
     @Test
     fun `delete router`() {
-        val (_, routerCSR, pwd) = testRouterData()
+        val (ip, routerCSR, pwd) = testRouterData()
 
         val body: MultiValueMap<String, String> = LinkedMultiValueMap()
         body.add("routerCSR", routerCSR)

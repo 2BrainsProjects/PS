@@ -56,18 +56,14 @@ class AnonichatApplication {
 class PipelineConfigurer(
     val authenticationInterceptor: AuthenticationInterceptor,
     val authenticatedUserArgumentResolver: SessionArgumentResolver,
-    val ipInterceptor: IpInterceptor,
-    val ipArgumentResolver: IpArgumentResolver
 ) : WebMvcConfigurer {
 
     override fun addInterceptors(registry: InterceptorRegistry) {
         registry.addInterceptor(authenticationInterceptor)
-        registry.addInterceptor(ipInterceptor)
     }
 
     override fun addArgumentResolvers(resolvers: MutableList<HandlerMethodArgumentResolver>) {
         resolvers.add(authenticatedUserArgumentResolver)
-        resolvers.add(ipArgumentResolver)
     }
 }
 

@@ -11,7 +11,7 @@ import java.io.OutputStreamWriter
 import java.util.*
 
 open class AnonichatTest {
-    data class UserTest(val username: String, val email: String, val password: String, val publicKey: String)
+    data class UserTest(val username: String, val email: String, val password: String, val publicKey: String, val ip: String)
 
     companion object {
         val basePath

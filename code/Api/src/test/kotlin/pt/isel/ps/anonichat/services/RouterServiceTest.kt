@@ -13,7 +13,7 @@ class RouterServiceTest : ServicesTest() {
         val (ip, routerCSR, pwd) = testRouterData()
 
         // when: registering the user
-        val routerId = routersServices.createRouter(routerCSR, pwd, path)
+        val routerId = routersServices.createRouter(ip, routerCSR, pwd, path)
 
         // then: the user is registered
         val (routers) = routersServices.getRouters(listOf(routerId))
@@ -25,7 +25,7 @@ class RouterServiceTest : ServicesTest() {
     fun `delete a router`() {
         // given: a user
         val (ip, routerCSR, pwd) = testRouterData()
-        val routerId = routersServices.createRouter(routerCSR, pwd, path)
+        val routerId = routersServices.createRouter(ip, routerCSR, pwd, path)
 
         // when: deleting the user
         val result = routersServices.deleteRouter(routerId, pwd)
@@ -38,11 +38,10 @@ class RouterServiceTest : ServicesTest() {
     fun `get a list of routers`() {
         // given: a user
         val (ip, routerCSR, pwd) = testRouterData()
-        val routerId = routersServices.createRouter(routerCSR, pwd, path)
+        val routerId = routersServices.createRouter(ip, routerCSR, pwd, path)
 
         // when: getting the list of users
         val (routers) = routersServices.getRouters(listOf(routerId))
-        println(routers)
 
         // then: the user is in the list
         assertEquals(ip, routers[0].ip)
@@ -53,7 +52,8 @@ class RouterServiceTest : ServicesTest() {
     fun `get the last router id`() {
         // given: a user
         val (ip, routerCSR, pwd) = testRouterData()
-        val routerId = routersServices.createRouter(routerCSR, pwd, path)
+
+        val routerId = routersServices.createRouter(ip, routerCSR, pwd, path)
 
         // when: getting the last user id
         val lastId = routersServices.getLastId()

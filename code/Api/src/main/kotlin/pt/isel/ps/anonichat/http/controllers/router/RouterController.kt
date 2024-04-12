@@ -6,12 +6,9 @@ import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-import pt.isel.ps.anonichat.domain.utils.Ip
-import pt.isel.ps.anonichat.http.controllers.router.models.DeleteInputModel
 import pt.isel.ps.anonichat.http.controllers.router.models.GetRouterOutputModel
 import pt.isel.ps.anonichat.http.controllers.router.models.GetRoutersCountOutputModel
 import pt.isel.ps.anonichat.http.controllers.router.models.GetRoutersOutputModel
@@ -97,10 +94,10 @@ class RouterController(
     fun deleteRouter(
         @Valid @PathVariable
         id: Int,
-        @RequestBody
-        body: DeleteInputModel
+        @Valid @RequestParam
+        pwd: String
     ): ResponseEntity<*> {
-        services.deleteRouter(id, body.pwd)
+        services.deleteRouter(id, pwd)
         return SirenEntity<Unit>(
             clazz = listOf(Rels.Router.DELETE)
         ).ok()
