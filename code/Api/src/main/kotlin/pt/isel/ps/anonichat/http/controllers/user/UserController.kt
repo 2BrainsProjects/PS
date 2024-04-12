@@ -85,10 +85,9 @@ class UserController(
     fun loginUser(
         @Valid @RequestBody
         body: LoginInputModel,
-        response: HttpServletResponse,
-        ip: Ip
+        response: HttpServletResponse
     ): ResponseEntity<*> {
-        val (token, certContent) = services.loginUser(body.name, body.email, body.password, ip.ip)
+        val (token, certContent) = services.loginUser(body.name, body.email, body.password, body.ip)
         response.addCookie(token)
         return SirenEntity(
             clazz = listOf(Rels.User.LOGIN),

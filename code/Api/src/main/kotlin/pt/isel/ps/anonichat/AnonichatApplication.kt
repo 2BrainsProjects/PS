@@ -14,8 +14,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import pt.isel.ps.anonichat.domain.user.UserDomainConfig
 import pt.isel.ps.anonichat.domain.user.utils.Sha256TokenEncoder
 import pt.isel.ps.anonichat.http.pipeline.authentication.AuthenticationInterceptor
-import pt.isel.ps.anonichat.http.pipeline.authentication.IpArgumentResolver
-import pt.isel.ps.anonichat.http.pipeline.authentication.IpInterceptor
 import pt.isel.ps.anonichat.http.pipeline.authentication.SessionArgumentResolver
 import pt.isel.ps.anonichat.repository.jdbi.utils.configure
 import kotlin.time.Duration.Companion.days

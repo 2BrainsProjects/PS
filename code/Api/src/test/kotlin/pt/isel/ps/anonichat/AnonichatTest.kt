@@ -31,7 +31,8 @@ open class AnonichatTest {
             testUsername(),
             testEmail(),
             testPassword(),
-            testUserCSR()
+            testUserCSR(),
+            testIp()
         )
 
         fun testRouterData(): Triple<String, String, String> {

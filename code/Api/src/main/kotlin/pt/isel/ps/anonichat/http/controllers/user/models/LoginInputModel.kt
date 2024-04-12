@@ -13,6 +13,8 @@ data class LoginInputModel(
     @field:Email
     val email: String? = null,
 
+    val ip: String,
+
     @field:NotBlank
     val password: String
 )

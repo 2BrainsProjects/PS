@@ -45,10 +45,12 @@ class CertificateDomain  {
 
     private fun execute(command: String) {
         try {
-            val runtime = Runtime.getRuntime()
-            runtime.exec(command)
+            val process = ProcessBuilder(command.split(" "))
+                .redirectErrorStream(true)
+                .start()
 
-        } catch (e: Exception) {
+            process.waitFor()
+        }catch (e: Exception){
             throw IllegalStateException(e.message)
         }
     }

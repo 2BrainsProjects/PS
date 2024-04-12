@@ -40,8 +40,7 @@ class RouterController(
          */
         body: RegisterInputModel
     ): ResponseEntity<*> {
-        println("oioioioioioioioioioioioioioioioioioioioioioioioioioioioioioioioioioioio")
-        val routerId = services.createRouter(body.routerCSR, body.pwd)
+        val routerId = services.createRouter(body.ip, body.routerCSR, body.pwd)
         return SirenEntity(
             clazz = listOf(Rels.Router.REGISTER),
             properties = RegisterOutputModel(routerId)

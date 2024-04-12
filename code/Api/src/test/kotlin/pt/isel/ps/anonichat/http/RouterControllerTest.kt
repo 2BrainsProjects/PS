@@ -18,7 +18,7 @@ class RouterControllerTest : HttpTest() {
     @Test
     fun `register router`() {
 
-        val (_, routerCSR, pwd) = testRouterData()
+        val (ip, routerCSR, pwd) = testRouterData()
 
         val body: MultiValueMap<String, String> = LinkedMultiValueMap()
         body.add("routerCSR", routerCSR)
@@ -42,7 +42,7 @@ class RouterControllerTest : HttpTest() {
 
     @Test
     fun `get routers`() {
-        val (_, routerCSR, pwd) = testRouterData()
+        val (ip, routerCSR, pwd) = testRouterData()
 
         val body: MultiValueMap<String, String> = LinkedMultiValueMap()
         body.add("routerCSR", routerCSR)
@@ -113,6 +113,7 @@ class RouterControllerTest : HttpTest() {
         val body: MultiValueMap<String, String> = LinkedMultiValueMap()
         body.add("routerCSR", routerCSR)
         body.add("pwd", pwd)
+        body.add("ip", ip)
 
         val routerId = client.post().uri(api("/routers"))
             .body(
@@ -123,10 +124,7 @@ class RouterControllerTest : HttpTest() {
             .expectBody<SirenEntity<RegisterOutputModel>>()
             .returnResult().responseBody?.properties?.routerId
 
-        client.delete().uri(api("/routers/$routerId"))
-            .body(
-                BodyInserters.fromFormData(body)
-            )
+        client.delete().uri(api("/routers/$routerId?pwd=$pwd"))
             .exchange()
             .expectStatus().isOk
     }

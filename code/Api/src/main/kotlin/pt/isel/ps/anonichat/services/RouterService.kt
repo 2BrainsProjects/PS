@@ -55,23 +55,19 @@ class RouterService(
      * @param path The path of certificate
      * @return The router's id
      */
-    fun createRouter(routerCSR: String, pwd: String, path: String = basePath): Int {
+    fun createRouter(ip: String, routerCSR: String, pwd: String, path: String = basePath): Int {
         return tm.run {
             // Hash the password
             val passwordHash = passwordEncoder.encode(pwd)
+
             //Create the router
             val id = it.routerRepository.createRouter(passwordHash)
 
             // Certificate need the router's id to be created
             val certPath = cd.createCertCommand(routerCSR, id, path)
-            // generate certificate using JCA
-            val cnContent = cd.getCNFromCertificate(certPath)
-            println(cnContent)
-
-            val ip = cnContent.split("CN=")[1].split(",")[0].takeWhile { c -> c != '/' }
 
             // Update the router with the certificate path and ip
-            it.routerRepository.updateRouter(id, ip, "$path/$id.cer")
+            it.routerRepository.updateRouter(id, ip, certPath)
 
             id
         }
