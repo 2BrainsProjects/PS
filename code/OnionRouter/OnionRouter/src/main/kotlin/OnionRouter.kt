@@ -10,8 +10,9 @@ import java.nio.channels.ServerSocketChannel
 import java.nio.channels.SocketChannel
 import java.nio.charset.StandardCharsets
 import java.util.UUID
-import kotlinx.coroutines.*
 import sun.misc.Signal
+import java.nio.channels.ClosedByInterruptException
+import kotlin.system.exitProcess
 
 class OnionRouter(private val port : Int, path: String = System.getProperty("user.dir") + "\\crypto"){
 
@@ -24,6 +25,7 @@ class OnionRouter(private val port : Int, path: String = System.getProperty("use
     private val url = "$apiUri/routers"
     private var status = 0
     private var command = ""
+    private val client = OkHttpClient()
 
     init {
         require(port >= 0) { "Port must not be negative" }
@@ -34,11 +36,7 @@ class OnionRouter(private val port : Int, path: String = System.getProperty("use
 
         val sSocket = ServerSocketChannel.open().bind(InetSocketAddress(port))
 
-        println(sSocket.localAddress.toString())
-
         val csr = crypto.generateClientCSR(port, sSocket.localAddress.toString(), pwd)
-
-        val client = OkHttpClient()
 
         val registerBody = FormBody.Builder()
             .add("routerCSR", csr.joinToString("\n"))
@@ -61,78 +59,89 @@ class OnionRouter(private val port : Int, path: String = System.getProperty("use
 
         val responseBody = registerResponse.body?.string()
 
+
         val routerId = responseBody?.split(',')?.get(1)?.dropWhile { !it.isDigit() }?.takeWhile { it.isDigit() }?.toIntOrNull()
 
         require(routerId != null){ "Error creating router" }
 
-        Signal.handle(Signal("INT")) {
-            gracefullyFinalize(client, sSocket, routerId, pwd)
-        }
-
         println(routerId)
 
+        val th = Thread{
+            try {
+                while (true) {
+                    val clientSocket = sSocket.accept()
+                    clientSocket.configureBlocking(false)
+                    clientSocket.register(selector, SelectionKey.OP_READ)
+                    socketsList.add(clientSocket)
+                    selector.wakeup()
+                }
+            } catch (_: ClosedByInterruptException) {
+                // ignore, this exception is thrown when the program ends
+                // so it kills both working threads, this one being the master
+            } catch (e: Exception) {
+                status = 1
+            }
+        }
+        th.start()
+
         try {
-            Thread{
+            Thread {
                 handleConnection()
             }.start()
-            runBlocking {
-                while (status == 0 || command != "exit") {
-                    try {
-                        withTimeout(TIMEOUT) {
-                            val clientSocket = sSocket.accept()
-                            clientSocket.configureBlocking(false)
-                            clientSocket.register(selector, SelectionKey.OP_READ)
-                            socketsList.add(clientSocket)
-                            selector.wakeup()
-                        }
-                    } catch (_: TimeoutCancellationException) {
-                        continue
-                    } catch (e: Exception) {
-                        status = 1
-                        println(e.message)
+
+            Signal.handle(Signal("INT")) {
+                th.interrupt()
+                status = 1
+                gracefullyFinalize(sSocket, routerId, pwd)
+                exitProcess(0)
+            }
+
+            while (true){
+                print(">")
+                command = readln()
+
+                when (command) {
+                    "exit" -> {
                         break
+                    }
+                    else -> {
+                        println("Invalid command")
                     }
                 }
             }
 
-            command = readln()
-
         } catch(e: IOException) {
-            status = 1
             println(e.message)
         } finally {
-            gracefullyFinalize(client, sSocket, routerId, pwd)
+            th.interrupt()
+            status = 1
+            gracefullyFinalize(sSocket, routerId, pwd)
         }
     }
 
     private fun handleConnection() {
-        while(status == 0) {
-            try {
-                var readyToRead = selector.select()
+        while (status == 0) {
+            var readyToRead = selector.select(TIMEOUT)
 
-                if (readyToRead == 0) continue
-                val keys = selector.selectedKeys()
+            if (readyToRead == 0) continue
+            val keys = selector.selectedKeys()
 
-                val iterator = keys.iterator()
+            val iterator = keys.iterator()
 
-                while (iterator.hasNext()) {
-                    val key = iterator.next()
-                    iterator.remove()
+            while (iterator.hasNext()) {
+                val key = iterator.next()
+                iterator.remove()
 
-                    if (key.isReadable) {
-                        val client = key.channel() as SocketChannel
+                if (key.isReadable) {
+                    val client = key.channel() as SocketChannel
 
-                        val msg = readFromClient(client) ?: continue
+                    val msg = readFromClient(client) ?: continue
 
-                        println("Received message: $msg")
-                        processMessage(msg, socketsList)
+                    println("Received message: $msg")
+                    processMessage(msg, socketsList)
 
-                        if (--readyToRead == 0) break
-                    }
+                    if (--readyToRead == 0) break
                 }
-            } catch (e:Exception){
-                println(e.message)
-                status = 1
             }
         }
     }
@@ -168,6 +177,7 @@ class OnionRouter(private val port : Int, path: String = System.getProperty("use
         if(!socketsList.any { it.remoteAddress.toString().drop(1) == addr }){
             println("sending to: $addr")
             val splitAddr = addr.split(':')
+            if (splitAddr.size != 2) return
             val newAddr = InetSocketAddress(splitAddr[0], splitAddr[1].toInt())
             val nextNode = SocketChannel.open(newAddr)
             socketsList.add(nextNode)
@@ -225,7 +235,7 @@ class OnionRouter(private val port : Int, path: String = System.getProperty("use
         sSocket.close()
     }
 
-    private fun gracefullyFinalize(client: OkHttpClient, sSocket: ServerSocketChannel, routerId: Int, pwd: String){
+    private fun gracefullyFinalize(sSocket: ServerSocketChannel, routerId: Int, pwd: String){
         val deleteRequest = Request.Builder()
             .header("Content-Type", JSON)
             .url("$url/$routerId?pwd=$pwd")
