@@ -89,6 +89,11 @@ class RouterController(
         ).ok()
     }
 
+    /**
+     * Handles the request to delete a router
+     * @param id the router's id
+     * @param pwd the router's password
+     */
     @DeleteMapping(Uris.Router.DELETE)
     fun deleteRouter(
         @Valid @PathVariable

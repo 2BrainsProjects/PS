@@ -73,7 +73,7 @@ class JdbiRouterRepository(
             .singleOrNull() ?: 0
 
     /**
-     * Updates a router's certificate
+     * Updates a router's certificates and ip
      * @param id The router's id
      * @param ip The router's ip
      * @param certPath The router's certificate path

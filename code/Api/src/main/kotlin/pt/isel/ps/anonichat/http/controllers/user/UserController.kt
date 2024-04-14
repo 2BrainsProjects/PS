@@ -78,7 +78,6 @@ class UserController(
      * Handles the request to login a user
      * @param body the request body (LoginInputModel)
      * @param response the response of the request
-     * @param ip The Ip the request
      * @return the response with the user's token and the certificate content
      */
     @PostMapping(Uris.User.LOGIN)

@@ -1,6 +1,7 @@
 import okhttp3.FormBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.Response
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
@@ -46,7 +47,7 @@ class OnionRouter(private val ip : InetSocketAddress, path: String = System.getP
     fun start(pwd: String = UUID.randomUUID().toString()){
         val sSocket = ServerSocketChannel.open().bind(ip)
         val csr = crypto.generateClientCSR(ip.port, sSocket.localAddress.toString(), pwd)
-        val routerId = createOnionRouter(csr.joinToString { "\n" }, pwd, sSocket.localAddress.toString())
+        val routerId = createOnionRouter(csr.joinToString { "\n" }, sSocket.localAddress.toString(), pwd)
         println(routerId)
 
         val th = Thread{
@@ -150,15 +151,16 @@ class OnionRouter(private val ip : InetSocketAddress, path: String = System.getP
      * @return the id of the router created
      * @throws Exception if the request fails
      */
-    private fun createOnionRouter(csr: String, pwd: String, ip: String): Int{
-        val registerBody = createBody(hashMapOf("routerCSR" to csr, "pwd" to pwd, "ip" to ip))
+    private fun createOnionRouter(csr: String, ip: String, pwd: String): Int{
+        val registerBody = createBody(hashMapOf("routerCSR" to csr, "ip" to ip, "pwd" to pwd))
 
         val registerRequest = createPostRequest(JSON, url, registerBody)
-        val registerResponse: okhttp3.Response
+        val registerResponse: Response
 
         try {
             registerResponse = client.newCall(registerRequest).execute()
         } catch (e: Exception) {
+            println(e.message)
             throw Exception("Error creating router")
         }
 
