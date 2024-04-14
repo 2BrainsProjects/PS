@@ -20,6 +20,13 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
     private val aCipher = Cipher.getInstance(ALG_ASYMMETRIC)
     private val keyFactory = KeyFactory.getInstance(ALG_ASYMMETRIC)
 
+    /**
+     * Method to generate the CSR for the client.
+     * @param port - port of the client
+     * @param ip - ip of the client
+     * @param pwd - password of the client
+     * @return the CSR
+     */
     fun generateClientCSR(port: Int, ip: String, pwd: String): List<String> {
         generateKeys(port)
         answeringCSRCreation(port, ip, pwd)
@@ -28,6 +35,12 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
         }
     }
 
+    /**
+     * Method to anwser the enumerous questions of the CSR creation.
+     * @param port - port of the host
+     * @param ip - ip of the host
+     * @param password - password of the host
+     */
     private fun answeringCSRCreation(port: Int, ip: String, password: String) {
         val command =
             "openssl req -out $basePath/$port.csr -key $basePath/priv$port.pem -new"
@@ -55,6 +68,10 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
         }
     }
 
+    /**
+     * Method to generate the key pair.
+     * @param port - port of the host
+     */
     fun generateKeys(port: Int){
         val keyPairGenerator = KeyPairGenerator.getInstance(ALG_ASYMMETRIC)
         keyPairGenerator.initialize(2048)
@@ -67,12 +84,23 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
         createAndWriteFile(publicKey, "$basePath/pub$port.pem")
     }
 
+    /**
+     * Method to create a file and write a key in it.
+     * @param key - key to write in the file
+     * @param filePath - path of the file
+     */
     private fun createAndWriteFile(key: ByteArray, filePath: String){
         val file2 = File(filePath)
         file2.createNewFile()
         file2.writeBytes(key)
     }
 
+    /**
+     * Method to encipher a message using hybrid mode.
+     * @param plain - message to encipher
+     * @param port - port of the host to encipher the message
+     * @return the enciphered message
+     */
     fun encipher(plain: String, port:Int):String {
         try {
             val pubKeyBytes = File("$basePath\\pub$port.pem").readBytes()
@@ -90,6 +118,11 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
         }
     }
 
+    /**
+     * Method to get the public key from a certificate.
+     * @param certificatePath - path of the certificate
+     * @return the public key
+     */
     private fun getPublicKeyFromCertificate(certificatePath: String): PublicKey {
         val factory = CertificateFactory.getInstance(STD_CERTIFICATE)
         val fis = FileInputStream(certificatePath)
@@ -98,12 +131,27 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
         return cert.publicKey
     }
 
+    /**
+     * Method to get the private key from a file.
+     * @param filePath - path of the file
+     * @return the private key
+     */
     private fun getPrivateKey(filePath: String): PrivateKey {
         val privKeyBytes = File(filePath).readBytes()
         val keySpec = PKCS8EncodedKeySpec(privKeyBytes)
         return keyFactory.generatePrivate(keySpec)
     }
 
+    /**
+     * Method to encipher a message using hybrid mode and JWE.
+     * @param strToCypher - message to encipher
+     * @param aditionalData - additional data to add to the header
+     * @param symmetricKey - symmetric key to encipher the message
+     * @param publicKey - public key to encipher the symmetric key
+     * @param iv - initialization vector
+     * @param markSize - size of the mark
+     * @return the enciphered message
+     */
     @Throws(Exception::class)
     private fun encipherString(
         strToCypher: String,
@@ -139,10 +187,22 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
         return jweToken
     }
 
+    /**
+     * Method to get the path of a certificate.
+     * @param certificateName - name of the certificate
+     * @param certificatePath - path of the certificate
+     * @return the path of the certificate
+     */
     private fun getCertificatePath(certificateName: String, certificatePath: String): String {
         return "$certificatePath/$certificateName"
     }
 
+    /**
+     * Method to decipher a message using hybrid mode.
+     * @param cipheredText - text to decipher
+     * @param port - port of the host to decipher the message
+     * @return the deciphered message
+     */
     @Throws(Exception::class)
     fun decipher(cipheredText: String, port: Int):String {
 

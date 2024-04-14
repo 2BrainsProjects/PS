@@ -1,4 +1,5 @@
+import java.net.InetSocketAddress
 
 fun main() {
-    OnionRouter(8081).start()
+    OnionRouter(InetSocketAddress(8081)).start()
 }

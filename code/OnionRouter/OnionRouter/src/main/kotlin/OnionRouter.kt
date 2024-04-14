@@ -14,7 +14,10 @@ import sun.misc.Signal
 import java.nio.channels.ClosedByInterruptException
 import kotlin.system.exitProcess
 
-class OnionRouter(private val port : Int, path: String = System.getProperty("user.dir") + "\\crypto"){
+/**
+ * This class represents an Onion Router
+ */
+class OnionRouter(private val ip : InetSocketAddress, path: String = System.getProperty("user.dir") + "\\crypto"){
 
     private val TIMEOUT = 5000L
     private val apiUri = "http://localhost:8080/api"
@@ -28,42 +31,22 @@ class OnionRouter(private val port : Int, path: String = System.getProperty("use
     private val client = OkHttpClient()
 
     init {
-        require(port >= 0) { "Port must not be negative" }
-        println("onion router running on port $port")
+
+        println("onion router running on port $ip")
     }
 
+    /**
+     * This function starts the onion router
+     * It creates a server socket, generates a certificate signing request and creates the onion router
+     * It also creates a thread to handle the connection with the client
+     * and a thread to accept new clients
+     * Has support to interruption of the program
+     * @param pwd the password of the router's CSR
+     */
     fun start(pwd: String = UUID.randomUUID().toString()){
-
-        val sSocket = ServerSocketChannel.open().bind(InetSocketAddress(port))
-
-        val csr = crypto.generateClientCSR(port, sSocket.localAddress.toString(), pwd)
-
-        val registerBody = FormBody.Builder()
-            .add("routerCSR", csr.joinToString("\n"))
-            .add("ip", sSocket.localAddress.toString())
-            .add("pwd", pwd)
-            .build()
-
-        val registerRequest = Request.Builder()
-            .header("Content-Type", JSON)
-            .url(url)
-            .post(registerBody)
-            .build()
-        val registerResponse: okhttp3.Response
-        try {
-            registerResponse = client.newCall(registerRequest).execute()
-        } catch (e: Exception) {
-            throw Exception("Error creating router")
-        }
-        if(registerResponse.code != 201) throw Exception("Error creating router")
-
-        val responseBody = registerResponse.body?.string()
-
-
-        val routerId = responseBody?.split(',')?.get(1)?.dropWhile { !it.isDigit() }?.takeWhile { it.isDigit() }?.toIntOrNull()
-
-        require(routerId != null){ "Error creating router" }
-
+        val sSocket = ServerSocketChannel.open().bind(ip)
+        val csr = crypto.generateClientCSR(ip.port, sSocket.localAddress.toString(), pwd)
+        val routerId = createOnionRouter(csr.joinToString { "\n" }, pwd, sSocket.localAddress.toString())
         println(routerId)
 
         val th = Thread{
@@ -96,19 +79,7 @@ class OnionRouter(private val port : Int, path: String = System.getProperty("use
                 exitProcess(0)
             }
 
-            while (true){
-                print(">")
-                command = readln()
-
-                when (command) {
-                    "exit" -> {
-                        break
-                    }
-                    else -> {
-                        println("Invalid command")
-                    }
-                }
-            }
+            getInput()
 
         } catch(e: IOException) {
             println(e.message)
@@ -119,6 +90,31 @@ class OnionRouter(private val port : Int, path: String = System.getProperty("use
         }
     }
 
+    /**
+     * Method to handle the input command
+     * Possible future maintenance interface
+     */
+    private fun getInput(){
+        while (true){
+            print("Command:")
+            print(">")
+            command = readln()
+            when (command) {
+                "exit" -> {
+                    break
+                }
+                else -> {
+                    println("Invalid command")
+                }
+            }
+        }
+    }
+
+    /**
+     * This function handles the connection with the client
+     * The selector wake up when a new client connects and
+     * reads the message from the client and processes it
+     */
     private fun handleConnection() {
         while (status == 0) {
             var readyToRead = selector.select(TIMEOUT)
@@ -138,7 +134,7 @@ class OnionRouter(private val port : Int, path: String = System.getProperty("use
                     val msg = readFromClient(client) ?: continue
 
                     println("Received message: $msg")
-                    processMessage(msg, socketsList)
+                    processMessage(msg)
 
                     if (--readyToRead == 0) break
                 }
@@ -146,11 +142,71 @@ class OnionRouter(private val port : Int, path: String = System.getProperty("use
         }
     }
 
-    //                          onion
-    private fun processMessage(msg:String, socketsList: MutableList<SocketChannel>){
+    /**
+     * This function makes a request to the API to create a new onion router
+     * @param csr the certificate signing request
+     * @param pwd the password of the router
+     * @param ip the ip of the router
+     * @return the id of the router created
+     * @throws Exception if the request fails
+     */
+    private fun createOnionRouter(csr: String, pwd: String, ip: String): Int{
+        val registerBody = createBody(hashMapOf("routerCSR" to csr, "pwd" to pwd, "ip" to ip))
+
+        val registerRequest = createPostRequest(JSON, url, registerBody)
+        val registerResponse: okhttp3.Response
+
+        try {
+            registerResponse = client.newCall(registerRequest).execute()
+        } catch (e: Exception) {
+            throw Exception("Error creating router")
+        }
+
+        if(registerResponse.code != 201) throw Exception("Error creating router")
+
+        val responseBody = registerResponse.body?.string()
+
+        val routerId = responseBody?.split(',')?.get(1)?.dropWhile { !it.isDigit() }?.takeWhile { it.isDigit() }?.toIntOrNull()
+
+        require(routerId != null){ "Error creating router" }
+
+        return routerId
+    }
+
+    /**
+     * This function creates a body for the request
+     * @param fields the fields of the body
+     * @return the body created
+     */
+    private fun createBody(fields: HashMap<String, String>): FormBody {
+        val formBody =  FormBody.Builder()
+        fields.forEach { (k, v) -> formBody.add(k, v) }
+        return formBody.build()
+    }
+
+    /**
+     * This function create a post request to the API
+     * @param mediaType the media type of the request
+     * @param url the url of the request
+     * @param body the body of the request
+     * @return the request created
+     */
+    private fun createPostRequest(mediaType: String, url: String, body: FormBody) =
+        Request.Builder()
+            .header("Content-Type", mediaType)
+            .url(url)
+            .post(body)
+            .build()
+
+    /**
+     * This function processes the message received from the client.
+     * It deciphers the message, extracts the address of the next node and sends the message to the next node
+     * @param msg the message to be processed
+     */
+    private fun processMessage(msg:String){
         println("processing...")
         if(msg.isBlank() || msg.isEmpty()) return
-        val plainText = crypto.decipher(msg, port)
+        val plainText = crypto.decipher(msg, ip.port)
         println("deciphered message: $plainText")
 
         val addr = plainText.split("||").last() // onion || 234 325 345 234:4363
@@ -172,18 +228,28 @@ class OnionRouter(private val port : Int, path: String = System.getProperty("use
             writeToClient(newMsgBytes, socket)
     }
 
+    /**
+     * This function adds a connection to the list of sockets if it doesn't exist
+     * @param addr the address of the connection to be added
+     */
     private fun putConnectionIfAbsent(addr: String){
         if(!addr.contains(":")) return
         if(!socketsList.any { it.remoteAddress.toString().drop(1) == addr }){
             println("sending to: $addr")
             val splitAddr = addr.split(':')
-            if (splitAddr.size != 2) return
-            val newAddr = InetSocketAddress(splitAddr[0], splitAddr[1].toInt())
+            if (splitAddr.size != 2 && splitAddr.size != 9) return
+            // testar isto
+            val newAddr = InetSocketAddress(addr.drop(1).dropLastWhile { it != ':' }.dropLast(1), splitAddr.last().toInt())
             val nextNode = SocketChannel.open(newAddr)
             socketsList.add(nextNode)
         }
     }
-    
+
+    /**
+     * This function reads the message from the client
+     * @param client the socket to read the message from
+     * @return the message read from the client
+     */
     private fun  readFromClient(client: SocketChannel): String? {
         val buffer = ByteBuffer.allocate(1024)
         buffer.clear()
@@ -204,6 +270,11 @@ class OnionRouter(private val port : Int, path: String = System.getProperty("use
         return msg
     }
 
+    /**
+     * This function writes the message to the client
+     * @param msgBytes the message to be sent
+     * @param socket the socket to send the message
+     */
     private fun writeToClient(msgBytes: ByteArray, socket: SocketChannel){
         var newMsgBytes = msgBytes
         val byteBuffer = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE)
@@ -223,6 +294,10 @@ class OnionRouter(private val port : Int, path: String = System.getProperty("use
         }
     }
 
+    /**
+     * This function closes all the sockets, the server socket and selector
+     * @param sSocket the server socket to be closed
+     */
     private fun finalizeOnionRouter(sSocket: ServerSocketChannel){
         val keys = selector.keys()
         val iterator = keys.iterator()
@@ -235,6 +310,13 @@ class OnionRouter(private val port : Int, path: String = System.getProperty("use
         sSocket.close()
     }
 
+    /**
+     * This function sends a DELETE request to the API to remove the router from the list of routers
+     * and then closes the server socket
+     * @param sSocket the server socket to be closed
+     * @param routerId the id of the router to be removed
+     * @param pwd the password of the router to be removed
+     */
     private fun gracefullyFinalize(sSocket: ServerSocketChannel, routerId: Int, pwd: String){
         val deleteRequest = Request.Builder()
             .header("Content-Type", JSON)
