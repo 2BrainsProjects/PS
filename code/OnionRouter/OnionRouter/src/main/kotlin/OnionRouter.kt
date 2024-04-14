@@ -47,7 +47,7 @@ class OnionRouter(private val ip : InetSocketAddress, path: String = System.getP
     fun start(pwd: String = UUID.randomUUID().toString()){
         val sSocket = ServerSocketChannel.open().bind(ip)
         val csr = crypto.generateClientCSR(ip.port, sSocket.localAddress.toString(), pwd)
-        val routerId = createOnionRouter(csr.joinToString { "\n" }, sSocket.localAddress.toString(), pwd)
+        val routerId = createOnionRouter(csr.joinToString ( "\n" ), sSocket.localAddress.toString(), pwd)
         println(routerId)
 
         val th = Thread{

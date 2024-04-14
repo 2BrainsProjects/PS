@@ -22,3 +22,4 @@ create table if not exists dbo.Router(
     password_hash varchar(60) not null,
     certificate varchar(256) null
 );
+
