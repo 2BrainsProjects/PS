@@ -27,9 +27,9 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
      * @param pwd - password of the client
      * @return the CSR
      */
-    fun generateClientCSR(port: Int, ip: String, pwd: String): List<String> {
+    fun generateClientCSR(port: Int, cn: String, pwd: String): List<String> {
         generateKeys(port)
-        answeringCSRCreation(port, ip, pwd)
+        answeringCSRCreation(port, cn, pwd)
         BufferedReader(InputStreamReader(FileInputStream("$basePath/$port.csr"))).use {
             return it.readLines().drop(1).dropLast(1)
         }
@@ -38,12 +38,15 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
     /**
      * Method to anwser the enumerous questions of the CSR creation.
      * @param port - port of the host
-     * @param ip - ip of the host
+     * @param cn - common name of the host
      * @param password - password of the host
      */
-    private fun answeringCSRCreation(port: Int, ip: String, password: String) {
+    private fun answeringCSRCreation(port: Int, cn: String, password: String) {
+        val filePath = "$basePath/$port.csr"
+        File(filePath).createNewFile()
+
         val command =
-            "openssl req -out $basePath/$port.csr -key $basePath/priv$port.pem -new"
+            "openssl req -out $filePath -key $basePath/priv$port.pem -new"
         try {
             val process = ProcessBuilder(command.split(" "))
                 .redirectErrorStream(true)
@@ -55,7 +58,7 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
                 writer.write("\n")
                 writer.flush()
             }
-            listOf("$ip\n", "\n", "$password\n", "\n").forEach {
+            listOf("$cn\n", "\n", "$password\n", "\n").forEach {
                 writer.write(it)
                 writer.flush()
             }

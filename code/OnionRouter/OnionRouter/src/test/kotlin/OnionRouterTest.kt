@@ -14,7 +14,7 @@ class OnionRouterTest {
     @Test
     fun `can create onion router`(){
         val serverPort = generateRandomPort()
-        val onionRouter = OnionRouter(serverPort, path)
+        val onionRouter = OnionRouter(InetSocketAddress(serverPort), path)
         Thread{
             onionRouter.start()
         }.start()
@@ -25,7 +25,7 @@ class OnionRouterTest {
     @Test
     fun `can connect to the server`(){
         val serverPort = generateRandomPort()
-        val onionRouter = OnionRouter(serverPort, path)
+        val onionRouter = OnionRouter(InetSocketAddress(serverPort), path)
         println("serverPort: $serverPort")
         Thread{
             onionRouter.start()

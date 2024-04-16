@@ -3,7 +3,7 @@ import java.nio.ByteBuffer
 import java.nio.channels.SocketChannel
 
 fun main() {
-    clientSender(InetSocketAddress("127.0.0.1",8081), "password", "hello", listOf("127.0.0.1:8082"))
+    clientSender(InetSocketAddress("[0:0:0:0:0:0:0:0]",8081), "password", "hello", listOf("127.0.0.1:8082"))
 }
 
 /**

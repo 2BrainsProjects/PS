@@ -46,8 +46,9 @@ class OnionRouter(private val ip : InetSocketAddress, path: String = System.getP
      */
     fun start(pwd: String = UUID.randomUUID().toString()){
         val sSocket = ServerSocketChannel.open().bind(ip)
-        val csr = crypto.generateClientCSR(ip.port, sSocket.localAddress.toString(), pwd)
-        val routerId = createOnionRouter(csr.joinToString ( "\n" ), sSocket.localAddress.toString(), pwd)
+        val addrString = sSocket.localAddress.toString().drop(1)
+        val csr = crypto.generateClientCSR(ip.port,addrString , pwd)
+        val routerId = createOnionRouter(csr.joinToString ( "\n" ), addrString, pwd)
         println(routerId)
 
         val th = Thread{
@@ -97,7 +98,7 @@ class OnionRouter(private val ip : InetSocketAddress, path: String = System.getP
      */
     private fun getInput(){
         while (true){
-            print("Command:")
+            println("Command:")
             print(">")
             command = readln()
             when (command) {
@@ -241,7 +242,8 @@ class OnionRouter(private val ip : InetSocketAddress, path: String = System.getP
             val splitAddr = addr.split(':')
             if (splitAddr.size != 2 && splitAddr.size != 9) return
             // testar isto
-            val newAddr = InetSocketAddress(addr.drop(1).dropLastWhile { it != ':' }.dropLast(1), splitAddr.last().toInt())
+
+            val newAddr = InetSocketAddress(addr.dropLastWhile { it != ':' }.dropLast(1), splitAddr.last().toInt())
             val nextNode = SocketChannel.open(newAddr)
             socketsList.add(nextNode)
         }
