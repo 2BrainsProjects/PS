@@ -10,7 +10,7 @@ fun main() {
     // setup of a ServerSocket simulating the last client
     val path: String = System.getProperty("user.dir") + "\\crypto"
     val crypto = Crypto(path)
-    val ip = InetSocketAddress(8082)
+    val ip = InetSocketAddress(8083)
     println("running on port ${ip.port}")
     val lastClient = ServerSocketChannel.open()
     lastClient.socket().bind(ip)

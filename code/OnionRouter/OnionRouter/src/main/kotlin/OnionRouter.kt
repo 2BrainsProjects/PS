@@ -29,7 +29,7 @@ class OnionRouter(private val ip : InetSocketAddress, path: String = System.getP
     private val url = "$apiUri/routers"
     private var status = 0
     private var command = ""
-    private val client = OkHttpClient()
+    private val httpUtils = HttpUtils()
 
     init {
 
@@ -153,13 +153,13 @@ class OnionRouter(private val ip : InetSocketAddress, path: String = System.getP
      * @throws Exception if the request fails
      */
     private fun createOnionRouter(csr: String, ip: String, pwd: String): Int{
-        val registerBody = createBody(hashMapOf("routerCSR" to csr, "ip" to ip, "pwd" to pwd))
+        val registerBody = httpUtils.createBody(hashMapOf("routerCSR" to csr, "ip" to ip, "pwd" to pwd))
 
-        val registerRequest = createPostRequest(JSON, url, registerBody)
+        val registerRequest = httpUtils.createPostRequest(JSON, url, registerBody)
         val registerResponse: Response
 
         try {
-            registerResponse = client.newCall(registerRequest).execute()
+            registerResponse = httpUtils.client.newCall(registerRequest).execute()
         } catch (e: Exception) {
             println(e.message)
             throw Exception("Error creating router")
@@ -175,31 +175,6 @@ class OnionRouter(private val ip : InetSocketAddress, path: String = System.getP
 
         return routerId
     }
-
-    /**
-     * This function creates a body for the request
-     * @param fields the fields of the body
-     * @return the body created
-     */
-    private fun createBody(fields: HashMap<String, String>): FormBody {
-        val formBody =  FormBody.Builder()
-        fields.forEach { (k, v) -> formBody.add(k, v) }
-        return formBody.build()
-    }
-
-    /**
-     * This function create a post request to the API
-     * @param mediaType the media type of the request
-     * @param url the url of the request
-     * @param body the body of the request
-     * @return the request created
-     */
-    private fun createPostRequest(mediaType: String, url: String, body: FormBody) =
-        Request.Builder()
-            .header("Content-Type", mediaType)
-            .url(url)
-            .post(body)
-            .build()
 
     /**
      * This function processes the message received from the client.
@@ -328,7 +303,7 @@ class OnionRouter(private val ip : InetSocketAddress, path: String = System.getP
             .delete()
             .build()
 
-        client.newCall(deleteRequest).execute()
+        httpUtils.client.newCall(deleteRequest).execute()
 
         finalizeOnionRouter(sSocket)
         println("end")

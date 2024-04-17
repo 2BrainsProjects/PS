@@ -57,6 +57,7 @@ class RouterController(
         @Valid @RequestParam
         ids: List<Int>
     ): ResponseEntity<*> {
+        println(ids)
         val (routers) = services.getRouters(ids)
         return SirenEntity(
             clazz = listOf(Rels.Router.ROUTERS, Rels.Collection.COLLECTION),
