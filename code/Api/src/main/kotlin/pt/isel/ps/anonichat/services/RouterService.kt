@@ -23,23 +23,17 @@ class RouterService(
      */
     fun getRouters(list: List<Int>): RoutersModel {
         return tm.run { tr ->
-            println("a entrar no mapNotNull")
             val routers = list.mapNotNull { id ->
-                println("a entrar no if isRouter")
                 if (tr.routerRepository.isRouter(id)) {
-                    println("a entrar no getRouterById")
                     tr.routerRepository.getRouterById(id)
                 } else null
             }
                 .map { router ->
-                    println("a entrar no map")
                 val cert = if(router.certificate != null) {
                     cd.readFile(router.certificate)
                 } else ""
-                    println("a dar cast para RouterModel")
                 router.toModel(cert)
             }
-            println("a retornar RoutersModel")
             RoutersModel(routers)
         }
     }
