@@ -47,8 +47,10 @@ class OnionRouter(private val ip : InetSocketAddress, path: String = System.getP
     fun start(pwd: String = UUID.randomUUID().toString()){
         val sSocket = ServerSocketChannel.open().bind(ip)
         val addrString = sSocket.localAddress.toString().drop(1)
-        val csr = crypto.generateClientCSR(ip.port,addrString , pwd)
-        val routerId = createOnionRouter(csr.joinToString ( "\n" ), addrString, pwd)
+        val finalAddr = if(addrString.count { it == ':' } > 1) "127.0.0.1:${ip.port}" else addrString
+
+        val csr = crypto.generateClientCSR(ip.port, "router" ,pwd)
+        val routerId = createOnionRouter(csr.joinToString ( "\n" ), finalAddr, pwd)
         println(routerId)
 
         val th = Thread{
@@ -191,19 +193,26 @@ class OnionRouter(private val ip : InetSocketAddress, path: String = System.getP
         val newMsg = plainText.dropLastWhile { it != '|' }.dropLast(2)
         val newMsgBytes = newMsg.toByteArray(Charsets.UTF_8)
 
-        socketsList.removeAll {
-            it.close()
-            !it.isOpen
+
+        socketsList.forEach {
+            if(!it.isOpen) socketsList.remove(it)
         }
+
+        println("-------------------------------------------------------")
+
 
         // verfificar se existe/estabelecer ligação ao nextNode
         putConnectionIfAbsent(addr)
 
         // socket com o próximo node                           removing prefix '/'  e.g. /127.0.0.1
-        val socket = socketsList.firstOrNull { it.remoteAddress.toString().drop(1) == addr }
+        val socket = socketsList.firstOrNull {                         // /127.0.0.1:8083
+            it.remoteAddress.toString().drop(1) == addr
+        }
 
-        if(socket != null)
+
+        if(socket != null) {
             writeToClient(newMsgBytes, socket)
+        }
     }
 
     /**
@@ -216,8 +225,6 @@ class OnionRouter(private val ip : InetSocketAddress, path: String = System.getP
             println("sending to: $addr")
             val splitAddr = addr.split(':')
             if (splitAddr.size != 2 && splitAddr.size != 9) return
-            // testar isto
-
             val newAddr = InetSocketAddress(addr.dropLastWhile { it != ':' }.dropLast(1), splitAddr.last().toInt())
             val nextNode = SocketChannel.open(newAddr)
             socketsList.add(nextNode)
@@ -306,6 +313,5 @@ class OnionRouter(private val ip : InetSocketAddress, path: String = System.getP
         httpUtils.client.newCall(deleteRequest).execute()
 
         finalizeOnionRouter(sSocket)
-        println("end")
     }
 }

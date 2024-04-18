@@ -4,12 +4,12 @@ import java.nio.ByteBuffer
 import java.nio.channels.SocketChannel
 
 fun main() {
-    clientSender(InetSocketAddress(8083), "password", "hello", listOf(21,22))
+    clientSender(InetSocketAddress("127.0.0.1" ,8083), "password", "hello", listOf(53,54))
 }
 
 /**
  * Method to create a client sender where it creates a socket to send a message.
- * @param serverIp - InetSocketAddress of the client sender
+ * @param clientIp - InetSocketAddress of the client sender
  * @param pwd - password of the client sender CSR
  * @param msg - message to send
  * @param nodes - list of nodes the message needs to pass through
@@ -45,31 +45,21 @@ fun clientSender(
     requireNotNull(body)
 
     val formattedBody = body.split("properties").filter { it.contains("id") }
-    println(formattedBody)
+
     formattedBody.forEach { se ->
         val id = se.split(',').first { it.contains("id") }.split(":").last()
         val ip = se.split(',').first { it.contains("ip") }.dropWhile { !it.isDigit() && it != '[' }.dropLast(1)
-        println("ip: ${se.split(',').first { it.contains("ip") }}")
         val certificate = se.split(',').first { it.contains("certificate") }.dropWhile { it != '-' }.dropLastWhile { it != '-' }
-        println("id: ${id.toInt()}")
         nodesToConnect[id.toInt()] = Pair(ip, certificate)
     }
-    println("nodes[0]: ${nodes[0]}")
+
     val firstNode = nodesToConnect[nodes[0]]?.first
-    println(nodesToConnect[nodes[0]])
-    println("firstNode: $firstNode")
     val serverAddr = firstNode?.dropLastWhile { it != ':' }?.dropLast(1)
-    println(firstNode?.takeLastWhile { it != ':' })
     val serverPort = firstNode?.takeLastWhile { it != ':' }?.toIntOrNull() ?: -1
 
     nodesToConnect.remove(nodes[0])
 
-    println(serverAddr)
-    println(serverPort)
-
     val serverIp = InetSocketAddress(serverAddr, serverPort)
-
-    println(serverIp)
 
     val socketChannel = SocketChannel.open(serverIp)
 
@@ -83,13 +73,13 @@ fun clientSender(
         var finalMsg = msg
 
         finalMsg = crypto.encipher(finalMsg, clientIp.port)
-        finalMsg += "||${clientIp.address}:${clientIp.port}"
-        println("finalMsg after lastClient ip: $finalMsg")
+        finalMsg += "||${clientIp.address.toString().drop(1)}:${clientIp.port}"
+        println(finalMsg)
         // reverse the nodes list to facilitate the user, so he just have to build the message path in order
         for(i in nodes.size - 1 downTo 1){
             val node = nodesToConnect[nodes[i]]
             val ip = node?.first
-            // construir certificado com o que vem da api e com o port sendo o id da api
+            // construir certificado com o que vem da api e com o port send o id da api
             val port = ip?.split(":")?.last()?.toInt() ?: -1
             finalMsg = crypto.encipher(finalMsg, port)
             finalMsg += "||$ip"
