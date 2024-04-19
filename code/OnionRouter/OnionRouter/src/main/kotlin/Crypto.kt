@@ -23,7 +23,7 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
     /**
      * Method to generate the CSR for the client.
      * @param port - port of the client
-     * @param ip - ip of the client
+     * @param cn - common name of the client
      * @param pwd - password of the client
      * @return the CSR
      */

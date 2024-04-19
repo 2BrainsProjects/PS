@@ -4,7 +4,7 @@ import java.nio.ByteBuffer
 import java.nio.channels.SocketChannel
 
 fun main() {
-    clientSender(InetSocketAddress("127.0.0.1" ,8083), "password", "hello", listOf(53,54))
+    clientSender(17, "password", "hello", listOf(106, 107))
 }
 
 /**
@@ -17,57 +17,44 @@ fun main() {
  * @return how many bytes have sent
  */
 fun clientSender(
-    clientIp: InetSocketAddress,
+    clientIp: Int,
     pwd: String,
     msg: String,
     nodes: List<Int>,
     certificatePath: String = System.getProperty("user.dir") + "\\crypto"
 ): Int{
-    val httpUtils = HttpUtils()
     val nodesToConnect = mutableMapOf<Int, Pair<String, String>>()
 
-    val routersRequest = httpUtils
-            .createGetRequest(
-                httpUtils.JSON,
-                httpUtils.apiUri + "/routers",
-                hashMapOf("ids" to nodes.joinToString(","))
-            )
-
-    val routersResponse: Response
-
-    try {
-        routersResponse = httpUtils.client.newCall(routersRequest).execute()
-    } catch (e: Exception) {
-        println(e.message)
-        throw Exception("Error creating router")
-    }
-    val body = routersResponse.body?.string()
-    requireNotNull(body)
-
-    val formattedBody = body.split("properties").filter { it.contains("id") }
-
-    formattedBody.forEach { se ->
-        val id = se.split(',').first { it.contains("id") }.split(":").last()
-        val ip = se.split(',').first { it.contains("ip") }.dropWhile { !it.isDigit() && it != '[' }.dropLast(1)
-        val certificate = se.split(',').first { it.contains("certificate") }.dropWhile { it != '-' }.dropLastWhile { it != '-' }
-        nodesToConnect[id.toInt()] = Pair(ip, certificate)
-    }
-
-    val firstNode = nodesToConnect[nodes[0]]?.first
-    val serverAddr = firstNode?.dropLastWhile { it != ':' }?.dropLast(1)
-    val serverPort = firstNode?.takeLastWhile { it != ':' }?.toIntOrNull() ?: -1
-
-    nodesToConnect.remove(nodes[0])
-
-    val serverIp = InetSocketAddress(serverAddr, serverPort)
+    val routersResponse = getRoutersResponseBody(nodes)
+    buildNodesToConnect(routersResponse, nodesToConnect)
+    val serverIp = getServerIp(nodesToConnect, nodes)
 
     val socketChannel = SocketChannel.open(serverIp)
 
+    val clientResponse = getClientResponseBody(listOf(clientIp))
+    val body = clientResponse.body?.string()
+    requireNotNull(body)
+    val formattedBody = body.split("properties").filter { it.contains("id") }[0]
+
+    val id = formattedBody.split(',').first { it.contains("id") }.split(":").last()
+    val ip = formattedBody.split(',').first { it.contains("ip") }.dropWhile { !it.isDigit() && it != '[' }.dropLast(1)
+    val certificate = formattedBody.split(',').first { it.contains("certificate") }.dropWhile { it != '-' }.dropLastWhile { it != '-' }
+
+    println(id)
+    println(ip)     // client ip written in login
+    println(certificate)
+
+    // extrair o clientAddr e clientPort do client do ip
+    // val clientIp = InetSocketAddress(clientAddr, clientPort)
+    val clientIp = InetSocketAddress("127.0.0.1", 8083)
+
     try {
         val crypto = Crypto(certificatePath)
+        // possuir clientIp: InetSocketAddress
 
+        // basic version of sender does not have CSR
         // generate the CSR to register in the API as a client
-        val csrOutput = crypto.generateClientCSR(serverIp.port, serverIp.toString(), pwd)
+        //val csrOutput = crypto.generateClientCSR(hostIp.port, hostIp.toString(), pwd)
         println("message: $msg")
 
         var finalMsg = msg
@@ -86,7 +73,7 @@ fun clientSender(
             println(finalMsg)
         }
 
-        finalMsg = crypto.encipher(finalMsg, serverPort)
+        finalMsg = crypto.encipher(finalMsg, serverIp.port)
         println(finalMsg)
 
         var bytesWritten: Int
@@ -104,3 +91,50 @@ fun clientSender(
         socketChannel.close()
     }
 }
+
+private fun buildNodesToConnect(routersResponse: Response, nodesToConnect: MutableMap<Int, Pair<String, String>>){
+    val body = routersResponse.body?.string()
+    requireNotNull(body)
+    val formattedBody = body.split("properties").filter { it.contains("id") }
+
+    formattedBody.forEach { se ->
+        val id = se.split(',').first { it.contains("id") }.split(":").last()
+        val ip = se.split(',').first { it.contains("ip") }.dropWhile { !it.isDigit() && it != '[' }.dropLast(1)
+        val certificate = se.split(',').first { it.contains("certificate") }.dropWhile { it != '-' }.dropLastWhile { it != '-' }
+        nodesToConnect[id.toInt()] = Pair(ip, certificate)
+    }
+}
+
+private fun getServerIp(nodesToConnect: MutableMap<Int, Pair<String, String>>, nodes: List<Int>): InetSocketAddress {
+    val firstNode = nodesToConnect[nodes[0]]?.first
+    val serverAddr = firstNode?.dropLastWhile { it != ':' }?.dropLast(1)
+    val serverPort = firstNode?.takeLastWhile { it != ':' }?.toIntOrNull() ?: -1
+
+    nodesToConnect.remove(nodes[0])
+
+    return InetSocketAddress(serverAddr, serverPort)
+}
+
+private fun getRequest(uri: String, query: HashMap<String, String>): Response{
+    val httpUtils = HttpUtils()
+
+    val request = httpUtils
+        .createGetRequest(
+            httpUtils.JSON,
+            uri,
+            query
+        )
+
+    try {
+        return httpUtils.client.newCall(request).execute()
+    } catch (e: Exception) {
+        println(e.message)
+        throw Exception("Error creating router")
+    }
+}
+
+private fun getRoutersResponseBody(ids: List<Int>) =
+    getRequest("http://localhost:8080/api/routers", hashMapOf("ids" to ids.joinToString(",")))
+
+private fun getClientResponseBody(ids: List<Int>) =
+    getRequest("http://localhost:8080/api/users", hashMapOf("ids" to ids.joinToString(",")))

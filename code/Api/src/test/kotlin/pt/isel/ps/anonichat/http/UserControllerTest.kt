@@ -1,6 +1,9 @@
 package pt.isel.ps.anonichat.http
 
  import org.springframework.test.web.reactive.server.expectBody
+ import org.springframework.util.LinkedMultiValueMap
+ import org.springframework.util.MultiValueMap
+ import org.springframework.web.reactive.function.BodyInserters
  import pt.isel.ps.anonichat.http.controllers.user.models.GetUserOutputModel
  import pt.isel.ps.anonichat.http.controllers.user.models.GetUsersCountOutputModel
  import pt.isel.ps.anonichat.http.controllers.user.models.LoginOutputModel
@@ -21,14 +24,15 @@ class UserControllerTest : HttpTest() {
         val (name, email, password, clientCSR) = testUserData()
 
         // when: registering the user
-        val userInfo = client.post().uri(api("/register"))
-            .bodyValue(
-                mapOf(
-                    "name" to name,
-                    "email" to email,
-                    "password" to password,
-                    "clientCSR" to clientCSR
-                )
+        val body: MultiValueMap<String, String> = LinkedMultiValueMap()
+        body.add("name", name)
+        body.add("email", email)
+        body.add("password", password)
+        body.add("clientCSR", clientCSR)
+
+        val userInfo = client.post().uri(api("/users"))
+            .body(
+                BodyInserters.fromFormData(body)
             )
             .exchange()
             .expectStatus().isCreated

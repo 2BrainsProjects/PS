@@ -11,7 +11,7 @@ object Uris {
 
     object User {
         const val HOME = "/me"
-        const val REGISTER = "/register"
+        const val REGISTER = "/users"
         const val LOGIN = "/login"
         const val LOGOUT = "/logout"
         const val USERS = "/users"

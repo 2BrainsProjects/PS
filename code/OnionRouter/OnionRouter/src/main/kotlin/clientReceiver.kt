@@ -1,3 +1,4 @@
+import okhttp3.Response
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.SelectionKey
@@ -12,12 +13,20 @@ fun main() {
     val crypto = Crypto(path)
     val ip = InetSocketAddress(8083)
     println("running on port ${ip.port}")
-    val lastClient = ServerSocketChannel.open()
-    lastClient.socket().bind(ip)
+    val lastClient = ServerSocketChannel.open().bind(ip)
     var socket : SocketChannel? = null
+
+    val name = "testUser"
+    val email = "testUser@gmail.com"
+    val pwd = "password"
 
     // generating the CSR so the API use it to generate the user certificate
     val csr = crypto.generateClientCSR(ip.port, lastClient.localAddress.toString(), "password")
+    val clientId = createClient(name, email, pwd, csr.joinToString ( "\n" ))
+
+    // so recebe o ip no login
+
+    println(clientId)
 
     val selector = Selector.open()
 
@@ -120,4 +129,33 @@ private fun readFromClient(client: SocketChannel, port: Int): String{
     val decipherMsg = Crypto(path).decipher(msg, port)
     println("deciphered message: $decipherMsg")
     return decipherMsg
+}
+
+private fun createClient(name: String, email: String, pwd: String, csr: String): Int{
+    val httpUtils = HttpUtils()
+    val JSON = "application/json"
+    val apiUri = "http://localhost:8080/api"
+    val url = "$apiUri/users"
+
+    val registerBody = httpUtils.createBody(hashMapOf("name" to name, "email" to email, "password" to pwd, "clientCSR" to csr))
+
+    val registerRequest = httpUtils.createPostRequest(JSON, url, registerBody)
+    val registerResponse: Response
+
+    try {
+        registerResponse = httpUtils.client.newCall(registerRequest).execute()
+    } catch (e: Exception) {
+        println(e.message)
+        throw Exception("Error creating client")
+    }
+
+    if(registerResponse.code != 201) throw Exception("Error creating client")
+
+    val responseBody = registerResponse.body?.string()
+
+    val clientId = responseBody?.split(',')?.get(1)?.dropWhile { !it.isDigit() }?.takeWhile { it.isDigit() }?.toIntOrNull()
+
+    require(clientId != null){ "Error creating router" }
+
+    return clientId
 }

@@ -4,6 +4,9 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBody
+import org.springframework.util.LinkedMultiValueMap
+import org.springframework.util.MultiValueMap
+import org.springframework.web.reactive.function.BodyInserters
 import pt.isel.ps.anonichat.AnonichatTest
 import pt.isel.ps.anonichat.http.controllers.user.models.GetUsersOutputModel
 import pt.isel.ps.anonichat.http.controllers.user.models.LoginOutputModel
@@ -26,23 +29,26 @@ class HttpTest : AnonichatTest() {
         email: String = testEmail(),
         password: String = testPassword(),
         clientCSR: String = testUserCSR()
-    ): RegisterOutputModel = client.post().uri(api("/register"))
-        .bodyValue(
-            mapOf(
-                "name" to name,
-                "email" to email,
-                "password" to password,
-                "clientCSR" to clientCSR
+    ): RegisterOutputModel {
+        val body: MultiValueMap<String, String> = LinkedMultiValueMap()
+        body.add("name", name)
+        body.add("email", email)
+        body.add("password", password)
+        body.add("clientCSR", clientCSR)
+
+        return client.post().uri(api("/users"))
+            .body(
+                BodyInserters.fromFormData(body)
             )
-        )
-        .exchange()
-        .expectStatus().isCreated
-        .expectHeader().value("location") {
-            assertTrue(it.startsWith("/me"))
-        }
-        .expectBody<SirenEntityEmbeddedLinkModel<RegisterOutputModel>>()
-        .returnResult()
-        .responseBody?.properties!!
+            .exchange()
+            .expectStatus().isCreated
+            .expectHeader().value("location") {
+                assertTrue(it.startsWith("/me"))
+            }
+            .expectBody<SirenEntityEmbeddedLinkModel<RegisterOutputModel>>()
+            .returnResult()
+            .responseBody?.properties!!
+    }
 
     fun loginTestUserHttp(
         name: String,
