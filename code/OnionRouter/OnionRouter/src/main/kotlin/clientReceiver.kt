@@ -14,15 +14,14 @@ fun main() {
     val ip = InetSocketAddress(8083)
     println("running on port ${ip.port}")
     val lastClient = ServerSocketChannel.open().bind(ip)
-    var socket : SocketChannel? = null
 
-    val name = "testUser"
-    val email = "testUser@gmail.com"
+    val name = "testUser2"
+    val email = "testUser2@gmail.com"
     val pwd = "password"
 
     // generating the CSR so the API use it to generate the user certificate
     val csr = crypto.generateClientCSR(ip.port, lastClient.localAddress.toString(), "password")
-    val clientId = createClient(name, email, pwd, csr.joinToString ( "\n" ))
+    val clientId = createClient(name, email, pwd, csr.joinToString("\n"))
 
     // so recebe o ip no login
 
@@ -31,27 +30,65 @@ fun main() {
     val selector = Selector.open()
 
     // In this thread we start the process of handling accepted connections
-    Thread{
+    Thread {
         handleConnection(selector, ip.port)
     }.start()
 
     // And in this one, we keep accepting connections
-    try {
-        while(true) {
-            socket = lastClient.accept()
+    Thread {
+        var socket: SocketChannel? = null
+        try {
+            while (true) {
+                socket = lastClient.accept()
 
-            // register this socket on selector so we can select the sockets ready to read
-            socket.configureBlocking(false)
-            socket.register(selector, SelectionKey.OP_READ)
+                // register this socket on selector so we can select the sockets ready to read
+                socket.configureBlocking(false)
+                socket.register(selector, SelectionKey.OP_READ)
 
-            // wakes up the selector from select() in handleConnection
-            selector.wakeup()
+                // wakes up the selector from select() in handleConnection
+                selector.wakeup()
+            }
+        } catch (e: Exception) {
+            println(e.message)
+        } finally {
+            lastClient.close()
+            socket?.close()
         }
-    } catch (e: Exception){
-        println(e.message)
-    } finally {
-        lastClient.close()
-        socket?.close()
+    }
+
+    while (true) {
+        println("Choose the option you want:")
+        println("1 - Send a message")
+        println("2 - Exit")
+        val option = readln().toIntOrNull()
+
+        when (option) {
+            1 -> {
+                println("Enter the message you want to send:")
+                val msg = readln()
+                clientSender(clientId, msg, listOf(108, 109))
+                /*
+                u1 -> on2 -> on4 -> u3
+                u1 -> on1 -> on3 -> u4
+                u1 -> on2 -> on3 -> u5
+
+                verificar se ja existe algum caminho para o primeiro onion router
+                senão construir o caminho deste no para o ultimo no
+                criar a cebola inteira
+                abrir um socket para o primeiro no caso não haja
+                enviar a mensagem
+                 */
+            }
+
+            2 -> {
+                println("Exiting...")
+                break
+            }
+
+            else -> {
+                println("Invalid option")
+            }
+        }
     }
 }
 
@@ -61,7 +98,10 @@ fun main() {
  * @param selector - selector used to mark the sockets
  * @param port - port of the host to decipher the message
  */
-private fun handleConnection(selector: Selector, port: Int) {
+private fun handleConnection(
+    selector: Selector,
+    port: Int,
+) {
     while (true) {
         // check if any socket is ready to read
         var readyToRead = selector.select()
@@ -99,7 +139,10 @@ private fun handleConnection(selector: Selector, port: Int) {
  * @param port - port of the host to decypher the message
  * @return the message read from the client socket
  */
-private fun readFromClient(client: SocketChannel, port: Int): String{
+private fun readFromClient(
+    client: SocketChannel,
+    port: Int,
+): String  {
     val path: String = System.getProperty("user.dir") + "\\crypto"
 
     // create auxiliar buffer to read in chunks
@@ -109,7 +152,7 @@ private fun readFromClient(client: SocketChannel, port: Int): String{
     buffer.clear()
     var msg = ""
     var size: Int = client.read(buffer)
-    if(size == -1) {
+    if (size == -1) {
         client.close()
         return msg
     }
@@ -131,7 +174,12 @@ private fun readFromClient(client: SocketChannel, port: Int): String{
     return decipherMsg
 }
 
-private fun createClient(name: String, email: String, pwd: String, csr: String): Int{
+private fun createClient(
+    name: String,
+    email: String,
+    pwd: String,
+    csr: String,
+): Int  {
     val httpUtils = HttpUtils()
     val JSON = "application/json"
     val apiUri = "http://localhost:8080/api"
@@ -149,13 +197,13 @@ private fun createClient(name: String, email: String, pwd: String, csr: String):
         throw Exception("Error creating client")
     }
 
-    if(registerResponse.code != 201) throw Exception("Error creating client")
+    if (registerResponse.code != 201) throw Exception("Error creating client")
 
     val responseBody = registerResponse.body?.string()
 
     val clientId = responseBody?.split(',')?.get(1)?.dropWhile { !it.isDigit() }?.takeWhile { it.isDigit() }?.toIntOrNull()
 
-    require(clientId != null){ "Error creating router" }
+    require(clientId != null) { "Error creating router" }
 
     return clientId
 }

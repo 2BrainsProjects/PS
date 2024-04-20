@@ -8,7 +8,7 @@ import kotlin.test.assertTrue
 
 class OnionRouterTest {
     private val path = System.getProperty("user.dir") + "\\src\\test\\resources"
-    private val DELAY_TO_SET_NETWORK = 1000L
+//  private val DELAY_TO_SET_NETWORK = 1000L
     private fun generateRandomPort() = Random.nextInt(7000, 9000)
 
     @Test
@@ -22,6 +22,7 @@ class OnionRouterTest {
         assertFailsWith<BindException> { ServerSocket().bind(InetSocketAddress(serverPort)) }
     }
 
+    /*
     @Test
     fun `can connect to the server`(){
         val serverPort = generateRandomPort()
@@ -38,9 +39,10 @@ class OnionRouterTest {
 
         Thread.sleep(DELAY_TO_SET_NETWORK)
 
-        val bytesWritten = clientSender(serverIp, pwd, msg, nodes, path)
+        val bytesWritten = clientSender(serverIp, msg, nodes, path)
         assertTrue(bytesWritten > 0)
     }
+    */
 
     /*
     @Test

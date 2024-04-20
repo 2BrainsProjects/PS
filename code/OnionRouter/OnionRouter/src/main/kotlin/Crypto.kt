@@ -15,7 +15,6 @@ import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\crypto") {
-
     private val sCipher = Cipher.getInstance("AES/GCM/NoPadding")
     private val aCipher = Cipher.getInstance(ALG_ASYMMETRIC)
     private val keyFactory = KeyFactory.getInstance(ALG_ASYMMETRIC)
@@ -27,7 +26,11 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
      * @param pwd - password of the client
      * @return the CSR
      */
-    fun generateClientCSR(port: Int, cn: String, pwd: String): List<String> {
+    fun generateClientCSR(
+        port: Int,
+        cn: String,
+        pwd: String,
+    ): List<String> {
         generateKeys(port)
         answeringCSRCreation(port, cn, pwd)
         BufferedReader(InputStreamReader(FileInputStream("$basePath/$port.csr"))).use {
@@ -41,16 +44,21 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
      * @param cn - common name of the host
      * @param password - password of the host
      */
-    private fun answeringCSRCreation(port: Int, cn: String, password: String) {
+    private fun answeringCSRCreation(
+        port: Int,
+        cn: String,
+        password: String,
+    ) {
         val filePath = "$basePath/$port.csr"
         File(filePath).createNewFile()
 
         val command =
             "openssl req -out $filePath -key $basePath/priv$port.pem -new"
         try {
-            val process = ProcessBuilder(command.split(" "))
-                .redirectErrorStream(true)
-                .start()
+            val process =
+                ProcessBuilder(command.split(" "))
+                    .redirectErrorStream(true)
+                    .start()
 
             // Provide input to the process
             val writer = BufferedWriter(OutputStreamWriter(process.outputStream))
@@ -65,7 +73,6 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
             writer.close()
 
             process.waitFor()
-
         } catch (e: Exception) {
             throw IllegalStateException(e.message)
         }
@@ -75,7 +82,7 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
      * Method to generate the key pair.
      * @param port - port of the host
      */
-    fun generateKeys(port: Int){
+    fun generateKeys(port: Int) {
         val keyPairGenerator = KeyPairGenerator.getInstance(ALG_ASYMMETRIC)
         keyPairGenerator.initialize(2048)
         val keyPair = keyPairGenerator.generateKeyPair()
@@ -92,7 +99,10 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
      * @param key - key to write in the file
      * @param filePath - path of the file
      */
-    private fun createAndWriteFile(key: ByteArray, filePath: String){
+    private fun createAndWriteFile(
+        key: ByteArray,
+        filePath: String,
+    ) {
         val file2 = File(filePath)
         file2.createNewFile()
         file2.writeBytes(key)
@@ -104,12 +114,14 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
      * @param port - port of the host to encipher the message
      * @return the enciphered message
      */
-    fun encipher(plain: String, port:Int):String {
+    fun encipher(
+        plain: String,
+        port: Int,
+    ): String {
         try {
             val pubKeyBytes = File("$basePath\\pub$port.pem").readBytes()
             val keySpec = X509EncodedKeySpec(pubKeyBytes)
             val publicKey = keyFactory.generatePublic(keySpec)
-            //val publicKey = getPublicKeyFromCertificate(basePath)
 
             val keyGenerator = KeyGenerator.getInstance(ALG_SYMMETRIC)
             keyGenerator.init(KEY_SIZE)
@@ -122,16 +134,39 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
     }
 
     /**
-     * Method to get the public key from a certificate.
-     * @param certificatePath - path of the certificate
-     * @return the public key
+     * Method to encipher a message using hybrid mode.
+     * @param plain - message to encipher
+     * @param port - port of the host to encipher the message
+     * @return the enciphered message
      */
-    private fun getPublicKeyFromCertificate(certificatePath: String): PublicKey {
+    fun encipher(
+        plain: String,
+        certificate: X509Certificate,
+    ): String {
+        try {
+            val publicKey = certificate.publicKey
+
+            val keyGenerator = KeyGenerator.getInstance(ALG_SYMMETRIC)
+            keyGenerator.init(KEY_SIZE)
+            val symmetricKey = keyGenerator.generateKey()
+            val iv = IvParameterSpec(PASSWORD.toByteArray())
+            return encipherString(plain, JWE_HEADER, symmetricKey, publicKey, iv, MARK_SIZE)
+        } catch (e: Exception) {
+            throw RuntimeException(e)
+        }
+    }
+
+    /**
+     * Method to build an object X509Certificate from its content.
+     * @param certificateContent - content of the certificate
+     * @return the certificate object
+     */
+    fun buildCertificate(certificateContent: String): X509Certificate {
         val factory = CertificateFactory.getInstance(STD_CERTIFICATE)
-        val fis = FileInputStream(certificatePath)
+        val fis = ByteArrayInputStream(certificateContent.toByteArray(Charsets.UTF_8))
         val cert: X509Certificate = factory.generateCertificate(fis) as X509Certificate
         fis.close()
-        return cert.publicKey
+        return cert
     }
 
     /**
@@ -162,9 +197,8 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
         symmetricKey: SecretKey,
         publicKey: PublicKey,
         iv: IvParameterSpec,
-        markSize: Int
-    ):String {
-
+        markSize: Int,
+    ): String {
         val gcmParameterSpec = GCMParameterSpec(markSize, iv.iv)
 
         sCipher.init(Cipher.ENCRYPT_MODE, symmetricKey, gcmParameterSpec)
@@ -196,7 +230,10 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
      * @param certificatePath - path of the certificate
      * @return the path of the certificate
      */
-    private fun getCertificatePath(certificateName: String, certificatePath: String): String {
+    private fun getCertificatePath(
+        certificateName: String,
+        certificatePath: String,
+    ): String {
         return "$certificatePath/$certificateName"
     }
 
@@ -207,8 +244,10 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
      * @return the deciphered message
      */
     @Throws(Exception::class)
-    fun decipher(cipheredText: String, port: Int):String {
-
+    fun decipher(
+        cipheredText: String,
+        port: Int,
+    ): String {
         val parts = cipheredText.split(".").map { s -> Base64.getDecoder().decode(s) }
 
         val (header, encryptedKeyStr, ivStr, encryptedMsg, markStr) = parts
@@ -250,7 +289,7 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
         return toReturn
     }
 
-    companion object{
+    companion object {
         private const val ALG_SYMMETRIC = "AES"
         private const val ALG_ASYMMETRIC = "RSA"
         private const val STD_CERTIFICATE = "X.509"
