@@ -1,10 +1,11 @@
+import okhttp3.Request
 import okhttp3.Response
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.SocketChannel
 
 fun main() {
-    clientSender(17, "hello", listOf(108, 109))
+    clientSender(67, "hello", listOf(120, 121))
 }
 
 /**
@@ -126,12 +127,11 @@ private fun getRequest(
     val httpUtils = HttpUtils()
 
     val request =
-        httpUtils
-            .createGetRequest(
-                httpUtils.json,
-                uri,
-                query,
-            )
+        createGetRequest(
+            httpUtils.json,
+            uri,
+            query,
+        )
 
     try {
         return httpUtils.client.newCall(request).execute()
@@ -139,6 +139,24 @@ private fun getRequest(
         println(e.message)
         throw Exception("Error creating router")
     }
+}
+
+private fun createGetRequest(
+    mediaType: String,
+    url: String,
+    query: HashMap<String, String>? = null,
+): Request {
+    val finalUrl =
+        if (query != null) {
+            url + "?" + query.map { (k, v) -> "$k=$v" }.joinToString("&")
+        } else {
+            url
+        }
+    return Request.Builder()
+        .header("Content-Type", mediaType)
+        .url(finalUrl)
+        .get()
+        .build()
 }
 
 private fun getRoutersResponseBody(ids: List<Int>) =

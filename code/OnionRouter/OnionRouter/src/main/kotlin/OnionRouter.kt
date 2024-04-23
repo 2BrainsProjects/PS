@@ -27,12 +27,14 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
     private val crypto = Crypto(path)
     private val json = "application/json"
     private val routerUrl = "$apiUri/routers"
+    private val userUrl = "$apiUri/users"
     private var status = 0
     private var command = ""
     private val httpUtils = HttpUtils()
 
-    init {
+    private data class User(val id: Int, val ip: String, val name: String, val certificate: X509Certificate)
 
+    init {
         println("onion router running on port $ip")
     }
 
@@ -94,18 +96,84 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
         }
     }
 
-    private fun buildMessagePath(): List<Pair<Int, Pair<String, X509Certificate>>> {
-        val count = getRouterCount()
+    private fun sendMessage(
+        clientId: Int,
+        msg: String,
+    ) {
+        val client = getClientData(clientId)
+
+        if (client == null)
+            {
+                println("Client Not Fount")
+                return
+            }
+
+        val path = buildMessagePath().map { Pair(it.second, it.third) } + Pair(client.ip, client.certificate)
+        val firstNodeIp = path.first().first
+        putConnectionIfAbsent(firstNodeIp)
+        val socket =
+            socketsList.firstOrNull { // /127.0.0.1:8083
+                it.remoteAddress.toString().drop(1) == firstNodeIp
+            }
+        val encipherMsg = encipherMessage(path.reversed(), msg)
+
+        if (socket != null) {
+            val newMsgBytes = encipherMsg.toByteArray(Charsets.UTF_8)
+            writeToClient(newMsgBytes, socket)
+        }
+    }
+
+    private fun getClientData(clientId: Int): User? {
+        val count = getCount("$userUrl/count")
+        val ids: MutableList<Int> = (0..count).shuffled().take(routersAmountRequest).toMutableList()
+
+        ids.add(clientId)
+        val idsListToSend = ids.toSet().shuffled()
+
+        val list = getClients(idsListToSend)
+
+        val client = list.firstOrNull { it.id == clientId }
+
+        return client
+    }
+
+    private fun getClients(ids: List<Int>): List<User> {
+        val list = mutableListOf<User>()
+        val response =
+            httpUtils.getRequest(
+                json,
+                "http://localhost:8080/api/users",
+                hashMapOf("ids" to ids.joinToString(",")),
+                "Users not found",
+            )
+
+        val body = response.body?.string()
+        requireNotNull(body)
+        val formattedBody = body.split("properties").filter { it.contains("id") }
+
+        formattedBody.forEach { se ->
+            val id = se.split(',').first { it.contains("id") }.split(":").last().toInt()
+            val ip = se.split(',').first { it.contains("ip") }.dropWhile { !it.isDigit() && it != '[' }.dropLast(1)
+            val name = se.split(',').first { it.contains("name") }
+            val certificateContent = se.split(',').first { it.contains("certificate") }.dropWhile { it != '-' }.dropLastWhile { it != '-' }
+            val certificate = crypto.buildCertificate(certificateContent)
+            list.add(User(id, ip, name, certificate))
+        }
+        return list
+    }
+
+    private fun buildMessagePath(): List<Triple<Int, String, X509Certificate>> {
+        val count = getCount("$routerUrl/count")
         val ids = (0..count).shuffled().take(routersAmountRequest)
 
-        val list = getRouters(ids).toList()
+        val list = getRouters(ids)
 
         val pathRouters = list.shuffled().take(pathSize)
         return pathRouters
     }
 
-    private fun getRouters(ids: List<Int>): Map<Int, Pair<String, X509Certificate>>  {
-        val nodesToConnect: MutableMap<Int, Pair<String, X509Certificate>> = mutableMapOf()
+    private fun getRouters(ids: List<Int>): List<Triple<Int, String, X509Certificate>> {
+        val nodesToConnect: MutableList<Triple<Int, String, X509Certificate>> = mutableListOf()
         val response = httpUtils.getRequest(json, routerUrl, hashMapOf("ids" to ids.joinToString(",")), "Error getting routers")
 
         val body = response.body?.string()
@@ -117,13 +185,13 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
             val ip = se.split(',').first { it.contains("ip") }.dropWhile { !it.isDigit() && it != '[' }.dropLast(1)
             val certificateContent = se.split(',').first { it.contains("certificate") }.dropWhile { it != '-' }.dropLastWhile { it != '-' }
             val certificate = crypto.buildCertificate(certificateContent)
-            nodesToConnect[id.toInt()] = Pair(ip, certificate)
+            nodesToConnect.add(Triple(id.toInt(), ip, certificate))
         }
         return nodesToConnect
     }
 
-    private fun getRouterCount(): Int {
-        val response = httpUtils.getRequest(json, "$routerUrl/count", null, "Error getting routers max id")
+    private fun getCount(uri: String): Int {
+        val response = httpUtils.getRequest(json, uri, null, "Error getting routers max id")
 
         val responseBody = response.body?.string()
 
@@ -142,6 +210,7 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
         message: String,
     ): String {
         var finalMsg = message
+
         for (i in 0 until list.size - 1) {
             val element = list[i]
             finalMsg = crypto.encipher(finalMsg, element.second)
@@ -156,17 +225,6 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
      * Possible future maintenance interface
      */
     private fun getInput() {
-        /*
-        u1 -> on2 -> on4 -> u3
-        u1 -> on1 -> on3 -> u4
-        u1 -> on2 -> on3 -> u5
-
-        verificar se ja existe algum caminho para o primeiro onion router
-        senão construir o caminho deste no para o ultimo no
-        criar a cebola inteira
-        abrir um socket para o primeiro no caso não haja
-        enviar a mensagem V
-         */
         while (true) {
             println("Command:")
             print(">")

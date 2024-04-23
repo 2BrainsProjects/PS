@@ -6,6 +6,7 @@ import java.nio.channels.Selector
 import java.nio.channels.ServerSocketChannel
 import java.nio.channels.SocketChannel
 import java.nio.charset.StandardCharsets
+import kotlin.random.Random
 
 fun main() {
     // setup of a ServerSocket simulating the last client
@@ -15,8 +16,9 @@ fun main() {
     println("running on port ${ip.port}")
     val lastClient = ServerSocketChannel.open().bind(ip)
 
-    val name = "testUser2"
-    val email = "testUser2@gmail.com"
+    val randomId = Random.nextInt()
+    val name = "testUser$randomId"
+    val email = "testUser$randomId@gmail.com"
     val pwd = "password"
 
     // generating the CSR so the API use it to generate the user certificate
@@ -142,7 +144,7 @@ private fun handleConnection(
 private fun readFromClient(
     client: SocketChannel,
     port: Int,
-): String  {
+): String {
     val path: String = System.getProperty("user.dir") + "\\crypto"
 
     // create auxiliar buffer to read in chunks
@@ -179,7 +181,7 @@ private fun createClient(
     email: String,
     pwd: String,
     csr: String,
-): Int  {
+): Int {
     val httpUtils = HttpUtils()
     val JSON = "application/json"
     val apiUri = "http://localhost:8080/api"

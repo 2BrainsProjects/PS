@@ -81,4 +81,7 @@ class HttpUtils {
         .url(url)
         .post(body)
         .build()
+
+    fun getRoutersResponseBody(ids: List<Int>) =
+        getRequest(json, "http://localhost:8080/api/routers", hashMapOf("ids" to ids.joinToString(",")), "Router not found")
 }
