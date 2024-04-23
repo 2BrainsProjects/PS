@@ -1,3 +1,4 @@
+import http.HttpUtils
 import okhttp3.Request
 import okhttp3.Response
 import java.net.InetSocketAddress
@@ -5,7 +6,7 @@ import java.nio.ByteBuffer
 import java.nio.channels.SocketChannel
 
 fun main() {
-    clientSender(67, "hello", listOf(120, 121))
+    clientSender(74, "hello", listOf(140, 141))
 }
 
 /**
@@ -47,6 +48,8 @@ fun clientSender(
     // val clientIp = InetSocketAddress(clientAddr, clientPort)
     val clientIp = InetSocketAddress("127.0.0.1", 8083)
 
+    println(clientIp.address)
+
     try {
         val crypto = Crypto(certificatePath)
         // possuir clientIp: InetSocketAddress
@@ -56,7 +59,7 @@ fun clientSender(
         // val csrOutput = crypto.generateClientCSR(hostIp.port, hostIp.toString(), pwd)
         println("message: $msg")
 
-        var finalMsg = msg
+        var finalMsg = msg // nickname: msg
 
         finalMsg = crypto.encipher(finalMsg, clientIp.port)
         finalMsg += "||${clientIp.address.toString().drop(1)}:${clientIp.port}"

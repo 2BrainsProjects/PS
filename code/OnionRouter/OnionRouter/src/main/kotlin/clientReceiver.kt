@@ -1,3 +1,4 @@
+import http.HttpUtils
 import okhttp3.Response
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
@@ -12,8 +13,8 @@ fun main() {
     // setup of a ServerSocket simulating the last client
     val path: String = System.getProperty("user.dir") + "\\crypto"
     val crypto = Crypto(path)
-    val ip = InetSocketAddress(8083)
-    println("running on port ${ip.port}")
+    val ip = InetSocketAddress("127.0.0.1", 8083)
+    println("running on port $ip")
     val lastClient = ServerSocketChannel.open().bind(ip)
 
     val randomId = Random.nextInt()
@@ -56,7 +57,7 @@ fun main() {
             lastClient.close()
             socket?.close()
         }
-    }
+    }.start()
 
     while (true) {
         println("Choose the option you want:")
@@ -68,7 +69,7 @@ fun main() {
             1 -> {
                 println("Enter the message you want to send:")
                 val msg = readln()
-                clientSender(clientId, msg, listOf(108, 109))
+                // clientSender(clientId, msg, listOf(108, 109))
                 /*
                 u1 -> on2 -> on4 -> u3
                 u1 -> on1 -> on3 -> u4
@@ -79,7 +80,7 @@ fun main() {
                 criar a cebola inteira
                 abrir um socket para o primeiro no caso não haja
                 enviar a mensagem
-                 */
+                */
             }
 
             2 -> {
