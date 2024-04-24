@@ -1,3 +1,5 @@
+package commands
+
 interface Command {
     val id: Int
 

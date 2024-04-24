@@ -3,8 +3,6 @@ package http
 import Crypto
 import domain.Client
 import domain.Router
-import okhttp3.Request
-import okhttp3.Response
 
 class HttpRequests(private val crypto: Crypto = Crypto()) {
     private val httpUtils = HttpUtils()
@@ -12,6 +10,34 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
     private val apiUri = "http://localhost:8080/api"
     private val routerUrl = "$apiUri/routers"
     private val userUrl = "$apiUri/users"
+
+    fun registerClient(
+        name: String,
+        email: String,
+        password: String,
+        clientCSR: String,
+    ): Int {
+        val registerResponse =
+            httpUtils.postRequest(
+                json,
+                userUrl,
+                hashMapOf("name" to name, "email" to email, "password" to password, "clientCSR" to clientCSR),
+                "Error registering user",
+            )
+
+        if (registerResponse.code != 201) throw Exception("Error registering user")
+
+        val responseBody = registerResponse.body?.string()
+        requireNotNull(responseBody)
+
+        val formattedBody = getFirstPropertiesStringFromId(responseBody)
+
+        val clientId = getId(formattedBody)
+
+        require(clientId != null) { "Error registering user" }
+
+        return clientId
+    }
 
     fun getClients(ids: List<Int>): List<Client> {
         val list = mutableListOf<Client>()
@@ -25,15 +51,16 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
 
         val body = response.body?.string()
         requireNotNull(body)
-        val formattedBody = body.split("properties").filter { it.contains("id") }
+        val formattedBody = getPropertiesStringsFromId(body)
 
         formattedBody.forEach { se ->
-            val id = se.split(',').first { it.contains("id") }.split(":").last().toInt()
+            val id = getId(se)
+            // Ip ta mal tenmos de corrigir
             val ip = se.split(',').first { it.contains("ip") }.dropWhile { !it.isDigit() && it != '[' }.dropLast(1)
-            val name = se.split(',').first { it.contains("name") }
-            val certificateContent = se.split(',').first { it.contains("certificate") }.dropWhile { it != '-' }.dropLastWhile { it != '-' }
+            val name = getName(se)
+            val certificateContent = getCertificate(se)
             val certificate = crypto.buildCertificate(certificateContent)
-            list.add(Client(id, ip, name, certificate))
+            if (id != null) list.add(Client(id, ip, name, certificate))
         }
         return list
     }
@@ -46,48 +73,50 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
      * @return the id of the router created
      * @throws Exception if the request fails
      */
-    fun createOnionRouter(
+    fun registerOnionRouter(
         csr: String,
         ip: String,
         pwd: String,
     ): Int {
-        val registerBody = httpUtils.createBody(hashMapOf("routerCSR" to csr, "ip" to ip, "pwd" to pwd))
-
-        val registerRequest = httpUtils.createPostRequest(json, routerUrl, registerBody)
-        val registerResponse: Response
-
-        try {
-            registerResponse = httpUtils.client.newCall(registerRequest).execute()
-        } catch (e: Exception) {
-            println(e.message)
-            throw Exception("Error creating router")
-        }
+        val registerResponse =
+            httpUtils.postRequest(
+                json,
+                routerUrl,
+                hashMapOf("routerCSR" to csr, "ip" to ip, "pwd" to pwd),
+                "Error creating router",
+            )
 
         if (registerResponse.code != 201) throw Exception("Error creating router")
 
         val responseBody = registerResponse.body?.string()
+        requireNotNull(responseBody)
+        val routerId = getId(responseBody)
+        // val routerId = responseBody?.split(',')?.get(1)?.dropWhile { !it.isDigit() }?.takeWhile { it.isDigit() }?.toIntOrNull()
 
-        val routerId = responseBody?.split(',')?.get(1)?.dropWhile { !it.isDigit() }?.takeWhile { it.isDigit() }?.toIntOrNull()
-
-        require(routerId != null) { "Error creating router" }
+        requireNotNull(routerId) { "Error creating router" }
 
         return routerId
     }
 
+    /**
+     * This function makes a request to the API to get routers information
+     * @param ids the ids of the routers to get
+     * @return a list of routers
+     */
     fun getRouters(ids: List<Int>): List<Router> {
         val nodesToConnect: MutableList<Router> = mutableListOf()
         val response = httpUtils.getRequest(json, routerUrl, hashMapOf("ids" to ids.joinToString(",")), "Error getting routers")
 
         val body = response.body?.string()
         requireNotNull(body)
-        val formattedBody = body.split("properties").filter { it.contains("id") }
+        val formattedBody = getPropertiesStringsFromId(body)
 
         formattedBody.forEach { se ->
-            val id = se.split(',').first { it.contains("id") }.split(":").last()
+            val id = getId(se)
             val ip = se.split(',').first { it.contains("ip") }.dropWhile { !it.isDigit() && it != '[' }.dropLast(1)
-            val certificateContent = se.split(',').first { it.contains("certificate") }.dropWhile { it != '-' }.dropLastWhile { it != '-' }
+            val certificateContent = getCertificate(se)
             val certificate = crypto.buildCertificate(certificateContent)
-            nodesToConnect.add(Router(id.toInt(), ip, certificate))
+            if (id != null) nodesToConnect.add(Router(id, ip, certificate))
         }
         return nodesToConnect
     }
@@ -124,13 +153,11 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
         routerId: Int,
         pwd: String,
     ) {
-        val deleteRequest =
-            Request.Builder()
-                .header("Content-Type", json)
-                .url("$routerUrl/$routerId?pwd=$pwd")
-                .delete()
-                .build()
-
-        httpUtils.client.newCall(deleteRequest).execute()
+        httpUtils.deleteRequest(
+            json,
+            "$routerUrl/$routerId",
+            hashMapOf("pwd" to pwd),
+            "Error deleting Router",
+        )
     }
 }

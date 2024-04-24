@@ -7,31 +7,101 @@ import okhttp3.Response
 
 class HttpUtils {
     val client = OkHttpClient()
-    val json = "application/json"
 
     /**
      * This function creates a body for the request
      * @param fields the fields of the body
      * @return the body created
      */
-    fun createBody(fields: HashMap<String, String>): FormBody {
+    private fun createBody(fields: HashMap<String, String>): FormBody {
         val formBody = FormBody.Builder()
         fields.forEach { (k, v) -> formBody.add(k, v) }
         return formBody.build()
     }
 
+    /**
+     * This method makes a get request to the API
+     * @param mediaType the media type of the request
+     * @param uri the uri of the request
+     * @param query the query of the request
+     * @param lazyMessage the message to be shown if the request fails
+     * @return the response of the request
+     */
     fun getRequest(
         mediaType: String,
         uri: String,
         query: HashMap<String, String>? = null,
         lazyMessage: String,
     ): Response {
+        val finalQuery = query?.let { "?" + query.map { (k, v) -> "$k=$v" }.joinToString("&") } ?: ""
         val request =
             createGetRequest(
                 mediaType,
                 uri,
-                query,
+                finalQuery,
             )
+        return handleRequest(request, lazyMessage)
+    }
+
+    /**
+     * This method makes a delete request to the API
+     * @param mediaType the media type of the request
+     * @param uri the uri of the request
+     * @param query the query of the request
+     * @param body the body of the request
+     * @param lazyMessage the message to be shown if the request fails
+     * @return the response of the request
+     */
+    fun deleteRequest(
+        mediaType: String,
+        uri: String,
+        query: HashMap<String, String>?,
+        lazyMessage: String,
+    ): Response {
+        val finalQuery = query?.let { "?" + query.map { (k, v) -> "$k=$v" }.joinToString("&") } ?: ""
+        val request =
+            createDeleteRequest(
+                mediaType,
+                uri,
+                finalQuery,
+            )
+        return handleRequest(request, lazyMessage)
+    }
+
+    /**
+     * This method makes a post request to the API
+     * @param mediaType the media type of the request
+     * @param uri the uri of the request
+     * @param body the body of the request
+     * @param lazyMessage the message to be shown if the request fails
+     * @return the response of the request
+     */
+    fun postRequest(
+        mediaType: String,
+        uri: String,
+        body: HashMap<String, String>,
+        lazyMessage: String,
+    ): Response {
+        val formBody = createBody(body)
+        val request =
+            createPostRequest(
+                mediaType,
+                uri,
+                formBody,
+            )
+        return handleRequest(request, lazyMessage)
+    }
+
+    /**
+     * This function handles the request
+     * @param request the request to be handled
+     * @param lazyMessage the message to be shown if the request fails
+     * @return the response of the request
+     */
+    private fun handleRequest(
+        request: Request,
+        lazyMessage: String,
+    ): Response {
         try {
             val response = client.newCall(request).execute()
             if (!response.isSuccessful) throw Exception(lazyMessage)
@@ -43,7 +113,7 @@ class HttpUtils {
     }
 
     /**
-     * This function create a post request to the API
+     * This function create a get request to the API
      * @param mediaType the media type of the request
      * @param url the url of the request
      * @param query the query of the request
@@ -52,29 +122,23 @@ class HttpUtils {
     private fun createGetRequest(
         mediaType: String,
         url: String,
-        query: HashMap<String, String>? = null,
+        query: String,
     ): Request {
-        val finalUrl =
-            if (query != null) {
-                url + "?" + query.map { (k, v) -> "$k=$v" }.joinToString("&")
-            } else {
-                url
-            }
         return Request.Builder()
             .header("Content-Type", mediaType)
-            .url(finalUrl)
+            .url(url + query)
             .get()
             .build()
     }
 
     /**
-     * This function create a post request to the API
+     * This function create a get request to the API
      * @param mediaType the media type of the request
      * @param url the url of the request
      * @param body the body of the request
      * @return the request created
      */
-    fun createPostRequest(
+    private fun createPostRequest(
         mediaType: String,
         url: String,
         body: FormBody,
@@ -84,6 +148,20 @@ class HttpUtils {
         .post(body)
         .build()
 
-    fun getRoutersResponseBody(ids: List<Int>) =
-        getRequest(json, "http://localhost:8080/api/routers", hashMapOf("ids" to ids.joinToString(",")), "Router not found")
+    /**
+     * This function create a delete request to the API
+     * @param mediaType the media type of the request
+     * @param url the url of the request
+     * @param query the query of the request
+     * @return the request created
+     */
+    private fun createDeleteRequest(
+        mediaType: String,
+        url: String,
+        query: String,
+    ) = Request.Builder()
+        .header("Content-Type", mediaType)
+        .url(url + query)
+        .delete()
+        .build()
 }

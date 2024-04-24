@@ -45,7 +45,7 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
         // val finalAddr = if (addrString.count { it == ':' } > 1) "127.0.0.1:${ip.port}" else addrString
 
         val csr = crypto.generateClientCSR(ip.port, "router", pwd)
-        val routerId = httpRequests.createOnionRouter(csr.joinToString("\n"), addrString, pwd)
+        val routerId = httpRequests.registerOnionRouter(csr.joinToString("\n"), addrString, pwd)
         println(routerId)
 
         val th =
@@ -162,7 +162,7 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
      */
     private fun getInput() {
         while (true) {
-            println("Command:")
+            println("commands.Command:")
             print(">")
             command = readln()
             when (command) {

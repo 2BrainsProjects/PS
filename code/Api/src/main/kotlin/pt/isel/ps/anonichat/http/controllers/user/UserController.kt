@@ -144,7 +144,7 @@ class UserController(
      * @return the response with the users max id
      */
     @GetMapping(Uris.User.USERS_COUNT)
-    fun getRoutersCount(): ResponseEntity<*> {
+    fun getUsersCount(): ResponseEntity<*> {
         val id = services.getLastId()
         return SirenEntity(
             clazz = listOf(Rels.User.USERS_COUNT),

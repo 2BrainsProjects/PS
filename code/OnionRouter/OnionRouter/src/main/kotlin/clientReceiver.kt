@@ -1,5 +1,4 @@
-import http.HttpUtils
-import okhttp3.Response
+import http.HttpRequests
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.SelectionKey
@@ -13,6 +12,7 @@ fun main() {
     // setup of a ServerSocket simulating the last client
     val path: String = System.getProperty("user.dir") + "\\crypto"
     val crypto = Crypto(path)
+    val httpRequests = HttpRequests(crypto)
     val ip = InetSocketAddress("127.0.0.1", 8083)
     println("running on port $ip")
     val lastClient = ServerSocketChannel.open().bind(ip)
@@ -24,7 +24,7 @@ fun main() {
 
     // generating the CSR so the API use it to generate the user certificate
     val csr = crypto.generateClientCSR(ip.port, lastClient.localAddress.toString(), "password")
-    val clientId = createClient(name, email, pwd, csr.joinToString("\n"))
+    val clientId = httpRequests.registerClient(name, email, pwd, csr.joinToString("\n"))
 
     // so recebe o ip no login
 
@@ -80,7 +80,7 @@ fun main() {
                 criar a cebola inteira
                 abrir um socket para o primeiro no caso não haja
                 enviar a mensagem
-                */
+                 */
             }
 
             2 -> {
@@ -175,38 +175,4 @@ private fun readFromClient(
     val decipherMsg = Crypto(path).decipher(msg, port)
     println("deciphered message: $decipherMsg")
     return decipherMsg
-}
-
-private fun createClient(
-    name: String,
-    email: String,
-    pwd: String,
-    csr: String,
-): Int {
-    val httpUtils = HttpUtils()
-    val JSON = "application/json"
-    val apiUri = "http://localhost:8080/api"
-    val url = "$apiUri/users"
-
-    val registerBody = httpUtils.createBody(hashMapOf("name" to name, "email" to email, "password" to pwd, "clientCSR" to csr))
-
-    val registerRequest = httpUtils.createPostRequest(JSON, url, registerBody)
-    val registerResponse: Response
-
-    try {
-        registerResponse = httpUtils.client.newCall(registerRequest).execute()
-    } catch (e: Exception) {
-        println(e.message)
-        throw Exception("Error creating client")
-    }
-
-    if (registerResponse.code != 201) throw Exception("Error creating client")
-
-    val responseBody = registerResponse.body?.string()
-
-    val clientId = responseBody?.split(',')?.get(1)?.dropWhile { !it.isDigit() }?.takeWhile { it.isDigit() }?.toIntOrNull()
-
-    require(clientId != null) { "Error creating router" }
-
-    return clientId
 }

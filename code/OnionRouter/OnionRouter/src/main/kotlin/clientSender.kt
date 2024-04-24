@@ -1,5 +1,5 @@
-import http.HttpUtils
-import okhttp3.Request
+import domain.Router
+import http.HttpRequests
 import okhttp3.Response
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
@@ -23,26 +23,28 @@ fun clientSender(
     nodes: List<Int>,
     certificatePath: String = System.getProperty("user.dir") + "\\crypto",
 ): Int {
-    val nodesToConnect = mutableMapOf<Int, Pair<String, String>>()
+    val crypto = Crypto(certificatePath)
+    val httpRequest = HttpRequests(crypto)
 
-    val routersResponse = getRoutersResponseBody(nodes)
-    buildNodesToConnect(routersResponse, nodesToConnect)
+    val nodesToConnect = httpRequest.getRouters(nodes).toMutableList()
     val serverIp = getServerIp(nodesToConnect, nodes)
-
     val socketChannel = SocketChannel.open(serverIp)
 
+    val client = httpRequest.getClients(listOf(clientId)).first()
+
+    /*
     val clientResponse = getClientResponseBody(listOf(clientId))
     val body = clientResponse.body?.string()
     requireNotNull(body)
-    val formattedBody = body.split("properties").filter { it.contains("id") }[0]
+    val formattedBody = getFirstIdString(body)
 
-    val id = formattedBody.split(',').first { it.contains("id") }.split(":").last()
+    val id = getId(formattedBody)
     val ip = formattedBody.split(',').first { it.contains("ip") }.dropWhile { !it.isDigit() && it != '[' }.dropLast(1)
-    val certificate = formattedBody.split(',').first { it.contains("certificate") }.dropWhile { it != '-' }.dropLastWhile { it != '-' }
-
-    println(id)
-    println(ip) // client ip written in login
-    println(certificate)
+    val certificate = getCertificate(formattedBody)
+     */
+    println(client.id)
+    println(client.ip) // client ip written in login
+    println(client.certificate)
 
     // extrair o clientAddr e clientPort do client do ip
     // val clientIp = InetSocketAddress(clientAddr, clientPort)
@@ -51,7 +53,6 @@ fun clientSender(
     println(clientIp.address)
 
     try {
-        val crypto = Crypto(certificatePath)
         // possuir clientIp: InetSocketAddress
 
         // basic version of sender does not have CSR
@@ -66,8 +67,8 @@ fun clientSender(
         println(finalMsg)
         // reverse the nodes list to facilitate the user, so he just have to build the message path in order
         for (i in nodes.size - 1 downTo 1) {
-            val node = nodesToConnect[nodes[i]]
-            val ip = node?.first
+            val node = nodesToConnect.firstOrNull { it.id == nodes[i] }
+            val ip = node?.ip
             // construir certificado com o que vem da api e com o port send o id da api
             val port = ip?.split(":")?.last()?.toInt() ?: -1
             finalMsg = crypto.encipher(finalMsg, port)
@@ -111,18 +112,18 @@ private fun buildNodesToConnect(
 }
 
 private fun getServerIp(
-    nodesToConnect: MutableMap<Int, Pair<String, String>>,
+    nodesToConnect: MutableList<Router>,
     nodes: List<Int>,
 ): InetSocketAddress {
-    val firstNode = nodesToConnect[nodes[0]]?.first
-    val serverAddr = firstNode?.dropLastWhile { it != ':' }?.dropLast(1)
-    val serverPort = firstNode?.takeLastWhile { it != ':' }?.toIntOrNull() ?: -1
+    val firstNode = nodesToConnect.first { it.id == nodes.first() }.ip
+    val serverAddr = firstNode.dropLastWhile { it != ':' }.dropLast(1)
+    val serverPort = firstNode.takeLastWhile { it != ':' }.toIntOrNull() ?: -1
 
-    nodesToConnect.remove(nodes[0])
+    nodesToConnect.removeIf { it.id == nodes.first() }
 
     return InetSocketAddress(serverAddr, serverPort)
 }
-
+/*
 private fun getRequest(
     uri: String,
     query: HashMap<String, String>,
@@ -166,3 +167,4 @@ private fun getRoutersResponseBody(ids: List<Int>) =
     getRequest("http://localhost:8080/api/routers", hashMapOf("ids" to ids.joinToString(",")))
 
 private fun getClientResponseBody(ids: List<Int>) = getRequest("http://localhost:8080/api/users", hashMapOf("ids" to ids.joinToString(",")))
+*/
