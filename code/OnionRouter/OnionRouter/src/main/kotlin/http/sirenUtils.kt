@@ -1,38 +1,79 @@
 package http
 
-/**
- * Extracts the properties string from the body
- */
-fun getPropertiesString(body: String) = body.split("properties")
+import Crypto
+import com.google.gson.internal.LinkedTreeMap
+import domain.Client
+import domain.Router
+import http.siren.SirenEntity
+import http.siren.SubEntity
 
 /**
- * Extracts the properties string from the body where it has the id
+ * Extracts the elements from a siren response
+ * @param crypto the crypto object
+ * @return the list of clients
  */
-fun getPropertiesStringsFromId(body: String) = getPropertiesString(body).filter { it.contains("id") }
+fun SirenEntity<*>.extractElements(crypto: Crypto): List<*> =
+    entities?.map {
+        require(it.properties is LinkedTreeMap<*, *>){ "Problem extracting elements from siren response" }
+        val id = (it.properties["id"] as Double).toInt()
+        val ip = it.properties["ip"] as String
+        val certificateContent = it.properties["certificate"] as String
+        val certificate = crypto.buildCertificate(certificateContent)
+        val name = it.properties["name"] as String?
+        if(name != null){
+            Client(id, ip, name, certificate)
+        }else{
+            Router(id, ip, certificate)
+        }
+    } ?: emptyList<Any>()
 
 /**
- * Extracts the first properties string from the body where it has the id
+ * Extracts the clients from a siren response
+ * @param crypto the crypto object
+ * @return the list of clients
  */
-fun getFirstPropertiesStringFromId(body: String): String = getPropertiesStringsFromId(body).first()
+fun SirenEntity<*>.extractClients(crypto: Crypto): List<Client> =
+    entities?.map {
+        require(it.properties is LinkedTreeMap<*, *>){ "Problem extracting clients from siren response" }
+        val id = it.extractProperty<Double>("id").toInt()
+        val name = it.extractProperty<String>("name")
+        val ip = it.extractProperty<String>("ip")
+        val certificateContent = it.extractProperty<String>("certificate")
+        val certificate = crypto.buildCertificate(certificateContent)
+        Client(id, ip, name, certificate)
+    } ?: emptyList()
 
 /**
- * Extracts the id from the properties string
+ * Extracts the clients from a siren response
+ * @param crypto the crypto object
+ * @return the list of clients
  */
-fun getId(body: String): Int? = body.split(',').firstOrNull { it.contains("id") }?.split(":")?.last()?.toIntOrNull()
+fun SirenEntity<*>.extractRouters(crypto: Crypto): List<Router> =
+    entities?.map {
+        require(it.properties is LinkedTreeMap<*, *>){ "Problem extracting clients from siren response" }
+        val id = it.extractProperty<Double>("id").toInt()
+        val ip = it.extractProperty<String>("ip")
+        val certificateContent = it.extractProperty<String>("certificate")
+        val certificate = crypto.buildCertificate(certificateContent)
+        Router(id, ip, certificate)
+    } ?: emptyList()
 
 /**
- * Extracts the ip from the properties string
+ * Extracts the property from a siren response
+ * @param propertyName the name of the property
+ * @return the property as a string
  */
-fun getCertificate(body: String): String = getParam(body, "certificate").dropWhile { it != '-' }.dropLastWhile { it != '-' }
+inline fun <reified T> SirenEntity<*>.extractProperty(propertyName: String): T {
+    require(properties is LinkedTreeMap<*, *>){ "Problem extracting property from siren response" }
+    return properties[propertyName] as T
+}
 
 /**
- * Extracts the name from the properties string
+ * Extracts the property from a SubEntity
+ * @param propertyName the name of the property
+ * @return the property as a string
  */
-fun getName(body: String): String = getParam(body, "name")
-
-fun getMaxId(body: String): String = getParam(body, "maxId")
-
-private fun getParam(
-    body: String,
-    paramName: String,
-): String = body.split(',').first { it.contains(paramName) }
+inline fun <reified T> SubEntity.EmbeddedRepresentation<*>.extractProperty(propertyName: String): T {
+    require(properties is LinkedTreeMap<*, *>){ "Problem extracting property from siren response" }
+    return properties[propertyName] as T
+}

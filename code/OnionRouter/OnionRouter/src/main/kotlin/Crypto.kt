@@ -163,9 +163,9 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
      */
     fun buildCertificate(certificateContent: String): X509Certificate {
         val factory = CertificateFactory.getInstance(STD_CERTIFICATE)
-        val fis = ByteArrayInputStream(certificateContent.toByteArray(Charsets.UTF_8))
-        val cert: X509Certificate = factory.generateCertificate(fis) as X509Certificate
-        fis.close()
+        val bais = ByteArrayInputStream(certificateContent.toByteArray(Charsets.UTF_8))
+        val cert: X509Certificate = factory.generateCertificate(bais) as X509Certificate
+        bais.close()
         return cert
     }
 

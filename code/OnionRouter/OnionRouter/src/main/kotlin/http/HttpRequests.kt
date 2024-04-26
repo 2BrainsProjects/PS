@@ -1,8 +1,10 @@
 package http
 
 import Crypto
+import com.google.gson.Gson
 import domain.Client
 import domain.Router
+import http.siren.SirenEntity
 
 class HttpRequests(private val crypto: Crypto = Crypto()) {
     private val httpUtils = HttpUtils()
@@ -10,7 +12,18 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
     private val apiUri = "http://localhost:8080/api"
     private val routerUrl = "$apiUri/routers"
     private val userUrl = "$apiUri/users"
+    private val gson = Gson()
 
+
+    /**
+     * This function makes a request to the API to register a new client
+     * @param name the name of the client
+     * @param email the email of the client
+     * @param password the password of the client
+     * @param clientCSR the client certificate signing request
+     * @return the id of the client created
+     * @throws Exception if the request fails
+     */
     fun registerClient(
         name: String,
         email: String,
@@ -26,21 +39,21 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
             )
 
         if (registerResponse.code != 201) throw Exception("Error registering user")
-
         val responseBody = registerResponse.body?.string()
         requireNotNull(responseBody)
 
-        val formattedBody = getFirstPropertiesStringFromId(responseBody)
-
-        val clientId = getId(formattedBody)
-
-        require(clientId != null) { "Error registering user" }
+        val siren = transformBodyToSiren(responseBody)
+        val clientId = siren.extractProperty<Double>("userId").toInt()
 
         return clientId
     }
 
+    /**
+     * This function makes a request to the API to get clients information
+     * @param ids the ids of the clients to get
+     * @return a list of clients
+     */
     fun getClients(ids: List<Int>): List<Client> {
-        val list = mutableListOf<Client>()
         val response =
             httpUtils.getRequest(
                 json,
@@ -51,18 +64,9 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
 
         val body = response.body?.string()
         requireNotNull(body)
-        val formattedBody = getPropertiesStringsFromId(body)
 
-        formattedBody.forEach { se ->
-            val id = getId(se)
-            // Ip ta mal tenmos de corrigir
-            val ip = se.split(',').first { it.contains("ip") }.dropWhile { !it.isDigit() && it != '[' }.dropLast(1)
-            val name = getName(se)
-            val certificateContent = getCertificate(se)
-            val certificate = crypto.buildCertificate(certificateContent)
-            if (id != null) list.add(Client(id, ip, name, certificate))
-        }
-        return list
+        val clients = transformBodyToSiren(body).extractClients(crypto)
+        return clients
     }
 
     /**
@@ -90,10 +94,8 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
 
         val responseBody = registerResponse.body?.string()
         requireNotNull(responseBody)
-        val routerId = getId(responseBody)
-        // val routerId = responseBody?.split(',')?.get(1)?.dropWhile { !it.isDigit() }?.takeWhile { it.isDigit() }?.toIntOrNull()
-
-        requireNotNull(routerId) { "Error creating router" }
+        val siren = transformBodyToSiren(responseBody)
+        val routerId = siren.extractProperty<Double>("routerId").toInt()
 
         return routerId
     }
@@ -104,43 +106,30 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
      * @return a list of routers
      */
     fun getRouters(ids: List<Int>): List<Router> {
-        val nodesToConnect: MutableList<Router> = mutableListOf()
         val response = httpUtils.getRequest(json, routerUrl, hashMapOf("ids" to ids.joinToString(",")), "Error getting routers")
 
         val body = response.body?.string()
         requireNotNull(body)
-        val formattedBody = getPropertiesStringsFromId(body)
 
-        formattedBody.forEach { se ->
-            val id = getId(se)
-            val ip = se.split(',').first { it.contains("ip") }.dropWhile { !it.isDigit() && it != '[' }.dropLast(1)
-            val certificateContent = getCertificate(se)
-            val certificate = crypto.buildCertificate(certificateContent)
-            if (id != null) nodesToConnect.add(Router(id, ip, certificate))
-        }
-        return nodesToConnect
+        val routers = transformBodyToSiren(body).extractRouters(crypto)
+
+        return routers
     }
 
+    /**
+     * This function makes a request to the API to get the number of routers
+     * @return the number of routers
+     */
     fun getRouterCount(): Int {
         return getCount("$routerUrl/count")
     }
 
+    /**
+     * This function makes a request to the API to get the number of clients
+     * @return the number of clients
+     */
     fun getClientCount(): Int {
         return getCount("$userUrl/count")
-    }
-
-    private fun getCount(uri: String): Int {
-        val response = httpUtils.getRequest(json, uri, null, "Error getting routers max id")
-
-        val responseBody = response.body?.string()
-
-        // Nao sei so depois de testar
-        val routerCount = responseBody?.split(',')?.get(1)?.dropWhile { !it.isDigit() }?.takeWhile { it.isDigit() }?.toIntOrNull()
-        println("countRouter: $routerCount")
-
-        require(routerCount != null) { "Error getting router count" }
-
-        return routerCount
     }
 
     /**
@@ -159,5 +148,29 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
             hashMapOf("pwd" to pwd),
             "Error deleting Router",
         )
+    }
+
+    /**
+     * This function makes a request to the API to get the max id.
+     * @param uri the uri to get the max id
+     * @return the max id
+     */
+    private fun getCount(uri: String): Int {
+        val response = httpUtils.getRequest(json, uri, null, "Error getting routers max id")
+
+        val responseBody = response.body?.string()
+        requireNotNull(responseBody)
+        val routerCount = transformBodyToSiren(responseBody).extractProperty<Double>("maxId").toInt()
+
+        return routerCount
+    }
+
+    /**
+     * This function transforms the body of the response to a SirenEntity
+     * @param body the body of the response
+     * @return the SirenEntity
+     */
+    private fun transformBodyToSiren(body: String): SirenEntity<*> {
+        return gson.fromJson(body, SirenEntity::class.java)
     }
 }
