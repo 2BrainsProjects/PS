@@ -4,6 +4,6 @@ class AddContact : Command {
     override val id = 5
 
     override fun execute(args: List<String>) {
-        println("AddCntact command executed")
+        println("AddContact command executed")
     }
 }

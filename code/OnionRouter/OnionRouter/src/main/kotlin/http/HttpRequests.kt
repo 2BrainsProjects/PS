@@ -14,7 +14,7 @@ fun main() {
     val email = "jnchuco@gmail.com"
     val csr = crypto.generateClientCSR(1, "cn", pass).joinToString("\n")
     val h = HttpRequests(crypto)
-    val token = h.loginClient(null, email, "123", pass)
+    val token = h.loginClient(email, "123", pass).token
     val client = h.logoutClient(token) // h.registerClient(name, email, pass, csr)
     println(client)
 }
@@ -61,18 +61,15 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
     }
 
     fun loginClient(
-        name: String?,
-        email: String?,
+        nameOrEmail: String,
         ip: String,
         password: String,
     ): Token {
         val body =
-            if (name != null) {
-                hashMapOf("name" to name, "ip" to ip, "password" to password)
-            } else if (email != null) {
-                hashMapOf("email" to email, "ip" to ip, "password" to password)
+            if (nameOrEmail.contains("@")) {
+                hashMapOf("email" to nameOrEmail, "ip" to ip, "password" to password)
             } else {
-                hashMapOf()
+                hashMapOf("name" to nameOrEmail, "ip" to ip, "password" to password)
             }
 
         val loginResponse =
@@ -94,8 +91,8 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
         return Token(token, expiresIn)
     }
 
-    fun logoutClient(token: Token): Boolean {
-        val headers = hashMapOf("Content-Type" to json, "Authorization" to "Bearer ${token.token}")
+    fun logoutClient(token: String): Boolean {
+        val headers = hashMapOf("Content-Type" to json, "Authorization" to "Bearer $token")
         val logoutResponse = httpUtils.postRequest(headers, "$apiUri/logout", hashMapOf(), "Error logout in")
 
         return logoutResponse.isSuccessful
