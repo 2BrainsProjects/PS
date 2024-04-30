@@ -4,7 +4,20 @@ import Crypto
 import com.google.gson.Gson
 import domain.Client
 import domain.Router
+import domain.Token
 import http.siren.SirenEntity
+
+fun main() {
+    val crypto = Crypto()
+    val name = "jnchuco"
+    val pass = "password"
+    val email = "jnchuco@gmail.com"
+    val csr = crypto.generateClientCSR(1, "cn", pass).joinToString("\n")
+    val h = HttpRequests(crypto)
+    val token = h.loginClient(null, email, "123", pass)
+    val client = h.logoutClient(token) // h.registerClient(name, email, pass, csr)
+    println(client)
+}
 
 class HttpRequests(private val crypto: Crypto = Crypto()) {
     private val httpUtils = HttpUtils()
@@ -13,7 +26,6 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
     private val routerUrl = "$apiUri/routers"
     private val userUrl = "$apiUri/users"
     private val gson = Gson()
-
 
     /**
      * This function makes a request to the API to register a new client
@@ -32,7 +44,7 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
     ): Int {
         val registerResponse =
             httpUtils.postRequest(
-                json,
+                hashMapOf("Content-Type" to json),
                 userUrl,
                 hashMapOf("name" to name, "email" to email, "password" to password, "clientCSR" to clientCSR),
                 "Error registering user",
@@ -48,6 +60,47 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
         return clientId
     }
 
+    fun loginClient(
+        name: String?,
+        email: String?,
+        ip: String,
+        password: String,
+    ): Token {
+        val body =
+            if (name != null) {
+                hashMapOf("name" to name, "ip" to ip, "password" to password)
+            } else if (email != null) {
+                hashMapOf("email" to email, "ip" to ip, "password" to password)
+            } else {
+                hashMapOf()
+            }
+
+        val loginResponse =
+            httpUtils.postRequest(
+                hashMapOf("Content-Type" to json),
+                "$apiUri/login",
+                body,
+                "Error logging in",
+            )
+
+        val responseBody = loginResponse.body?.string()
+        requireNotNull(responseBody)
+
+        val siren = transformBodyToSiren(responseBody)
+        println(siren)
+        val token = siren.extractProperty<String>("token")
+        val expiresIn = siren.extractProperty<Double>("expiresIn").toLong()
+
+        return Token(token, expiresIn)
+    }
+
+    fun logoutClient(token: Token): Boolean {
+        val headers = hashMapOf("Content-Type" to json, "Authorization" to "Bearer ${token.token}")
+        val logoutResponse = httpUtils.postRequest(headers, "$apiUri/logout", hashMapOf(), "Error logout in")
+
+        return logoutResponse.isSuccessful
+    }
+
     /**
      * This function makes a request to the API to get clients information
      * @param ids the ids of the clients to get
@@ -56,8 +109,8 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
     fun getClients(ids: List<Int>): List<Client> {
         val response =
             httpUtils.getRequest(
-                json,
-                "http://localhost:8080/api/users",
+                hashMapOf("Content-Type" to json),
+                userUrl,
                 hashMapOf("ids" to ids.joinToString(",")),
                 "Users not found",
             )
@@ -84,7 +137,7 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
     ): Int {
         val registerResponse =
             httpUtils.postRequest(
-                json,
+                hashMapOf("Content-Type" to json),
                 routerUrl,
                 hashMapOf("routerCSR" to csr, "ip" to ip, "pwd" to pwd),
                 "Error creating router",
@@ -106,7 +159,13 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
      * @return a list of routers
      */
     fun getRouters(ids: List<Int>): List<Router> {
-        val response = httpUtils.getRequest(json, routerUrl, hashMapOf("ids" to ids.joinToString(",")), "Error getting routers")
+        val response =
+            httpUtils.getRequest(
+                hashMapOf("Content-Type" to json),
+                routerUrl,
+                hashMapOf("ids" to ids.joinToString(",")),
+                "Error getting routers",
+            )
 
         val body = response.body?.string()
         requireNotNull(body)
@@ -120,17 +179,13 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
      * This function makes a request to the API to get the number of routers
      * @return the number of routers
      */
-    fun getRouterCount(): Int {
-        return getCount("$routerUrl/count")
-    }
+    fun getRouterCount(): Int = getCount("$routerUrl/count")
 
     /**
      * This function makes a request to the API to get the number of clients
      * @return the number of clients
      */
-    fun getClientCount(): Int {
-        return getCount("$userUrl/count")
-    }
+    fun getClientCount(): Int = getCount("$userUrl/count")
 
     /**
      * This function sends a DELETE request to the API to remove the router from the list of routers
@@ -143,7 +198,7 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
         pwd: String,
     ) {
         httpUtils.deleteRequest(
-            json,
+            hashMapOf("Content-Type" to json),
             "$routerUrl/$routerId",
             hashMapOf("pwd" to pwd),
             "Error deleting Router",
@@ -156,7 +211,13 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
      * @return the max id
      */
     private fun getCount(uri: String): Int {
-        val response = httpUtils.getRequest(json, uri, null, "Error getting routers max id")
+        val response =
+            httpUtils.getRequest(
+                hashMapOf("Content-Type" to json),
+                uri,
+                null,
+                "Error getting routers max id",
+            )
 
         val responseBody = response.body?.string()
         requireNotNull(responseBody)
@@ -170,7 +231,5 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
      * @param body the body of the response
      * @return the SirenEntity
      */
-    private fun transformBodyToSiren(body: String): SirenEntity<*> {
-        return gson.fromJson(body, SirenEntity::class.java)
-    }
+    private fun transformBodyToSiren(body: String): SirenEntity<*> = gson.fromJson(body, SirenEntity::class.java)
 }

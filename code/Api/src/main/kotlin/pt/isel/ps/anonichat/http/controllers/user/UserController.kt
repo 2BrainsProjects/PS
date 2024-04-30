@@ -85,7 +85,7 @@ class UserController(
      */
     @PostMapping(Uris.User.LOGIN)
     fun loginUser(
-        @Valid @RequestBody
+        @Valid
         body: LoginInputModel,
         response: HttpServletResponse
     ): ResponseEntity<*> {

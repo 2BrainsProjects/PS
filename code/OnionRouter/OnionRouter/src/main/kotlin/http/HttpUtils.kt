@@ -1,6 +1,5 @@
 package http
 
-import http.siren.SirenEntity
 import okhttp3.FormBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -29,7 +28,7 @@ class HttpUtils {
      * @return the response of the request
      */
     fun getRequest(
-        mediaType: String,
+        headers: HashMap<String, String>,
         uri: String,
         query: HashMap<String, String>? = null,
         lazyMessage: String,
@@ -37,7 +36,7 @@ class HttpUtils {
         val finalQuery = query?.let { "?" + query.map { (k, v) -> "$k=$v" }.joinToString("&") } ?: ""
         val request =
             createGetRequest(
-                mediaType,
+                headers,
                 uri,
                 finalQuery,
             )
@@ -54,7 +53,7 @@ class HttpUtils {
      * @return the response of the request
      */
     fun deleteRequest(
-        mediaType: String,
+        headers: HashMap<String, String>,
         uri: String,
         query: HashMap<String, String>?,
         lazyMessage: String,
@@ -62,7 +61,7 @@ class HttpUtils {
         val finalQuery = query?.let { "?" + query.map { (k, v) -> "$k=$v" }.joinToString("&") } ?: ""
         val request =
             createDeleteRequest(
-                mediaType,
+                headers,
                 uri,
                 finalQuery,
             )
@@ -71,14 +70,14 @@ class HttpUtils {
 
     /**
      * This method makes a post request to the API
-     * @param mediaType the media type of the request
+     * @param headers the media type of the request
      * @param uri the uri of the request
      * @param body the body of the request
      * @param lazyMessage the message to be shown if the request fails
      * @return the response of the request
      */
     fun postRequest(
-        mediaType: String,
+        headers: HashMap<String, String>,
         uri: String,
         body: HashMap<String, String>,
         lazyMessage: String,
@@ -86,10 +85,11 @@ class HttpUtils {
         val formBody = createBody(body)
         val request =
             createPostRequest(
-                mediaType,
+                headers,
                 uri,
                 formBody,
             )
+        println("request done")
         return handleRequest(request, lazyMessage)
     }
 
@@ -103,13 +103,17 @@ class HttpUtils {
         request: Request,
         lazyMessage: String,
     ): Response {
+        var body: String? = null
         try {
             val response = client.newCall(request).execute()
-            if (!response.isSuccessful) throw Exception(lazyMessage)
+            if (!response.isSuccessful) {
+                body = response.body?.string()
+                throw Exception(body)
+            }
             return response
         } catch (e: Exception) {
             println(e.message)
-            throw Exception(lazyMessage)
+            throw Exception(body ?: lazyMessage)
         }
     }
 
@@ -121,12 +125,14 @@ class HttpUtils {
      * @return the request created
      */
     private fun createGetRequest(
-        mediaType: String,
+        headers: HashMap<String, String>,
         url: String,
         query: String,
     ): Request {
-        return Request.Builder()
-            .header("Content-Type", mediaType)
+        val requestBuilder = Request.Builder()
+        headers.forEach { (header, value) -> requestBuilder.header(header, value) }
+
+        return requestBuilder
             .url(url + query)
             .get()
             .build()
@@ -140,14 +146,18 @@ class HttpUtils {
      * @return the request created
      */
     private fun createPostRequest(
-        mediaType: String,
+        headers: HashMap<String, String>,
         url: String,
         body: FormBody,
-    ) = Request.Builder()
-        .header("Content-Type", mediaType)
-        .url(url)
-        .post(body)
-        .build()
+    ): Request {
+        val requestBuilder = Request.Builder()
+        headers.forEach { (header, value) -> requestBuilder.header(header, value) }
+
+        return requestBuilder
+            .url(url)
+            .post(body)
+            .build()
+    }
 
     /**
      * This function create a delete request to the API
@@ -157,12 +167,16 @@ class HttpUtils {
      * @return the request created
      */
     private fun createDeleteRequest(
-        mediaType: String,
+        headers: HashMap<String, String>,
         url: String,
         query: String,
-    ) = Request.Builder()
-        .header("Content-Type", mediaType)
-        .url(url + query)
-        .delete()
-        .build()
+    ): Request {
+        val requestBuilder = Request.Builder()
+        headers.forEach { (header, value) -> requestBuilder.header(header, value) }
+
+        return requestBuilder
+            .url(url + query)
+            .delete()
+            .build()
+    }
 }
