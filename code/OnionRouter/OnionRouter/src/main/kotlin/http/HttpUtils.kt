@@ -1,12 +1,11 @@
 package http
 
-import okhttp3.FormBody
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
+import com.google.gson.Gson
+import okhttp3.*
 
 class HttpUtils {
-    val client = OkHttpClient()
+    private val client = OkHttpClient()
+    private val gson = Gson()
 
     /**
      * This function creates a body for the request
@@ -38,7 +37,7 @@ class HttpUtils {
             createGetRequest(
                 headers,
                 uri,
-                finalQuery,
+                finalQuery
             )
         return handleRequest(request, lazyMessage)
     }
@@ -89,7 +88,6 @@ class HttpUtils {
                 uri,
                 formBody,
             )
-        println("request done")
         return handleRequest(request, lazyMessage)
     }
 
@@ -99,21 +97,27 @@ class HttpUtils {
      * @param lazyMessage the message to be shown if the request fails
      * @return the response of the request
      */
+    private data class Problem(
+        val type: String,
+        val title: String,
+        val detail: String,
+        val instance: String
+    )
     private fun handleRequest(
         request: Request,
         lazyMessage: String,
     ): Response {
-        var body: String? = null
+        var detail: String? = null
         try {
             val response = client.newCall(request).execute()
             if (!response.isSuccessful) {
-                body = response.body?.string()
-                throw Exception(body)
+                val body = response.body?.string()
+                detail = gson.fromJson(body, Problem::class.java).detail
+                throw Exception(detail)
             }
             return response
         } catch (e: Exception) {
-            println(e.message)
-            throw Exception(body ?: lazyMessage)
+            throw Exception(detail ?: lazyMessage)
         }
     }
 
@@ -127,7 +131,7 @@ class HttpUtils {
     private fun createGetRequest(
         headers: HashMap<String, String>,
         url: String,
-        query: String,
+        query: String
     ): Request {
         val requestBuilder = Request.Builder()
         headers.forEach { (header, value) -> requestBuilder.header(header, value) }

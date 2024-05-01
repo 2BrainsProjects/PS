@@ -67,6 +67,7 @@ class UserController(
          * removed @RequestBody annotation due to spring doesn´t recognize
          * Content-Type: application/x-www-form-urlencoded as a possible body
          */
+        @Valid
         body: RegisterInputModel
     ): ResponseEntity<*> {
         val (userId, certificateContent) = services.registerUser(body.name, body.email, body.password, body.clientCSR)

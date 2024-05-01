@@ -162,7 +162,7 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
      */
     private fun getInput() {
         while (true) {
-            println("commands.Command:")
+            println("Command:")
             print(">")
             command = readln()
             when (command) {
