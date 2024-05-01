@@ -6,6 +6,7 @@ import domain.Client
 import domain.Router
 import domain.Token
 import http.siren.SirenEntity
+import kotlin.math.sign
 
 fun main() {
     val crypto = Crypto()
@@ -84,7 +85,6 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
         requireNotNull(responseBody)
 
         val siren = transformBodyToSiren(responseBody)
-        println(siren)
         val token = siren.extractProperty<String>("token")
         val expiresIn = siren.extractProperty<Double>("expiresIn").toLong()
 

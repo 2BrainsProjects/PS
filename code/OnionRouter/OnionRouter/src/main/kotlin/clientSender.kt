@@ -6,7 +6,7 @@ import java.nio.ByteBuffer
 import java.nio.channels.SocketChannel
 
 fun main() {
-    clientSender(74, "hello", listOf(140, 141))
+    clientSender(1, "hello", listOf(20, 21))
 }
 
 /**
@@ -32,25 +32,8 @@ fun clientSender(
 
     val client = httpRequest.getClients(listOf(clientId)).first()
 
-    /*
-    val clientResponse = getClientResponseBody(listOf(clientId))
-    val body = clientResponse.body?.string()
-    requireNotNull(body)
-    val formattedBody = getFirstIdString(body)
-
-    val id = getId(formattedBody)
-    val ip = formattedBody.split(',').first { it.contains("ip") }.dropWhile { !it.isDigit() && it != '[' }.dropLast(1)
-    val certificate = getCertificate(formattedBody)
-     */
-    println(client.id)
-    println(client.ip) // client ip written in login
-    println(client.certificate)
-
     // extrair o clientAddr e clientPort do client do ip
-    // val clientIp = InetSocketAddress(clientAddr, clientPort)
-    val clientIp = InetSocketAddress("127.0.0.1", 8083)
-
-    println(clientIp.address)
+    val clientIp = client.ip
 
     try {
         // possuir clientIp: InetSocketAddress
@@ -62,16 +45,18 @@ fun clientSender(
 
         var finalMsg = msg // nickname: msg
 
-        finalMsg = crypto.encipher(finalMsg, clientIp.port)
-        finalMsg += "||${clientIp.address.toString().drop(1)}:${clientIp.port}"
+        val port = clientIp.split(":").last().toInt()
+        val address = clientIp.split(":").first()
+        finalMsg = crypto.encipher(finalMsg, port)
+        finalMsg += "||${address}:${port}"
         println(finalMsg)
         // reverse the nodes list to facilitate the user, so he just have to build the message path in order
         for (i in nodes.size - 1 downTo 1) {
             val node = nodesToConnect.firstOrNull { it.id == nodes[i] }
-            val ip = node?.ip
+            requireNotNull(node)
+            val ip = node.ip
             // construir certificado com o que vem da api e com o port send o id da api
-            val port = ip?.split(":")?.last()?.toInt() ?: -1
-            finalMsg = crypto.encipher(finalMsg, port)
+            finalMsg = crypto.encipher(finalMsg, ip.split(":").last().toInt())
             finalMsg += "||$ip"
             println(finalMsg)
         }
@@ -123,48 +108,3 @@ private fun getServerIp(
 
     return InetSocketAddress(serverAddr, serverPort)
 }
-/*
-private fun getRequest(
-    uri: String,
-    query: HashMap<String, String>,
-): Response {
-    val httpUtils = HttpUtils()
-
-    val request =
-        createGetRequest(
-            httpUtils.json,
-            uri,
-            query,
-        )
-
-    try {
-        return httpUtils.client.newCall(request).execute()
-    } catch (e: Exception) {
-        println(e.message)
-        throw Exception("Error creating router")
-    }
-}
-
-private fun createGetRequest(
-    mediaType: String,
-    url: String,
-    query: HashMap<String, String>? = null,
-): Request {
-    val finalUrl =
-        if (query != null) {
-            url + "?" + query.map { (k, v) -> "$k=$v" }.joinToString("&")
-        } else {
-            url
-        }
-    return Request.Builder()
-        .header("Content-Type", mediaType)
-        .url(finalUrl)
-        .get()
-        .build()
-}
-
-private fun getRoutersResponseBody(ids: List<Int>) =
-    getRequest("http://localhost:8080/api/routers", hashMapOf("ids" to ids.joinToString(",")))
-
-private fun getClientResponseBody(ids: List<Int>) = getRequest("http://localhost:8080/api/users", hashMapOf("ids" to ids.joinToString(",")))
-*/

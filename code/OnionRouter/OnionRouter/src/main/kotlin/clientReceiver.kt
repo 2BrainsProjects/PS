@@ -6,92 +6,51 @@ import java.nio.channels.Selector
 import java.nio.channels.ServerSocketChannel
 import java.nio.channels.SocketChannel
 import java.nio.charset.StandardCharsets
-import kotlin.random.Random
 
 fun main() {
     // setup of a ServerSocket simulating the last client
     val path: String = System.getProperty("user.dir") + "\\crypto"
     val crypto = Crypto(path)
-    val httpRequests = HttpRequests(crypto)
-    val ip = InetSocketAddress("127.0.0.1", 8083)
-    println("running on port $ip")
+    val ip = InetSocketAddress("127.0.0.1",8083)
+    println("running on port ${ip.toString().drop(1)}")
     val lastClient = ServerSocketChannel.open().bind(ip)
-
-    val randomId = Random.nextInt()
-    val name = "testUser$randomId"
-    val email = "testUser$randomId@gmail.com"
-    val pwd = "password"
+    var socket : SocketChannel? = null
+    val name = "jnchuco"
+    val email = "jnchuco@gmail.com"
+    val pwd = "Jnchuco1?"
 
     // generating the CSR so the API use it to generate the user certificate
     val csr = crypto.generateClientCSR(ip.port, lastClient.localAddress.toString(), "password")
-    val clientId = httpRequests.registerClient(name, email, pwd, csr.joinToString("\n"))
+    val clientId = HttpRequests(crypto).loginClient(name, ip.toString().drop(1), pwd)
 
     // so recebe o ip no login
 
-    println(clientId)
+    //println(clientId)
 
     val selector = Selector.open()
 
     // In this thread we start the process of handling accepted connections
-    Thread {
+    Thread{
         handleConnection(selector, ip.port)
     }.start()
 
     // And in this one, we keep accepting connections
-    Thread {
-        var socket: SocketChannel? = null
-        try {
-            while (true) {
-                socket = lastClient.accept()
+    try {
+        while(true) {
+            socket = lastClient.accept()
 
-                // register this socket on selector so we can select the sockets ready to read
-                socket.configureBlocking(false)
-                socket.register(selector, SelectionKey.OP_READ)
+            // register this socket on selector so we can select the sockets ready to read
+            socket.configureBlocking(false)
+            socket.register(selector, SelectionKey.OP_READ)
 
-                // wakes up the selector from select() in handleConnection
-                selector.wakeup()
-            }
-        } catch (e: Exception) {
-            println(e.message)
-        } finally {
-            lastClient.close()
-            socket?.close()
+            // wakes up the selector from select() in handleConnection
+            selector.wakeup()
         }
-    }.start()
-
-    while (true) {
-        println("Choose the option you want:")
-        println("1 - Send a message")
-        println("2 - Exit")
-        val option = readln().toIntOrNull()
-
-        when (option) {
-            1 -> {
-                println("Enter the message you want to send:")
-                val msg = readln()
-                // clientSender(clientId, msg, listOf(108, 109))
-                /*
-                u1 -> on2 -> on4 -> u3
-                u1 -> on1 -> on3 -> u4
-                u1 -> on2 -> on3 -> u5
-
-                verificar se ja existe algum caminho para o primeiro onion router
-                senão construir o caminho deste no para o ultimo no
-                criar a cebola inteira
-                abrir um socket para o primeiro no caso não haja
-                enviar a mensagem
-                 */
-            }
-
-            2 -> {
-                println("Exiting...")
-                break
-            }
-
-            else -> {
-                println("Invalid option")
-            }
-        }
+    } catch (e: Exception){
+        println(e.message)
+    } finally {
+        lastClient.close()
+        socket?.close()
     }
 }
 
@@ -101,10 +60,7 @@ fun main() {
  * @param selector - selector used to mark the sockets
  * @param port - port of the host to decipher the message
  */
-private fun handleConnection(
-    selector: Selector,
-    port: Int,
-) {
+private fun handleConnection(selector: Selector, port: Int) {
     while (true) {
         // check if any socket is ready to read
         var readyToRead = selector.select()
@@ -142,10 +98,7 @@ private fun handleConnection(
  * @param port - port of the host to decypher the message
  * @return the message read from the client socket
  */
-private fun readFromClient(
-    client: SocketChannel,
-    port: Int,
-): String {
+private fun readFromClient(client: SocketChannel, port: Int): String{
     val path: String = System.getProperty("user.dir") + "\\crypto"
 
     // create auxiliar buffer to read in chunks
@@ -155,7 +108,7 @@ private fun readFromClient(
     buffer.clear()
     var msg = ""
     var size: Int = client.read(buffer)
-    if (size == -1) {
+    if(size == -1) {
         client.close()
         return msg
     }

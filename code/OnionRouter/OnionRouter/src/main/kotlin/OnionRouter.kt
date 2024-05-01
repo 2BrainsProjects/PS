@@ -41,12 +41,12 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
      */
     fun start(pwd: String = UUID.randomUUID().toString()) {
         val sSocket = ServerSocketChannel.open().bind(ip)
-        val addrString = sSocket.localAddress.toString()
+        val addrString = sSocket.localAddress.toString().drop(1)
         // val finalAddr = if (addrString.count { it == ':' } > 1) "127.0.0.1:${ip.port}" else addrString
 
         val csr = crypto.generateClientCSR(ip.port, "router", pwd)
         val routerId = httpRequests.registerOnionRouter(csr.joinToString("\n"), addrString, pwd)
-        println(routerId)
+        println("router id: $routerId")
 
         val th =
             Thread {
@@ -162,8 +162,8 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
      */
     private fun getInput() {
         while (true) {
-            println("Command:")
-            print(">")
+            //println("Command:")
+            //print(">")
             command = readln()
             when (command) {
                 "exit" -> {
@@ -227,16 +227,14 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
             if (!it.isOpen) socketsList.remove(it)
         }
 
-        println("-------------------------------------------------------")
-
         // verfificar se existe/estabelecer ligação ao nextNode
         putConnectionIfAbsent(addr)
+
+        println("-------------------------------------------------------")
 
         // socket com o próximo node                           removing prefix '/'  e.g. /127.0.0.1
         val socket =
             socketsList.firstOrNull { // /127.0.0.1:8083
-                println("remote addr 1: ${it.remoteAddress}")
-                println("addr 1: $addr")
                 it.remoteAddress.toString().contains(addr)
             }
 
@@ -252,15 +250,12 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
     private fun putConnectionIfAbsent(addr: String) {
         if (!addr.contains(":")) return
 
-        socketsList.forEach { println("socketslist: ${it.remoteAddress}") }
-        println("addr 2: $addr")
         if (!socketsList.any { it.remoteAddress.toString().contains(addr) }) {
             println("sending to: $addr")
             val splitAddr = addr.split(':')
             if (splitAddr.size != 2 && splitAddr.size != 9) return
             val newAddr = InetSocketAddress(addr.dropLastWhile { it != ':' }.dropLast(1), splitAddr.last().toInt())
             val nextNode = SocketChannel.open(newAddr)
-            println("nextNode: ${nextNode.remoteAddress}")
             socketsList.add(nextNode)
         }
     }
