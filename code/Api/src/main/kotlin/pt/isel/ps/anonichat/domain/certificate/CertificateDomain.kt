@@ -7,8 +7,6 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.OutputStreamWriter
-import java.security.cert.CertificateFactory
-import java.security.cert.X509Certificate
 
 @Component
 class CertificateDomain  {
@@ -16,11 +14,9 @@ class CertificateDomain  {
     /**
      * this function requires openssl installed in system's PATH.
      * the resultant certificate will be in clientId.crt
+     * @param clientCSR user's certificate signing request
      * @param clientId user's id
-     * @param name user's name
-     * @param email user's email
      * @param path path of the certificate
-     * @param password user's password
      * @return the path of the certificate
      */
     fun createCertCommand(
@@ -31,6 +27,8 @@ class CertificateDomain  {
         val csrFile = createCSRTempFile(clientId, clientCSR, path)
 
         val certFile = File("$path/$clientId.cer")
+
+        if(certFile.exists()) certFile.delete()
         certFile.createNewFile()
 
         val signedCertificateCommand = signedCertificateCommand(clientId, path)

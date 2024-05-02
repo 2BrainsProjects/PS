@@ -7,6 +7,13 @@ class HttpUtils {
     private val client = OkHttpClient()
     private val gson = Gson()
 
+    private data class Problem(
+        val type: String,
+        val title: String,
+        val detail: String,
+        val instance: String
+    )
+
     /**
      * This function creates a body for the request
      * @param fields the fields of the body
@@ -97,12 +104,6 @@ class HttpUtils {
      * @param lazyMessage the message to be shown if the request fails
      * @return the response of the request
      */
-    private data class Problem(
-        val type: String,
-        val title: String,
-        val detail: String,
-        val instance: String
-    )
     private fun handleRequest(
         request: Request,
         lazyMessage: String,

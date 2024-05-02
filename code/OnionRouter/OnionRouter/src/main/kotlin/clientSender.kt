@@ -6,7 +6,7 @@ import java.nio.ByteBuffer
 import java.nio.channels.SocketChannel
 
 fun main() {
-    clientSender(1, "hello", listOf(20, 21))
+    clientSender(1, "hello", listOf(46,47))
 }
 
 /**
@@ -47,7 +47,7 @@ fun clientSender(
 
         val port = clientIp.split(":").last().toInt()
         val address = clientIp.split(":").first()
-        finalMsg = crypto.encipher(finalMsg, port)
+        finalMsg = crypto.encipher(finalMsg, client.certificate)
         finalMsg += "||${address}:${port}"
         println(finalMsg)
         // reverse the nodes list to facilitate the user, so he just have to build the message path in order
@@ -56,12 +56,12 @@ fun clientSender(
             requireNotNull(node)
             val ip = node.ip
             // construir certificado com o que vem da api e com o port send o id da api
-            finalMsg = crypto.encipher(finalMsg, ip.split(":").last().toInt())
+            finalMsg = crypto.encipher(finalMsg, node.certificate)
             finalMsg += "||$ip"
             println(finalMsg)
         }
 
-        finalMsg = crypto.encipher(finalMsg, serverIp.port)
+        finalMsg = crypto.encipher(finalMsg, nodesToConnect.first().certificate)
         println(finalMsg)
 
         var bytesWritten: Int

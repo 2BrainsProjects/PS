@@ -34,7 +34,7 @@ class UserService(
      * @return The user's id and the certificate
      * @throws UserAlreadyExistsException if the user already exists
      */
-    fun registerUser(name: String, email: String, password: String, clientCSR: String, path: String = basePath): Pair<Int, String> {
+    fun registerUser(name: String, email: String, password: String, clientCSR: String, path: String = basePath): Int {
         val passwordHash = domain.encodePassword(password)
         return tm.run {
             requireOrThrow<UserAlreadyExistsException>(!it.userRepository.isUserByUsername(name)) {
@@ -53,7 +53,7 @@ class UserService(
             // Update the user with the certificate path
             it.userRepository.updateCert(userId, "$path/$userId.cer")
 
-            Pair(userId, certContent)
+            userId
         }
     }
 

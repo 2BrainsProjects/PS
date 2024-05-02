@@ -6,6 +6,7 @@ import domain.Client
 import domain.Router
 import http.siren.SirenEntity
 import http.siren.SubEntity
+import java.io.File
 
 /**
  * Extracts the elements from a siren response
@@ -39,7 +40,14 @@ fun SirenEntity<*>.extractClients(crypto: Crypto): List<Client> =
         val name = it.extractProperty<String>("name")
         val ip = it.extractProperty<String>("ip")
         val certificateContent = it.extractProperty<String>("certificate")
+
+        val f = File(System.getProperty("user.dir") + "\\crypto\\checkCertContent.pem")
+        f.createNewFile()
+        f.writeText(certificateContent)
+
+        println(certificateContent)
         val certificate = crypto.buildCertificate(certificateContent)
+        println("passou o certificado")
         Client(id, ip, name, certificate)
     } ?: emptyList()
 

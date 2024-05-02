@@ -70,10 +70,10 @@ class UserController(
         @Valid
         body: RegisterInputModel
     ): ResponseEntity<*> {
-        val (userId, certificateContent) = services.registerUser(body.name, body.email, body.password, body.clientCSR)
+        val userId = services.registerUser(body.name, body.email, body.password, body.clientCSR)
         return SirenEntity(
             clazz = listOf(Rels.User.REGISTER),
-            properties = RegisterOutputModel(userId, certificateContent),
+            properties = RegisterOutputModel(userId),
             links = listOf(Links.home())
         ).created(Uris.User.home())
     }

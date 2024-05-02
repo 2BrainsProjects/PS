@@ -12,7 +12,7 @@ class CryptoTest {
     @Test
     fun `can generate keys`(){
         val port = generateRandomPort()
-        crypto.generateKeys(port)
+        crypto.generatePrivateKey(port)
 
         val privKeyFile = File("$path\\priv$port.pem")
         val pubKeyFile = File("$path\\pub$port.pem")
@@ -50,7 +50,7 @@ class CryptoTest {
     @Test
     fun `can encipher and decipher a message`() {
         val port = generateRandomPort()
-        crypto.generateKeys(port)
+        crypto.generatePrivateKey(port)
 
         val message = "Hello, World!"
 
@@ -66,8 +66,8 @@ class CryptoTest {
         val port1 = generateRandomPort()
         val port2 = generateRandomPort()
 
-        crypto.generateKeys(port1)
-        crypto.generateKeys(port2)
+        crypto.generatePrivateKey(port1)
+        crypto.generatePrivateKey(port2)
 
         val message = "Hello, World!"
 

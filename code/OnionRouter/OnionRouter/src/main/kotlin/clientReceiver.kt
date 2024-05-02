@@ -21,11 +21,12 @@ fun main() {
 
     // generating the CSR so the API use it to generate the user certificate
     val csr = crypto.generateClientCSR(ip.port, lastClient.localAddress.toString(), "password")
-    val clientId = HttpRequests(crypto).loginClient(name, ip.toString().drop(1), pwd)
+    val clientId = HttpRequests(crypto).registerClient(name, email, pwd, csr.joinToString("\n"))
+    HttpRequests(crypto).loginClient(name, ip.toString().drop(1), pwd)
 
     // so recebe o ip no login
 
-    //println(clientId)
+    println(clientId)
 
     val selector = Selector.open()
 

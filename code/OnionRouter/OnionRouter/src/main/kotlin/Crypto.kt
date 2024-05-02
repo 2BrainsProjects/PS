@@ -31,7 +31,7 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
         cn: String,
         pwd: String,
     ): List<String> {
-        generateKeys(port)
+        generatePrivateKey(port)
         answeringCSRCreation(port, cn, pwd)
         BufferedReader(InputStreamReader(FileInputStream("$basePath/$port.csr"))).use {
             return it.readLines().drop(1).dropLast(1)
@@ -82,16 +82,13 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
      * Method to generate the key pair.
      * @param port - port of the host
      */
-    fun generateKeys(port: Int) {
+    fun generatePrivateKey(port: Int) {
         val keyPairGenerator = KeyPairGenerator.getInstance(ALG_ASYMMETRIC)
         keyPairGenerator.initialize(2048)
         val keyPair = keyPairGenerator.generateKeyPair()
 
         val privateKey = keyPair.private.encoded
         createAndWriteFile(privateKey, "$basePath/priv$port.pem")
-
-        val publicKey = keyPair.public.encoded
-        createAndWriteFile(publicKey, "$basePath/pub$port.pem")
     }
 
     /**
