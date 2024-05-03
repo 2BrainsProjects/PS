@@ -6,7 +6,7 @@ import java.nio.ByteBuffer
 import java.nio.channels.SocketChannel
 
 fun main() {
-    clientSender(1, "hello", listOf(46,47))
+    clientSender(5, "hello", listOf(21,22))
 }
 
 /**
@@ -44,11 +44,11 @@ fun clientSender(
         println("message: $msg")
 
         var finalMsg = msg // nickname: msg
-
+        
         val port = clientIp.split(":").last().toInt()
         val address = clientIp.split(":").first()
         finalMsg = crypto.encipher(finalMsg, client.certificate)
-        finalMsg += "||${address}:${port}"
+        finalMsg += "||$address:$port"
         println(finalMsg)
         // reverse the nodes list to facilitate the user, so he just have to build the message path in order
         for (i in nodes.size - 1 downTo 1) {
@@ -103,8 +103,6 @@ private fun getServerIp(
     val firstNode = nodesToConnect.first { it.id == nodes.first() }.ip
     val serverAddr = firstNode.dropLastWhile { it != ':' }.dropLast(1)
     val serverPort = firstNode.takeLastWhile { it != ':' }.toIntOrNull() ?: -1
-
-    nodesToConnect.removeIf { it.id == nodes.first() }
 
     return InetSocketAddress(serverAddr, serverPort)
 }

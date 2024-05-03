@@ -69,9 +69,7 @@ class CertificateDomain  {
         if (!file.exists()) {
             file.createNewFile()
             BufferedWriter(OutputStreamWriter(FileOutputStream("$path/$clientId.csr"))).use {
-                it.write("-----BEGIN CERTIFICATE REQUEST-----\n")
-                it.write(clientCSR + "\n")
-                it.write("-----END CERTIFICATE REQUEST-----\n")
+                it.write(clientCSR)
             }
         }
         return file

@@ -33,8 +33,11 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
     ): List<String> {
         generatePrivateKey(port)
         answeringCSRCreation(port, cn, pwd)
-        BufferedReader(InputStreamReader(FileInputStream("$basePath/$port.csr"))).use {
-            return it.readLines().drop(1).dropLast(1)
+        val path = "$basePath/$port.csr"
+        BufferedReader(InputStreamReader(FileInputStream(path))).use {
+            val csrContent = it.readLines()
+            File(path).delete()
+            return csrContent
         }
     }
 
@@ -101,6 +104,7 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
         filePath: String,
     ) {
         val file2 = File(filePath)
+        if (file2.exists()) file2.delete()
         file2.createNewFile()
         file2.writeBytes(key)
     }

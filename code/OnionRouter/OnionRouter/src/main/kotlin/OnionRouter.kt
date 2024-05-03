@@ -11,6 +11,7 @@ import java.nio.channels.ServerSocketChannel
 import java.nio.channels.SocketChannel
 import java.security.cert.X509Certificate
 import java.util.UUID
+import kotlin.random.Random
 import kotlin.system.exitProcess
 
 /**
@@ -39,7 +40,7 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
      * Has support to interruption of the program
      * @param pwd the password of the router's CSR
      */
-    fun start(pwd: String = UUID.randomUUID().toString()) {
+    fun start(pwd: String = "password"+ Random.nextInt()) {
         val sSocket = ServerSocketChannel.open().bind(ip)
         val addrString = sSocket.localAddress.toString().drop(1)
         // val finalAddr = if (addrString.count { it == ':' } > 1) "127.0.0.1:${ip.port}" else addrString
