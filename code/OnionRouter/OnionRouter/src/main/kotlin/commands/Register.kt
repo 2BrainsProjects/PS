@@ -1,11 +1,12 @@
 package commands
 
+import domain.UserStorage
 import http.HttpRequests
 
-class Register(private val httpRequests: HttpRequests) : Command {
+class Register(private val httpRequests: HttpRequests, private val userStorage: UserStorage) : Command {
     override fun execute(args: List<String>) { // name, email, password, clientCSR
 
         val id = httpRequests.registerClient(args[0], args[1], args[2], args[3])
-        println(id)
+        userStorage.id = id
     }
 }

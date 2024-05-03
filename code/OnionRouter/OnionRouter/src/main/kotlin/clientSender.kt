@@ -43,8 +43,8 @@ fun clientSender(
         // val csrOutput = crypto.generateClientCSR(hostIp.port, hostIp.toString(), pwd)
         println("message: $msg")
 
-        var finalMsg = msg // nickname: msg
-        
+        var finalMsg = "$msg"   // ${sender.name}:
+
         val port = clientIp.split(":").last().toInt()
         val address = clientIp.split(":").first()
         finalMsg = crypto.encipher(finalMsg, client.certificate)

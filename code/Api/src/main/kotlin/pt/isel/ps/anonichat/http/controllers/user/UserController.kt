@@ -82,7 +82,7 @@ class UserController(
      * Handles the request to login a user
      * @param body the request body (LoginInputModel)
      * @param response the response of the request
-     * @return the response with the user's token and the certificate content
+     * @return the response with the user's token
      */
     @PostMapping(Uris.User.LOGIN)
     fun loginUser(
@@ -90,11 +90,11 @@ class UserController(
         body: LoginInputModel,
         response: HttpServletResponse
     ): ResponseEntity<*> {
-        val (token, certContent) = services.loginUser(body.name, body.email, body.password, body.ip)
+        val token = services.loginUser(body.name, body.email, body.password, body.ip)
         response.addCookie(token)
         return SirenEntity(
             clazz = listOf(Rels.User.LOGIN),
-            properties = LoginOutputModel(certContent, token.value, token.expiration.epochSeconds),
+            properties = LoginOutputModel(token.value, token.expiration.epochSeconds),
             links = listOf(Links.home(), Links.userHome())
         ).ok()
     }

@@ -67,27 +67,25 @@ class UserService(
      * @return The user's token and the content of the certificate
      * @throws InvalidCredentialsException if the username or email is not provided
      */
-    fun loginUser(name: String?, email: String?, password: String, ip: String, path: String = basePath): Pair<TokenModel, String> {
-        val userId: Int
+    fun loginUser(name: String?, email: String?, password: String, ip: String, path: String = basePath): TokenModel {
         val tokenModel: TokenModel
         when {
             name != null -> {
                 tokenModel = loginByUsername(name, password, ip)
-                userId = tm.run {
+                tm.run {
                     it.userRepository.getUserByUsername(name).id
                 }
             }
             email != null -> {
                 tokenModel = loginByEmail(email, password, ip)
-                userId = tm.run {
+                tm.run {
                     it.userRepository.getUserByEmail(email).id
                 }
             }
             else -> throw InvalidCredentialsException("Username or email is required for login")
         }
-        val certContent: String = cd.readFile("$path/$userId.cer")
 
-        return Pair(tokenModel, certContent)
+        return tokenModel
     }
 
     /**
