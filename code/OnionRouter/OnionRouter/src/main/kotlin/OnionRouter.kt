@@ -1,4 +1,4 @@
-import domain.Client
+import domain.ClientInformation
 import domain.Router
 import http.HttpRequests
 import sun.misc.Signal
@@ -10,7 +10,6 @@ import java.nio.channels.Selector
 import java.nio.channels.ServerSocketChannel
 import java.nio.channels.SocketChannel
 import java.security.cert.X509Certificate
-import java.util.UUID
 import kotlin.random.Random
 import kotlin.system.exitProcess
 
@@ -27,6 +26,7 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
     private var status = 0
     private var command = ""
     private val httpRequests = HttpRequests(crypto)
+    private val client = Client(crypto, httpRequests)
 
     init {
         println("onion router running on port $ip")
@@ -40,14 +40,16 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
      * Has support to interruption of the program
      * @param pwd the password of the router's CSR
      */
-    fun start(pwd: String = "password"+ Random.nextInt()) {
+    fun start(pw: String = "password"+ Random.nextInt()) {
         val sSocket = ServerSocketChannel.open().bind(ip)
         val addrString = sSocket.localAddress.toString().drop(1)
-        // val finalAddr = if (addrString.count { it == ':' } > 1) "127.0.0.1:${ip.port}" else addrString
 
+        client.initializationMenu(addrString)
+        /*
         val csr = crypto.generateClientCSR(ip.port, "router", pwd)
         val routerId = httpRequests.registerOnionRouter(csr.joinToString("\n"), addrString, pwd)
         println("router id: $routerId")
+         */
 
         val th =
             Thread {
@@ -76,7 +78,7 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
             Signal.handle(Signal("INT")) {
                 th.interrupt()
                 status = 1
-                httpRequests.deleteRouter(routerId, pwd)
+                client.deleteNode()
                 finalizeOnionRouter(sSocket, selector)
                 exitProcess(0)
             }
@@ -87,7 +89,7 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
         } finally {
             th.interrupt()
             status = 1
-            httpRequests.deleteRouter(routerId, pwd)
+            client.deleteNode()
             finalizeOnionRouter(sSocket, selector)
         }
     }
@@ -118,7 +120,7 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
         }
     }
 
-    private fun getClientData(clientId: Int): Client? {
+    private fun getClientData(clientId: Int): ClientInformation? {
         val count = httpRequests.getClientCount()
         val ids: MutableList<Int> = (0..count).shuffled().take(routersAmountRequest).toMutableList()
 

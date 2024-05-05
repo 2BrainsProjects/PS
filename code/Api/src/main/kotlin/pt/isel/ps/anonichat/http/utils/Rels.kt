@@ -10,6 +10,7 @@ object Rels {
         const val REGISTER = "register-user"
         const val LOGIN = "login"
         const val LOGOUT = "logout"
+        const val USER = "get-user"
         const val USERS = "get-users"
         const val USERS_COUNT = "get-users-count"
     }

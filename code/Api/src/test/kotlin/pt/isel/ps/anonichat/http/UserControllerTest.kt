@@ -4,7 +4,7 @@ package pt.isel.ps.anonichat.http
  import org.springframework.util.LinkedMultiValueMap
  import org.springframework.util.MultiValueMap
  import org.springframework.web.reactive.function.BodyInserters
- import pt.isel.ps.anonichat.http.controllers.user.models.GetUserOutputModel
+ import pt.isel.ps.anonichat.http.controllers.user.models.GetUserInformationOutputModel
  import pt.isel.ps.anonichat.http.controllers.user.models.GetUsersCountOutputModel
  import pt.isel.ps.anonichat.http.controllers.user.models.LoginOutputModel
  import pt.isel.ps.anonichat.http.controllers.user.models.RegisterOutputModel
@@ -147,8 +147,8 @@ class UserControllerTest : HttpTest() {
         }
     }
 
-    private fun getUserOutputModel(map: LinkedHashMap<*, *>): GetUserOutputModel {
-        return GetUserOutputModel(
+    private fun getUserOutputModel(map: LinkedHashMap<*, *>): GetUserInformationOutputModel {
+        return GetUserInformationOutputModel(
             map["id"] as Int,
             map["ip"] as String,
             map["name"] as String,

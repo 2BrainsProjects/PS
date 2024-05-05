@@ -6,12 +6,9 @@ import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-import pt.isel.ps.anonichat.domain.utils.Ip
-import pt.isel.ps.anonichat.http.controllers.router.models.GetRoutersCountOutputModel
 import pt.isel.ps.anonichat.http.controllers.user.models.*
 import pt.isel.ps.anonichat.http.media.siren.SirenEntity
 import pt.isel.ps.anonichat.http.media.siren.SubEntity
@@ -115,6 +112,20 @@ class UserController(
     }
 
     /**
+     * Handles the request to get the user information
+     * @param user the user session
+     * @return the response with the user information
+     */
+    @GetMapping(Uris.User.USER)
+    fun getUser(user: Session): ResponseEntity<*> {
+        val user = services.getUser(user.token)
+        return SirenEntity(
+            clazz = listOf(Rels.User.USER),
+            properties = GetUserOutputModel(user.id, user.name)
+        ).ok()
+    }
+
+    /**
      * Handles the request to get list of users
      * @param ids the request query ids of the users
      * @return the response with the list of users
@@ -134,7 +145,7 @@ class UserController(
             entities = users.map { user ->
                 SubEntity.EmbeddedRepresentation(
                     rel = listOf(Rels.Collection.ITEM),
-                    properties = GetUserOutputModel(user.id, user.ip, user.name, user.certificate)
+                    properties = GetUserInformationOutputModel(user.id, user.ip, user.name, user.certificate)
                 )
             }
         ).ok()

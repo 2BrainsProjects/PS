@@ -1,19 +1,23 @@
 import commands.Login
 import commands.Register
+import domain.RouterStorage
+import domain.UserStorage
 import http.HttpRequests
-import java.net.InetSocketAddress
+import kotlin.random.Random
 
 fun main() {
     val crypto = Crypto()
     val httpRequests = HttpRequests(crypto)
     val client = Client(crypto, httpRequests)
-    client.authenticationMenu(InetSocketAddress("127.0.0.1", 8081))
+    client.initializationMenu("127.0.0.1:8081")
 }
 
 class Client(
     private val crypto: Crypto,
     private val httpRequests: HttpRequests
 ) {
+    private var routerStorage: RouterStorage? = null
+    private var userStorage: UserStorage? = null
 
     /*
     initialization menu
@@ -32,50 +36,38 @@ class Client(
         - send message
         - logout
     */
-    fun authenticationMenu(ip: InetSocketAddress){
-        var command = ""
-        while (true) {
-            println("___________________________________")
-            println("Menu")
-            println("1 - Register")
-            println("2 - Login")
-            print("> ")
-            command = readln()
-            when (command) {
-                "exit" -> {
-                    break
-                }
-                "1" -> {
-                    println("Register")
 
-                    val args = getInputs(listOf("Name", "Email", "Password")).toMutableList()
-                    val port = ip.port
-                    val name = args[0]
-                    val pwd = args[2]
-                    val csr = crypto.generateClientCSR(port, name, pwd).joinToString("\n")
-                    args.add(csr)
+    fun deleteNode(){
+        val userStorage = userStorage
+        val routerStorage = routerStorage
+        if (userStorage != null) {
+            userStorage.token?.let { httpRequests.logoutClient(it.token) }
+        }
+        if (routerStorage != null) {
+            httpRequests.deleteRouter(routerStorage.id, routerStorage.pwd)
+        }
+    }
 
-                    try{
-                        Register(httpRequests).execute(args)
-                        break
-                    } catch (e: Exception) {
-                        println("Something went wrong. Try again.")
-                        println(e.message)
-                    }
-                }
-                "2" -> {
-                    println("Login")
-                    val args = getInputs(listOf("Name or Email", "Password")).toMutableList()
-
-                    args.add(1, ip.toString().dropWhile { it == '/' })
-                    try {
-                        Login(httpRequests).execute(args)
-                        break
-                    } catch (e: Exception) {
-                        println("Something went wrong. Try again.")
-                        println(e.message)
-                    }
-                }
+    fun initializationMenu(ip: String){
+        showMenu(
+            "Would you like to initialize as:",
+            "1 - Client",
+            "2 - Router",
+            "3 - Both"
+        )
+        val command = readln()
+        when (command) {
+            "1" -> {
+                authenticationMenu(ip)
+                //operationsMenu()
+            }
+            "2" -> {
+                initializeRouter(ip)
+            }
+            "3" -> {
+                initializeRouter(ip)
+                authenticationMenu(ip)
+                //operationsMenu()
             }
         }
     }
@@ -83,12 +75,13 @@ class Client(
     fun operationsMenu(){
         var command = ""
         while (true) {
-            println("Menu")
-            println("1 - Add contact")
-            println("2 - Contact messages")
-            println("3 - List contacts")
-            println("4 - Logout")
-            print(">")
+            showMenu(
+                "Menu",
+                "1 - Add contact",
+                "2 - Contact messages",
+                "3 - List contacts",
+                "4 - Logout"
+            )
             command = readln()
             when (command) {
                 "exit" -> {
@@ -111,6 +104,70 @@ class Client(
                 }
             }
         }
+    }
+
+    private fun authenticationMenu(ip: String) {
+        var command: String
+        while (true) {
+            showMenu(
+                "Menu",
+                "1 - Register",
+                "2 - Login"
+            )
+            command = readln()
+            when (command) {
+                "exit" -> {
+                    break
+                }
+                "1" -> {
+                    println("Register")
+
+                    val args = getInputs(listOf("Name", "Email", "Password")).toMutableList()
+                    val port = ip.split(":").last().toInt()
+                    val name = args[0]
+                    val pwd = args[2]
+                    val csr = crypto.generateClientCSR(port, name, pwd).joinToString("\n")
+                    args.add(csr)
+                    args.add(ip)
+                    try{
+                        userStorage = UserStorage()
+                        Register(httpRequests, userStorage!!).execute(args)
+                        break
+                    } catch (e: Exception) {
+                        println("Something went wrong. Try again.")
+                        println(e.message)
+                    }
+                }
+                "2" -> {
+                    println("Login")
+                    val args = getInputs(listOf("Name or Email", "Password")).toMutableList()
+
+                    args.add(1, ip)
+                    try {
+                        userStorage = UserStorage()
+                        Login(httpRequests, userStorage!!).execute(args)
+                        break
+                    } catch (e: Exception) {
+                        println("Something went wrong. Try again.")
+                        println(e.message)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun initializeRouter(ip: String){
+        val password = "Pa\$\$w0rd${Random.nextInt()}"
+        val port = ip.split(":").last().toInt()
+        val csr = crypto.generateClientCSR(port, "router", password)
+        val routerId = httpRequests.registerOnionRouter(csr.joinToString("\n"), ip , password)
+        routerStorage = RouterStorage(routerId, password)
+    }
+
+    private fun showMenu(vararg options: String) {
+        println("___________________________________")
+        options.forEach { println(it) }
+        print("> ")
     }
 
     private fun getInputs(list: List<String>): List<String>{

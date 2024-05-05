@@ -14,6 +14,7 @@ object Uris {
         const val REGISTER = "/users"
         const val LOGIN = "/login"
         const val LOGOUT = "/logout"
+        const val USER = "/user"
         const val USERS = "/users"
         const val USERS_COUNT = "/users/count"
 

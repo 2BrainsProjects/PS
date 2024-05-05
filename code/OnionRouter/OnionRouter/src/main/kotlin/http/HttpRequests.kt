@@ -3,20 +3,20 @@ package http
 import Crypto
 import com.google.gson.Gson
 import domain.Client
+import domain.ClientInformation
 import domain.Router
 import domain.Token
 import http.siren.SirenEntity
-import kotlin.math.sign
 
 fun main() {
     val crypto = Crypto()
-    val name = "jnchuco"
-    val pass = "password"
-    val email = "jnchuco@gmail.com"
+    val name = "Joao"
+    val pass = "Joao1234?"
     val csr = crypto.generateClientCSR(1, "cn", pass).joinToString("\n")
     val h = HttpRequests(crypto)
-    val token = h.loginClient(email, "123", pass).token
-    val client = h.logoutClient(token) // h.registerClient(name, email, pass, csr)
+    val token = h.loginClient(name, "123", pass).token
+    println(token)
+    val client = h.getClient(token) // h.registerClient(name, email, pass, csr)
     println(client)
 }
 
@@ -98,12 +98,22 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
         return logoutResponse.isSuccessful
     }
 
+    fun getClient(token: String): Client {
+        val headers = hashMapOf("Content-Type" to json, "Authorization" to "Bearer $token")
+        val response = httpUtils.getRequest(headers, "$apiUri/user", hashMapOf(), "Error getting user")
+        val responseBody = response.body?.string()
+        requireNotNull(responseBody)
+
+        val client = transformBodyToSiren(responseBody).extractClient()
+        return client
+    }
+
     /**
      * This function makes a request to the API to get clients information
      * @param ids the ids of the clients to get
      * @return a list of clients
      */
-    fun getClients(ids: List<Int>): List<Client> {
+    fun getClients(ids: List<Int>): List<ClientInformation> {
         val response =
             httpUtils.getRequest(
                 hashMapOf("Content-Type" to json),

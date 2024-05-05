@@ -124,6 +124,12 @@ class UserService(
         }
     }
 
+    fun getUser(tokenValue: String): User {
+        val user = getUserByToken(tokenValue)
+        requireOrThrow<UserNotFoundException>(user != null) { "User was not found" }
+        return user
+    }
+
     /**
      * Creates a new valid token for a user
      * @param userId The user's id
