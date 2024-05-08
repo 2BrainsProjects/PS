@@ -5,16 +5,10 @@ import domain.UserStorage
 import http.HttpRequests
 import kotlin.random.Random
 
-fun main() {
-    val crypto = Crypto()
-    val httpRequests = HttpRequests(crypto)
-    val client = Client(crypto, httpRequests)
-    client.initializationMenu("127.0.0.1:8081")
-}
-
 class Client(
     private val crypto: Crypto,
-    private val httpRequests: HttpRequests
+    private val httpRequests: HttpRequests,
+    private val sendMsg: (Int, String) -> Unit
 ) {
     private var routerStorage: RouterStorage? = null
     private var userStorage: UserStorage? = null
@@ -36,6 +30,8 @@ class Client(
         - send message
         - logout
     */
+
+    fun getInfo(): Pair<UserStorage?, RouterStorage?> = Pair(userStorage, routerStorage)
 
     fun deleteNode(){
         val userStorage = userStorage
@@ -59,55 +55,22 @@ class Client(
         when (command) {
             "1" -> {
                 authenticationMenu(ip)
-                //operationsMenu()
+                operationsMenu()
             }
             "2" -> {
                 initializeRouter(ip)
             }
             "3" -> {
-                initializeRouter(ip)
-                authenticationMenu(ip)
-                //operationsMenu()
+                val csr = authenticationMenu(ip)
+                initializeRouter(ip, csr)
+                operationsMenu()
             }
         }
     }
 
-    fun operationsMenu(){
-        var command = ""
-        while (true) {
-            showMenu(
-                "Menu",
-                "1 - Add contact",
-                "2 - Contact messages",
-                "3 - List contacts",
-                "4 - Logout"
-            )
-            command = readln()
-            when (command) {
-                "exit" -> {
-                    break
-                }
-                "1" -> {
-                    // poder adicionar por nome ou por id (?)
-                    println("Enter the name of the contact")
-                }
-                "2" -> {
-                    println("Name of the contact:")
-                    // ---------------------------
-                    println("Send message")
-                }
-                "3" -> {
-                    // sliding window to get the files(?)
-                }
-                "4" -> {
-                    println("Logout")
-                }
-            }
-        }
-    }
-
-    private fun authenticationMenu(ip: String) {
+    private fun authenticationMenu(ip: String):String? {
         var command: String
+        var csr : String? = null
         while (true) {
             showMenu(
                 "Menu",
@@ -116,9 +79,6 @@ class Client(
             )
             command = readln()
             when (command) {
-                "exit" -> {
-                    break
-                }
                 "1" -> {
                     println("Register")
 
@@ -126,7 +86,7 @@ class Client(
                     val port = ip.split(":").last().toInt()
                     val name = args[0]
                     val pwd = args[2]
-                    val csr = crypto.generateClientCSR(port, name, pwd).joinToString("\n")
+                    csr = crypto.generateClientCSR(port, name, pwd).joinToString("\n")
                     args.add(csr)
                     args.add(ip)
                     try{
@@ -154,13 +114,48 @@ class Client(
                 }
             }
         }
+        return csr
     }
 
-    private fun initializeRouter(ip: String){
+    private fun operationsMenu(){
+        var command = ""
+        while (true) {
+            showMenu(
+                "Menu",
+                "1 - Add contact",
+                "2 - Contact messages",
+                "3 - List contacts",
+                "4 - Logout"
+            )
+            command = readln()
+            when (command) {
+                "1" -> {
+                    // poder adicionar por nome ou por id (?)
+                    println("Enter the name or id of the contact")
+                }
+                "2" -> {
+                    val args = getInputs(listOf("Id of the contact", "Message"))
+                    sendMsg(args[0].toInt(), args[1])
+                    //println("Load more")
+                }
+                "3" -> {
+                    // sliding window to get the files(?)
+                }
+                "4" -> {
+                    deleteNode()
+                    println("Logout successfully.")
+                    break
+                }
+            }
+        }
+    }
+
+    private fun initializeRouter(ip: String, csr: String? = null){
         val password = "Pa\$\$w0rd${Random.nextInt()}"
         val port = ip.split(":").last().toInt()
-        val csr = crypto.generateClientCSR(port, "router", password)
-        val routerId = httpRequests.registerOnionRouter(csr.joinToString("\n"), ip , password)
+        println("running on port $port")
+        val csrToUser = csr ?: crypto.generateClientCSR(port, "router", password).joinToString("\n")
+        val routerId = httpRequests.registerOnionRouter(csrToUser, ip , password)
         routerStorage = RouterStorage(routerId, password)
     }
 

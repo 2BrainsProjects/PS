@@ -12,7 +12,6 @@ import java.nio.channels.SocketChannel
 import java.security.cert.X509Certificate
 import kotlin.random.Random
 import kotlin.system.exitProcess
-
 /**
  * This class represents an Onion Router
  */
@@ -26,7 +25,7 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
     private var status = 0
     private var command = ""
     private val httpRequests = HttpRequests(crypto)
-    private val client = Client(crypto, httpRequests)
+    private val client = Client(crypto, httpRequests, ::sendMessage)
 
     init {
         println("onion router running on port $ip")
@@ -40,16 +39,9 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
      * Has support to interruption of the program
      * @param pwd the password of the router's CSR
      */
-    fun start(pw: String = "password"+ Random.nextInt()) {
+    fun start() {
         val sSocket = ServerSocketChannel.open().bind(ip)
         val addrString = sSocket.localAddress.toString().drop(1)
-
-        client.initializationMenu(addrString)
-        /*
-        val csr = crypto.generateClientCSR(ip.port, "router", pwd)
-        val routerId = httpRequests.registerOnionRouter(csr.joinToString("\n"), addrString, pwd)
-        println("router id: $routerId")
-         */
 
         val th =
             Thread {
@@ -83,7 +75,9 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
                 exitProcess(0)
             }
 
-            getInput()
+            client.initializationMenu(addrString)
+            if(client.getInfo().second != null)
+                getInput()
         } catch (e: IOException) {
             println(e.message)
         } finally {
@@ -112,7 +106,10 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
             socketsList.firstOrNull { // /127.0.0.1:8083
                 it.remoteAddress.toString().contains(firstNodeIp)
             }
-        val encipherMsg = encipherMessage(msg, path.reversed())
+
+        val sender = this.client.getInfo().first
+        val msgToSend = "final:${sender?.id}:${sender?.name}:$msg"
+        val encipherMsg = encipherMessage(msgToSend, path.reversed())
 
         if (socket != null) {
             val newMsgBytes = encipherMsg.toByteArray(Charsets.UTF_8)
@@ -222,6 +219,12 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
         val plainText = crypto.decipher(msg, ip.port)
         println("deciphered message: $plainText")
 
+        //final:id:name:msg
+        if(plainText.startsWith("final:")){
+            readMsg(plainText)
+            return
+        }
+
         val addr = plainText.split("||").last() // onion || 234 325 345 234:4363
         val newMsg = plainText.dropLastWhile { it != '|' }.dropLast(2)
         val newMsgBytes = newMsg.toByteArray(Charsets.UTF_8)
@@ -240,10 +243,20 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
             socketsList.firstOrNull { // /127.0.0.1:8083
                 it.remoteAddress.toString().contains(addr)
             }
-
         if (socket != null) {
             writeToClient(newMsgBytes, socket)
         }
+    }
+
+    private fun readMsg(msg:String){
+        //final:id:name:msg
+        val info = msg.split(":").drop(1)
+        val id = info.first()
+        val name = info[1]
+        val message = info.drop(2).joinToString(":")
+        println("$name,$id:$message")
+        // se user tiver na conversa com $name então ele vê a msg
+        // guardamos sempre essa mensagem no ficheiro $name.txt
     }
 
     /**

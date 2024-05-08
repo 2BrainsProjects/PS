@@ -1,12 +1,11 @@
 import domain.Router
 import http.HttpRequests
-import okhttp3.Response
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.SocketChannel
 
 fun main() {
-    clientSender(5, "hello", listOf(21,22))
+    clientSender(14, "hello", listOf(35, 36))
 }
 
 /**
@@ -43,10 +42,12 @@ fun clientSender(
         // val csrOutput = crypto.generateClientCSR(hostIp.port, hostIp.toString(), pwd)
         println("message: $msg")
 
-        var finalMsg = "$msg"   // ${sender.name}:
+        var finalMsg = "final:${client.id}:${client.name}:$msg"   // ${sender.id}:${sender.name}:$msg
+        println(finalMsg)
 
         val port = clientIp.split(":").last().toInt()
         val address = clientIp.split(":").first()
+        println(client.id)
         finalMsg = crypto.encipher(finalMsg, client.certificate)
         finalMsg += "||$address:$port"
         println(finalMsg)
@@ -56,11 +57,13 @@ fun clientSender(
             requireNotNull(node)
             val ip = node.ip
             // construir certificado com o que vem da api e com o port send o id da api
+            println(node.id)
             finalMsg = crypto.encipher(finalMsg, node.certificate)
             finalMsg += "||$ip"
             println(finalMsg)
         }
 
+        println(nodesToConnect.first().id)
         finalMsg = crypto.encipher(finalMsg, nodesToConnect.first().certificate)
         println(finalMsg)
 
@@ -77,22 +80,6 @@ fun clientSender(
         return bytesWritten
     } finally {
         socketChannel.close()
-    }
-}
-
-private fun buildNodesToConnect(
-    routersResponse: Response,
-    nodesToConnect: MutableMap<Int, Pair<String, String>>,
-) {
-    val body = routersResponse.body?.string()
-    requireNotNull(body)
-    val formattedBody = body.split("properties").filter { it.contains("id") }
-
-    formattedBody.forEach { se ->
-        val id = se.split(',').first { it.contains("id") }.split(":").last()
-        val ip = se.split(',').first { it.contains("ip") }.dropWhile { !it.isDigit() && it != '[' }.dropLast(1)
-        val certificate = se.split(',').first { it.contains("certificate") }.dropWhile { it != '-' }.dropLastWhile { it != '-' }
-        nodesToConnect[id.toInt()] = Pair(ip, certificate)
     }
 }
 
