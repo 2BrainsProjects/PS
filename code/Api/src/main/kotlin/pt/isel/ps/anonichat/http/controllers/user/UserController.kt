@@ -167,6 +167,42 @@ class UserController(
         ).ok()
     }
 
+    @GetMapping(Uris.User.MESSAGES)
+    fun getMessages(
+        user: Session,
+        @RequestParam @Valid
+        params: GetMessagesInputModel
+    ): ResponseEntity<*> {
+        val messages = services.getMessages(user.user.id, params.cid, params.msgDate)
+        return SirenEntity(
+            clazz = listOf(Rels.User.MESSAGES),
+            properties = GetMessagesOutputModel(messages.count()),
+            links = listOfNotNull(
+                Links.self(Uris.User.MESSAGES)
+            ),
+            entities = messages.map { message ->
+                SubEntity.EmbeddedRepresentation(
+                    rel = listOf(Rels.Collection.ITEM),
+                    properties = GetMessageOutputModel(message.cid, message.message, message.msgDate)
+                )
+            }
+        ).ok()
+    }
+
+    @PostMapping(Uris.User.MESSAGES)
+    fun saveMessages(
+        user: Session,
+        body: SaveMessagesInputModel
+    ): ResponseEntity<*> {
+        services.saveMessages(user.user.id, body.cid, body.message, body.msgDate)
+        return SirenEntity<Unit>(
+            clazz = listOf(Rels.User.MESSAGES),
+            links = listOfNotNull(
+                Links.self(Uris.User.MESSAGES)
+            )
+        ).ok()
+    }
+
     private fun HttpServletResponse.addCookie(token: TokenModel) {
         val cookie = Cookie(TOKEN, token.value).also {
             it.isHttpOnly = true

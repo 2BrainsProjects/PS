@@ -2,6 +2,7 @@ package pt.isel.ps.anonichat.repository.jdbi
 
 import org.jdbi.v3.core.Handle
 import org.jdbi.v3.core.kotlin.mapTo
+import pt.isel.ps.anonichat.domain.user.Message
 import pt.isel.ps.anonichat.domain.user.User
 import pt.isel.ps.anonichat.repository.UserRepository
 
@@ -131,4 +132,29 @@ class JdbiUserRepository(
             .bind("id", id)
             .bind("certPath", certPath)
             .execute() == 1
+
+    override fun saveMessages(userId: Int, cid: String, message: String, msgDate: String): Boolean =
+        handle.createUpdate("insert into dbo.Message (user_id, cid, message, msg_date) values (:userId, :cid, :message, timestamp :msgDate)")
+            .bind("userId", userId)
+            .bind("cid", cid)
+            .bind("message", message)
+            .bind("msg_date", msgDate)
+            .execute() == 1
+
+    override fun getMessages(userId: Int, cid: String) : List<Message> =
+        handle.createQuery("select * from dbo.Message where user_id = :userId and cid = :cid")
+            .bind("userId", userId)
+            .bind("cid", cid)
+            .mapTo<Message>()
+            .list()
+
+    override fun getMessages(userId: Int, cid: String, msgDate: String) : List<Message> =
+        handle.createQuery("select * from dbo.Message where user_id = :userId and cid = :cid and msg_date > timestamp :msgDate")
+            .bind("userId", userId)
+            .bind("cid", cid)
+            .bind("msg_date", msgDate)
+            .mapTo<Message>()
+            .list()
+
+
 }

@@ -25,9 +25,7 @@ class CertificateDomain  {
         path: String
     ): String {
         val csrFile = createCSRTempFile(clientId, clientCSR, path)
-
         val certFile = File("$path/$clientId.cer")
-
         if(certFile.exists()) certFile.delete()
         certFile.createNewFile()
 
@@ -37,7 +35,6 @@ class CertificateDomain  {
         // wait for the file to be written on
         while(BufferedReader(FileInputStream(certFile).bufferedReader()).readLines().isEmpty()){}
         csrFile.delete()
-
         return "$path/$clientId.cer"
     }
 

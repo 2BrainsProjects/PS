@@ -13,6 +13,7 @@ object Rels {
         const val USER = "get-user"
         const val USERS = "get-users"
         const val USERS_COUNT = "get-users-count"
+        const val MESSAGES = "get-messages"
     }
 
     object Router {

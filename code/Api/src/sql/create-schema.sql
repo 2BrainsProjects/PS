@@ -23,3 +23,9 @@ create table if not exists dbo.Router(
     certificate varchar(256) null
 );
 
+create table if not exists dbo.Message(
+    user_id int references dbo.User(id) on delete cascade,
+    cid varchar(128) not null,
+    message varchar(512) not null,
+    msg_date timestamp not null
+);

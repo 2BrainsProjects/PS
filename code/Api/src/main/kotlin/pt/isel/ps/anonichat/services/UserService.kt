@@ -9,6 +9,7 @@ import pt.isel.ps.anonichat.domain.exceptions.UserException.UnauthorizedExceptio
 import pt.isel.ps.anonichat.domain.exceptions.UserException.UserAlreadyExistsException
 import pt.isel.ps.anonichat.domain.exceptions.UserException.UserNotFoundException
 import pt.isel.ps.anonichat.domain.exceptions.requireOrThrow
+import pt.isel.ps.anonichat.domain.user.Message
 import pt.isel.ps.anonichat.domain.user.Token
 import pt.isel.ps.anonichat.domain.user.User
 import pt.isel.ps.anonichat.domain.user.UserDomain
@@ -43,10 +44,8 @@ class UserService(
             requireOrThrow<UserAlreadyExistsException>(!it.userRepository.isUserByEmail(email)) {
                 "User with email $email already exists"
             }
-
             // Register a new user
             val userId = it.userRepository.registerUser(name, email, passwordHash)
-
             // Certificate need the user's id to be created
             val certContent = cd.createCertCommand(clientCSR, userId, path)
 
@@ -178,6 +177,22 @@ class UserService(
             it.userRepository.getLastId()
         }
     }
+
+    fun saveMessages(userId: Int, cid: String, message: String, msgDate: String) =
+        tm.run {
+            requireOrThrow<UserNotFoundException>(it.userRepository.isUser(userId)) { "User was not Found" }
+            it.userRepository.saveMessages(userId, cid, message, msgDate)
+        }
+
+    fun getMessages(userId: Int, cid: String, msgDate: String?): List<Message> =
+        tm.run {
+            requireOrThrow<UserNotFoundException>(it.userRepository.isUser(userId)) { "User was not Found" }
+            if(msgDate != null){
+                it.userRepository.getMessages(userId, cid, msgDate)
+            }else{
+                it.userRepository.getMessages(userId, cid)
+            }
+        }
 
     /**
      * Logs in a user by username

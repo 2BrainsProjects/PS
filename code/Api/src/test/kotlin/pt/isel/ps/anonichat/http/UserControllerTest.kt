@@ -1,5 +1,6 @@
 package pt.isel.ps.anonichat.http
 
+ import org.springframework.http.MediaType
  import org.springframework.test.web.reactive.server.expectBody
  import org.springframework.util.LinkedMultiValueMap
  import org.springframework.util.MultiValueMap
@@ -61,14 +62,14 @@ class UserControllerTest : HttpTest() {
 
         // when: creating a token
         // then: the response is a 200
-        val (_, token, _) = client.post().uri(api("/login"))
-            .bodyValue(
-                mapOf(
-                    "name" to name,
-                    "password" to password,
-                    "ip" to ip
-                )
-            )
+        val body: MultiValueMap<String, String> = LinkedMultiValueMap()
+        body.add("name", name)
+        body.add("password", password)
+        body.add("ip", ip)
+
+        val (token, _) = client.post().uri(api("/login"))
+            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+            .body(BodyInserters.fromFormData(body))
             .exchange()
             .expectStatus().isOk
             .expectBody<SirenEntity<LoginOutputModel>>()
@@ -110,11 +111,11 @@ class UserControllerTest : HttpTest() {
     @Test
     fun `can get 3 users`() {
         // given: 5 users
-        val (u1Id, _) = registerTestUserHttp()
-        val (u2Id, _) = registerTestUserHttp()
-        val (u3Id, _) = registerTestUserHttp()
-        val (u4Id, _) = registerTestUserHttp()
-        val (u5Id, _) = registerTestUserHttp()
+        val (u1Id) = registerTestUserHttp()
+        val (u2Id) = registerTestUserHttp()
+        val (u3Id) = registerTestUserHttp()
+        val (u4Id) = registerTestUserHttp()
+        val (u5Id) = registerTestUserHttp()
 
         val maxIdResponse = client.get().uri(api("/users/count"))
             .exchange()

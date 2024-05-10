@@ -44,7 +44,7 @@ open class AnonichatTest {
         private fun generateCSR(id: Int, pseudoname: String, email: String, pwd: String, extraPath: String): String {
             answeringCSRCreation(id, pseudoname, email, pwd, extraPath)
             BufferedReader(InputStreamReader(FileInputStream("$basePath$extraPath/$id.csr"))).use {
-                return it.readLines().drop(1).dropLast(1).joinToString("")
+                return it.readLines().joinToString("\n")
             }
         }
 

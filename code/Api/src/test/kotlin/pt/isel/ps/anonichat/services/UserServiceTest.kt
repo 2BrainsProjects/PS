@@ -15,7 +15,7 @@ class UserServiceTest : ServicesTest() {
         val (name, email, password, clientCSR) = testUserData()
 
         // when: registering the user
-        val (userId, _) = usersServices.registerUser(name, email, password, clientCSR, path)
+        val userId = usersServices.registerUser(name, email, password, clientCSR, path)
 
         // then: the user is registered
         val users = usersServices.getUsers(listOf(userId))
@@ -43,7 +43,7 @@ class UserServiceTest : ServicesTest() {
         val (token) = usersServices.loginUser(name, null, password, "192.127.0.1", path)
 
         // and: getting the user by token
-        val userByToken = usersServices.getUserByToken(token.value)
+        val userByToken = usersServices.getUserByToken(token)
 
         // then: the user is logged in
         assertEquals(name, userByToken?.name)
@@ -54,16 +54,12 @@ class UserServiceTest : ServicesTest() {
     fun `login a user by email`() {
         // given: a user
         val (name, email, password, clientCSR) = testUserData()
-
         // when: registering the user
         usersServices.registerUser(name, email, password, clientCSR, path)
-
         // and: logging in the user by email
         val (token) = usersServices.loginUser(null, email, password, "192.127.0.1", path)
-
         // and: getting the user by token
-        val userByToken = usersServices.getUserByToken(token.value)
-
+        val userByToken = usersServices.getUserByToken(token)
         // then: the user is logged in
         assertEquals(name, userByToken?.name)
         assertEquals(email, userByToken?.email)
@@ -75,7 +71,7 @@ class UserServiceTest : ServicesTest() {
         val (name, email, password, clientCSR) = testUserData()
 
         // when: registering the user
-        val (userId) = usersServices.registerUser(name, email, password, clientCSR, path)
+        val userId = usersServices.registerUser(name, email, password, clientCSR, path)
 
         val maxId = usersServices.getLastId()
 
@@ -102,14 +98,14 @@ class UserServiceTest : ServicesTest() {
         val (token, _) = usersServices.loginUser(name, null, password, "192.127.0.1", path)
 
         // then: the user is logged in
-        val userByToken = usersServices.getUserByToken(token.value)
+        val userByToken = usersServices.getUserByToken(token)
         assertNotNull(userByToken)
         assertEquals(name, userByToken.name)
 
         // when: revoking the token
-        usersServices.revokeToken(token.value)
+        usersServices.revokeToken(token)
 
         // then: the token is no longer valid to get the user
-        assertEquals(null, usersServices.getUserByToken(token.value))
+        assertEquals(null, usersServices.getUserByToken(token))
     }
 }
