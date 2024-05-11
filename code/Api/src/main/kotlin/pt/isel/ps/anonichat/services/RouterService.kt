@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component
 import pt.isel.ps.anonichat.domain.certificate.CertificateDomain
 import pt.isel.ps.anonichat.domain.exceptions.RouterException.InvalidCredentialsException
 import pt.isel.ps.anonichat.domain.exceptions.requireOrThrow
+import pt.isel.ps.anonichat.domain.utils.readFile
 import pt.isel.ps.anonichat.repository.transaction.TransactionManager
 import pt.isel.ps.anonichat.services.models.RouterModel.Companion.toModel
 import pt.isel.ps.anonichat.services.models.RoutersModel
@@ -30,7 +31,7 @@ class RouterService(
             }
                 .map { router ->
                 val cert = if(router.certificate != null) {
-                    cd.readFile(router.certificate)
+                    readFile(router.certificate)
                 } else ""
                 router.toModel(cert)
             }

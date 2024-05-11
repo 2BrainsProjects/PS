@@ -13,10 +13,13 @@ import pt.isel.ps.anonichat.domain.user.Message
 import pt.isel.ps.anonichat.domain.user.Token
 import pt.isel.ps.anonichat.domain.user.User
 import pt.isel.ps.anonichat.domain.user.UserDomain
+import pt.isel.ps.anonichat.domain.utils.readFile
+import pt.isel.ps.anonichat.domain.utils.writeFile
 import pt.isel.ps.anonichat.repository.transaction.TransactionManager
 import pt.isel.ps.anonichat.services.models.TokenModel
 import pt.isel.ps.anonichat.services.models.UserModel.Companion.toModel
 import pt.isel.ps.anonichat.services.models.UsersModel
+import java.io.File
 
 @Component
 class UserService(
@@ -46,8 +49,15 @@ class UserService(
             }
             // Register a new user
             val userId = it.userRepository.registerUser(name, email, passwordHash)
+            val sessionInfoPath = System.getProperty("user.dir") + "\\sessions\\user$userId.txt"
+            val file = File(sessionInfoPath)
+            File(file.parent).mkdirs()
+            file.createNewFile()
+
+            it.userRepository.updateSessionInfo(userId, sessionInfoPath)
+
             // Certificate need the user's id to be created
-            val certContent = cd.createCertCommand(clientCSR, userId, path)
+            cd.createCertCommand(clientCSR, userId, path)
 
             // Update the user with the certificate path
             it.userRepository.updateCert(userId, "$path/$userId.cer")
@@ -66,17 +76,17 @@ class UserService(
      * @return The user's token and the content of the certificate
      * @throws InvalidCredentialsException if the username or email is not provided
      */
-    fun loginUser(name: String?, email: String?, password: String, ip: String, path: String = basePath): TokenModel {
-        val tokenModel: TokenModel
+    fun loginUser(name: String?, email: String?, password: String, ip: String, path: String = basePath): Pair<TokenModel, String> {
+        val tokenModelAndSessionInfo: Pair<TokenModel, String>
         when {
             name != null -> {
-                tokenModel = loginByUsername(name, password, ip)
+                tokenModelAndSessionInfo = loginByUsername(name, password, ip)
                 tm.run {
                     it.userRepository.getUserByUsername(name).id
                 }
             }
             email != null -> {
-                tokenModel = loginByEmail(email, password, ip)
+                tokenModelAndSessionInfo = loginByEmail(email, password, ip)
                 tm.run {
                     it.userRepository.getUserByEmail(email).id
                 }
@@ -84,7 +94,7 @@ class UserService(
             else -> throw InvalidCredentialsException("Username or email is required for login")
         }
 
-        return tokenModel
+        return tokenModelAndSessionInfo
     }
 
     /**
@@ -98,7 +108,7 @@ class UserService(
                 if (tr.userRepository.isUser(id)) tr.userRepository.getUser(id) else null
             }
             .map { user ->
-                val cert = if(user.certificate != null) cd.readFile(user.certificate) else ""
+                val cert = if(user.certificate != null) readFile(user.certificate) else ""
                 user.toModel(cert)
             }
             UsersModel(users)
@@ -194,6 +204,14 @@ class UserService(
             }
         }
 
+    fun saveSessionInfo(userId: Int, sessionInfo: String){
+        val sessionInfoPath = tm.run {
+            requireOrThrow<UserNotFoundException>(it.userRepository.isUser(userId)) { "User was not Found" }
+            it.userRepository.getUserSession(userId)
+        }
+        writeFile(sessionInfoPath, sessionInfo)
+    }
+
     /**
      * Logs in a user by username
      * @param name The user's username
@@ -201,18 +219,23 @@ class UserService(
      * @return The user's token
      * @throws InvalidCredentialsException if the username or password is incorrect
      */
-    private fun loginByUsername(name: String, password: String, ip: String): TokenModel = tm.run {
-        requireOrThrow<InvalidCredentialsException>(it.userRepository.isUserByUsername(name)) {
-            "Incorrect username or password"
-        }
-        val user = it.userRepository.getUserByUsername(name)
-        requireOrThrow<InvalidCredentialsException>(domain.verifyPassword(password, user.passwordHash)) {
-            "Incorrect username or password"
-        }
-        it.userRepository.updateIp(user.id, ip)
+    private fun loginByUsername(name: String, password: String, ip: String): Pair<TokenModel, String> =
+        tm.run {
+            requireOrThrow<InvalidCredentialsException>(it.userRepository.isUserByUsername(name)) {
+                "Incorrect username or password"
+            }
+            val user = it.userRepository.getUserByUsername(name)
+            requireOrThrow<InvalidCredentialsException>(domain.verifyPassword(password, user.passwordHash)) {
+                "Incorrect username or password"
+            }
+            it.userRepository.updateIp(user.id, ip)
+            val sessionInfoPath = it.userRepository.getUserSession(user.id)
+            val sessionInfo = readFile(sessionInfoPath)
 
-        createToken(user.id)
-    }
+            val tokenModel = createToken(user.id)
+
+            tokenModel to sessionInfo
+        }
 
     /**
      * Logs in a user by email
@@ -221,18 +244,24 @@ class UserService(
      * @return The user's token
      * @throws InvalidCredentialsException if the email or password is incorrect
      */
-    private fun loginByEmail(email: String, password: String, ip: String): TokenModel = tm.run {
-        requireOrThrow<InvalidCredentialsException>(it.userRepository.isUserByEmail(email)) {
-            "Incorrect email or password"
-        }
-        val user = it.userRepository.getUserByEmail(email)
-        requireOrThrow<InvalidCredentialsException>(domain.verifyPassword(password, user.passwordHash)) {
-            "Incorrect email or password"
-        }
-        it.userRepository.updateIp(user.id, ip)
+    private fun loginByEmail(email: String, password: String, ip: String): Pair<TokenModel, String> =
+        tm.run {
+            requireOrThrow<InvalidCredentialsException>(it.userRepository.isUserByEmail(email)) {
+                "Incorrect email or password"
+            }
+            val user = it.userRepository.getUserByEmail(email)
+            requireOrThrow<InvalidCredentialsException>(domain.verifyPassword(password, user.passwordHash)) {
+                "Incorrect email or password"
+            }
+            it.userRepository.updateIp(user.id, ip)
 
-        createToken(user.id)
-    }
+            val sessionInfoPath = it.userRepository.getUserSession(user.id)
+            val sessionInfo = readFile(sessionInfoPath)
+
+            val tokenModel = createToken(user.id)
+
+            tokenModel to sessionInfo
+        }
 
     companion object{
         private val basePath

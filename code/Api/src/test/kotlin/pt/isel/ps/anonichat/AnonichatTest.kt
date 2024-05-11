@@ -8,6 +8,8 @@ import java.io.BufferedWriter
 import java.io.FileInputStream
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
+import java.sql.Timestamp
+import java.text.SimpleDateFormat
 import java.util.*
 
 open class AnonichatTest {
@@ -87,6 +89,18 @@ open class AnonichatTest {
         fun testIp(): String{
             val random = Random()
             return "${random.nextInt(256)}.${random.nextInt(256)}.${random.nextInt(256)}.${random.nextInt(256)}"
+        }
+
+        fun testTimestamp(): String{
+            // Make sure to adjust the date format ('YYYY-MM-DD HH24:MI:SS') according to the format of the timestamp you're passing.
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+            val currentTime = Date()
+            return dateFormat.format(currentTime)
+        }
+
+        fun testCid() : String{
+            val random = Random()
+            return "cid${random.nextInt()}"
         }
 
         fun testCertificate(): String {

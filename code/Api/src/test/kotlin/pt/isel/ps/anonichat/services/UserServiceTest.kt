@@ -43,7 +43,7 @@ class UserServiceTest : ServicesTest() {
         val (token) = usersServices.loginUser(name, null, password, "192.127.0.1", path)
 
         // and: getting the user by token
-        val userByToken = usersServices.getUserByToken(token)
+        val userByToken = usersServices.getUserByToken(token.value)
 
         // then: the user is logged in
         assertEquals(name, userByToken?.name)
@@ -59,7 +59,7 @@ class UserServiceTest : ServicesTest() {
         // and: logging in the user by email
         val (token) = usersServices.loginUser(null, email, password, "192.127.0.1", path)
         // and: getting the user by token
-        val userByToken = usersServices.getUserByToken(token)
+        val userByToken = usersServices.getUserByToken(token.value)
         // then: the user is logged in
         assertEquals(name, userByToken?.name)
         assertEquals(email, userByToken?.email)
@@ -98,14 +98,31 @@ class UserServiceTest : ServicesTest() {
         val (token, _) = usersServices.loginUser(name, null, password, "192.127.0.1", path)
 
         // then: the user is logged in
-        val userByToken = usersServices.getUserByToken(token)
+        val userByToken = usersServices.getUserByToken(token.value)
         assertNotNull(userByToken)
         assertEquals(name, userByToken.name)
 
         // when: revoking the token
-        usersServices.revokeToken(token)
+        usersServices.revokeToken(token.value)
 
         // then: the token is no longer valid to get the user
-        assertEquals(null, usersServices.getUserByToken(token))
+        assertEquals(null, usersServices.getUserByToken(token.value))
+    }
+
+    @Test
+    fun `save and get messages`(){
+
+        val (name, email, password, clientCSR) = testUserData()
+
+        // when: registering the user
+        val userId = usersServices.registerUser(name, email, password, clientCSR, path)
+
+        val cid = testCid()
+        val msgDate = testTimestamp()
+        val msgs = listOf("hello, how you doing?", "well and you?")
+
+        assertTrue(usersServices.saveMessages(userId, cid, msgs.first(), msgDate))
+
+
     }
 }

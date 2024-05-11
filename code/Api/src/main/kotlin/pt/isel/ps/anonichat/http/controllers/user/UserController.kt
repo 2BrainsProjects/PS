@@ -87,11 +87,11 @@ class UserController(
         body: LoginInputModel,
         response: HttpServletResponse
     ): ResponseEntity<*> {
-        val token = services.loginUser(body.name, body.email, body.password, body.ip)
+        val (token, sessionInfo) = services.loginUser(body.name, body.email, body.password, body.ip)
         response.addCookie(token)
         return SirenEntity(
             clazz = listOf(Rels.User.LOGIN),
-            properties = LoginOutputModel(token.value, token.expiration.epochSeconds),
+            properties = LoginOutputModel(token.value, token.expiration.epochSeconds, sessionInfo),
             links = listOf(Links.home(), Links.userHome())
         ).ok()
     }
@@ -102,7 +102,8 @@ class UserController(
      * @return the response
      */
     @PostMapping(Uris.User.LOGOUT)
-    fun logoutUser(user: Session, response: HttpServletResponse): ResponseEntity<*> {
+    fun logoutUser(user: Session, logoutInputModel: LogoutInputModel,response: HttpServletResponse): ResponseEntity<*> {
+        services.saveSessionInfo(user.user.id, logoutInputModel.sessionInfo)
         services.revokeToken(user.token)
         response.removeCookie()
         return SirenEntity<Unit>(
@@ -118,10 +119,10 @@ class UserController(
      */
     @GetMapping(Uris.User.USER)
     fun getUser(user: Session): ResponseEntity<*> {
-        val user = services.getUser(user.token)
+        val userInfo = services.getUser(user.token)
         return SirenEntity(
             clazz = listOf(Rels.User.USER),
-            properties = GetUserOutputModel(user.id, user.name)
+            properties = GetUserOutputModel(userInfo.id, userInfo.name)
         ).ok()
     }
 
@@ -167,6 +168,12 @@ class UserController(
         ).ok()
     }
 
+    /**
+     * Handles the request to get the messages of a user
+     * @param user the user session
+     * @param params the request query parameters
+     * @return the response with the user messages
+     */
     @GetMapping(Uris.User.MESSAGES)
     fun getMessages(
         user: Session,
@@ -189,6 +196,12 @@ class UserController(
         ).ok()
     }
 
+    /**
+     * Handles the request to save messages of a user
+     * @param user the user session
+     * @param body the request body (SaveMessagesInputModel)
+     * @return the response
+     */
     @PostMapping(Uris.User.MESSAGES)
     fun saveMessages(
         user: Session,

@@ -18,4 +18,6 @@ interface UserRepository {
     fun saveMessages(userId: Int, cid: String, message: String, msgDate: String): Boolean
     fun getMessages(userId: Int, cid: String): List<Message>
     fun getMessages(userId: Int, cid: String, msgDate: String): List<Message>
+    fun getUserSession(id: Int): String
+    fun updateSessionInfo(id: Int, sessionInfoPath: String): Boolean
 }

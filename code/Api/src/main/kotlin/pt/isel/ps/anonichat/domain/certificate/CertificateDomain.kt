@@ -7,6 +7,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.OutputStreamWriter
+import java.nio.file.Files
 
 @Component
 class CertificateDomain  {
@@ -25,6 +26,7 @@ class CertificateDomain  {
         path: String
     ): String {
         val csrFile = createCSRTempFile(clientId, clientCSR, path)
+        File(path).mkdirs()
         val certFile = File("$path/$clientId.cer")
         if(certFile.exists()) certFile.delete()
         certFile.createNewFile()
@@ -50,18 +52,8 @@ class CertificateDomain  {
         }
     }
 
-    fun readFile(filePath: String): String {
-        val bufferedReader = BufferedReader(FileInputStream(filePath).bufferedReader())
-        val text = bufferedReader.readText()
-        bufferedReader.close()
-        return text
-    }
-
     private fun createCSRTempFile(clientId: Int, clientCSR: String, path: String): File {
-        val dir = File(path)
-        if(!dir.exists()) {
-            dir.mkdir()
-        }
+        File(path).mkdirs()
         val file = File("$path/$clientId.csr")
         if (!file.exists()) {
             file.createNewFile()

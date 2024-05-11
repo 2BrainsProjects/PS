@@ -6,7 +6,8 @@ create table if not exists dbo.User(
     name varchar(64) unique not null,
     email varchar(64) unique not null check (email ~ '^[A-Za-z0-9+_.-]+@(.+)$'),
     password_hash varchar(60) not null,
-    certificate varchar(256) null
+    certificate varchar(256) null,
+    session_info varchar(256) null
 );
 
 create table if not exists dbo.Token(

@@ -2,6 +2,7 @@ package pt.isel.ps.anonichat.repository
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class UserRepositoryTest : RepositoryTest() {
@@ -36,7 +37,7 @@ class UserRepositoryTest : RepositoryTest() {
         val username = testUsername()
         val email = testEmail()
         val password = HASHED_TEST_PASSWORD
-        val ip = "255.255.2.5"
+        val ip = testIp()
 
         val userId = usersRepository.registerUser(username, email, password)
 
@@ -78,5 +79,58 @@ class UserRepositoryTest : RepositoryTest() {
         val lastId = usersRepository.getLastId()
 
         assertTrue(totalUsers <= lastId)
+    }
+
+    @Test
+    fun `save and get message`(){
+        val username = testUsername()
+        val email = testEmail()
+        val password = HASHED_TEST_PASSWORD
+
+        val userId = usersRepository.registerUser(username, email, password)
+        val cid = testCid()
+        val message1 = "hello, how you doing?"
+        val message2 = "Well and you?"
+        val msgDate1 = testTimestamp()
+        assertTrue(usersRepository.saveMessages(userId, cid, message1, msgDate1))
+        Thread.sleep(1000)
+
+        val msgDate2 = testTimestamp()
+        usersRepository.saveMessages(userId, cid, message2, msgDate2)
+
+        val messages = usersRepository.getMessages(userId, cid)
+        assertEquals(2, messages.size)
+
+        val msg = messages.firstOrNull{it.message == message2}
+        assertNotNull(msg)
+        assertEquals(message2, msg.message)
+        assertEquals(userId, msg.userId)
+        assertEquals(cid, msg.cid)
+        assertEquals(msgDate2, msg.msgDate)
+        assertNotNull(messages.firstOrNull{it.message == message1})
+
+        val messagesWithTime = usersRepository.getMessages(userId, cid, msgDate1)
+
+        assertEquals(1, messagesWithTime.size)
+        val msgWithTime = messagesWithTime.first()
+        assertEquals(message2, msgWithTime.message)
+        assertEquals(userId, msgWithTime.userId)
+        assertEquals(cid, msgWithTime.cid)
+        assertEquals(msgDate2, msgWithTime.msgDate)
+    }
+
+    @Test
+    fun `update and get user session`(){
+        val username = testUsername()
+        val email = testEmail()
+        val password = HASHED_TEST_PASSWORD
+        val sessionInfo = "123"
+
+        val userId = usersRepository.registerUser(username, email, password)
+
+        assertTrue(usersRepository.updateSessionInfo(userId, sessionInfo))
+
+        val session = usersRepository.getUserSession(userId)
+        assertEquals(sessionInfo, session)
     }
 }
