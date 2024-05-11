@@ -99,10 +99,15 @@ class UserController(
     /**
      * Handles the request to logout a user
      * @param user the user session
+     * @param logoutInputModel the request body (LogoutInputModel)
      * @return the response
      */
     @PostMapping(Uris.User.LOGOUT)
-    fun logoutUser(user: Session, logoutInputModel: LogoutInputModel,response: HttpServletResponse): ResponseEntity<*> {
+    fun logoutUser(
+        user: Session,
+        logoutInputModel: LogoutInputModel,
+        response: HttpServletResponse
+    ): ResponseEntity<*> {
         services.saveSessionInfo(user.user.id, logoutInputModel.sessionInfo)
         services.revokeToken(user.token)
         response.removeCookie()
@@ -171,16 +176,19 @@ class UserController(
     /**
      * Handles the request to get the messages of a user
      * @param user the user session
-     * @param params the request query parameters
+     * @param cid the conversation id
+     * @param msgDate the message date
      * @return the response with the user messages
      */
     @GetMapping(Uris.User.MESSAGES)
     fun getMessages(
         user: Session,
         @RequestParam @Valid
-        params: GetMessagesInputModel
+        cid: String,
+        @RequestParam @Valid
+        msgDate: String
     ): ResponseEntity<*> {
-        val messages = services.getMessages(user.user.id, params.cid, params.msgDate)
+        val messages = services.getMessages(user.user.id, cid, msgDate)
         return SirenEntity(
             clazz = listOf(Rels.User.MESSAGES),
             properties = GetMessagesOutputModel(messages.count()),

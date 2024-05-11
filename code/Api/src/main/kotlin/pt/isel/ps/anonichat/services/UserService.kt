@@ -188,12 +188,28 @@ class UserService(
         }
     }
 
+    /**
+     * Save messages of a user in a conversation
+     * @param userId The user's id
+     * @param cid The conversation id
+     * @param message The message
+     * @param msgDate The message date
+     * @throws UserNotFoundException if the user was not found
+     */
     fun saveMessages(userId: Int, cid: String, message: String, msgDate: String) =
         tm.run {
             requireOrThrow<UserNotFoundException>(it.userRepository.isUser(userId)) { "User was not Found" }
             it.userRepository.saveMessages(userId, cid, message, msgDate)
         }
 
+    /**
+     * Get messages if msgDate is null, get all messages, else get messages after msgDate
+     * @param userId The user's id
+     * @param cid The conversation id
+     * @param msgDate The message date
+     * @return The list of messages
+     * @throws UserNotFoundException if the user was not found
+     */
     fun getMessages(userId: Int, cid: String, msgDate: String?): List<Message> =
         tm.run {
             requireOrThrow<UserNotFoundException>(it.userRepository.isUser(userId)) { "User was not Found" }
@@ -204,6 +220,12 @@ class UserService(
             }
         }
 
+    /**
+     * Save the session info of a user
+     * @param userId The user's id
+     * @param sessionInfo The session info
+     * @throws UserNotFoundException if the user was not found
+     */
     fun saveSessionInfo(userId: Int, sessionInfo: String){
         val sessionInfoPath = tm.run {
             requireOrThrow<UserNotFoundException>(it.userRepository.isUser(userId)) { "User was not Found" }
@@ -216,7 +238,7 @@ class UserService(
      * Logs in a user by username
      * @param name The user's username
      * @param password The user's password
-     * @return The user's token
+     * @return The user's token and the session info
      * @throws InvalidCredentialsException if the username or password is incorrect
      */
     private fun loginByUsername(name: String, password: String, ip: String): Pair<TokenModel, String> =
@@ -241,7 +263,7 @@ class UserService(
      * Logs in a user by email
      * @param email The user's email
      * @param password The user's password
-     * @return The user's token
+     * @return The user's token and the session info
      * @throws InvalidCredentialsException if the email or password is incorrect
      */
     private fun loginByEmail(email: String, password: String, ip: String): Pair<TokenModel, String> =

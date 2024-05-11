@@ -1,7 +1,6 @@
 package pt.isel.ps.anonichat.services
 
-import org.junit.jupiter.api.RepeatedTest
-import org.springframework.test.annotation.Repeat
+import pt.isel.ps.anonichat.domain.exceptions.UserException.UserNotFoundException
 import pt.isel.ps.anonichat.domain.exceptions.UserException.UserAlreadyExistsException
 import kotlin.math.min
 import kotlin.test.*
@@ -67,23 +66,24 @@ class UserServiceTest : ServicesTest() {
 
     @Test
     fun `get users`() {
-        // given: a user
-        val (name, email, password, clientCSR) = testUserData()
 
-        // when: registering the user
-        val userId = usersServices.registerUser(name, email, password, clientCSR, path)
+        val ids = emptyList<Int>().toMutableList()
+        for (i in 0..3) {
+            // given: a user
+            val (name, email, password, clientCSR) = testUserData()
+            // when: registering the user
+            val userId = usersServices.registerUser(name, email, password, clientCSR, path)
+            ids.add(userId)
+        }
 
         val maxId = usersServices.getLastId()
 
         // then: when getting the users, the user is present
-        val list = List(min(5, maxId)){
-            if(it == 0)
-                userId
-            else
-                (0..maxId).random()
-        }.distinct()
-        val (users) = usersServices.getUsers(list)
-        assertTrue(users.isNotEmpty())
+        ids.add(maxId+1)
+        val (users) = usersServices.getUsers(ids)
+        ids.remove(maxId+1)
+        assertEquals(ids.size, users.size)
+        assertTrue(users.map { it.id }.containsAll(ids))
     }
 
     @Test
@@ -111,7 +111,6 @@ class UserServiceTest : ServicesTest() {
 
     @Test
     fun `save and get messages`(){
-
         val (name, email, password, clientCSR) = testUserData()
 
         // when: registering the user
@@ -120,8 +119,40 @@ class UserServiceTest : ServicesTest() {
         val cid = testCid()
         val msgDate = testTimestamp()
         val msgs = listOf("hello, how you doing?", "well and you?")
-
         assertTrue(usersServices.saveMessages(userId, cid, msgs.first(), msgDate))
+        Thread.sleep(1000)
+        assertTrue(usersServices.saveMessages(userId, cid, msgs.last(), testTimestamp()))
+
+        val messages = usersServices.getMessages(userId, cid, null)
+        assertEquals(2, messages.size)
+        assertEquals(2, messages.map { if (msgs.contains(it.message)) it.message}.size)
+
+        val messagesWithTime = usersServices.getMessages(userId, cid, msgDate)
+        assertEquals(1, messagesWithTime.size)
+        assertEquals(messagesWithTime.first().message, msgs.last())
+    }
+
+    @Test
+    fun `try to save and get messages with invalid user`(){
+        val cid = testCid()
+        // when: registering the user
+        val invalidId = usersServices.getLastId() + 1
+
+        assertFailsWith<UserNotFoundException> { usersServices.saveMessages(invalidId, cid, "oi", testTimestamp()) }
+        assertFailsWith<UserNotFoundException> { usersServices.getMessages(invalidId, cid, null) }
+    }
+
+    @Test
+    fun `save and get sessionInfo`(){
+        val (name, email, password, clientCSR) = testUserData()
+
+        // when: registering the user
+        val userId = usersServices.registerUser(name, email, password, clientCSR, path)
+        val sessionInfo = "1234"
+        usersServices.saveSessionInfo(userId, sessionInfo)
+
+        val (_, session) = usersServices.loginUser(name, null, password, testIp(), path)
+        assertEquals(sessionInfo, session)
 
 
     }

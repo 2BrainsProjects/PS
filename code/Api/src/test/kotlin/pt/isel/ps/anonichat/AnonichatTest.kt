@@ -3,11 +3,7 @@ package pt.isel.ps.anonichat
 import org.jdbi.v3.core.Jdbi
 import org.postgresql.ds.PGSimpleDataSource
 import pt.isel.ps.anonichat.repository.jdbi.utils.configure
-import java.io.BufferedReader
-import java.io.BufferedWriter
-import java.io.FileInputStream
-import java.io.InputStreamReader
-import java.io.OutputStreamWriter
+import java.io.*
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
 import java.util.*
@@ -57,6 +53,7 @@ open class AnonichatTest {
             generateCSR(userId, username, "", pwd, ROUTERS)
 
         private fun answeringCSRCreation(id: Int, name: String, email: String, password: String, extraPath: String) {
+            File("$basePath$extraPath").mkdirs()
             val command =
                 "openssl req -out $basePath$extraPath/$id.csr -new -newkey rsa:2048 -nodes -keyout $basePath$extraPath/$id.key"
             try {

@@ -133,6 +133,14 @@ class JdbiUserRepository(
             .bind("certPath", certPath)
             .execute() == 1
 
+    /**
+     * Saves a message
+     * @param userId The user's id
+     * @param cid The conversation id
+     * @param message The message
+     * @param msgDate The message date
+     * @return if the message was saved
+     */
     override fun saveMessages(userId: Int, cid: String, message: String, msgDate: String): Boolean =
         handle.createUpdate("insert into dbo.Message (user_id, cid, message, msg_date) values (:userId, :cid, :message, TO_TIMESTAMP(:msg_date, 'YYYY-MM-DD HH24:MI:SS'))")
             .bind("userId", userId)
@@ -141,6 +149,12 @@ class JdbiUserRepository(
             .bind("msg_date", msgDate)
             .execute() == 1
 
+    /**
+     * Gets the messages
+     * @param userId The user's id
+     * @param cid The conversation id
+     * @return The messages
+     */
     override fun getMessages(userId: Int, cid: String) : List<Message> =
         handle.createQuery("select * from dbo.Message where user_id = :userId and cid = :cid")
             .bind("userId", userId)
@@ -148,6 +162,13 @@ class JdbiUserRepository(
             .mapTo<Message>()
             .list()
 
+    /**
+     * Gets all the messages after a certain date
+     * @param userId The user's id
+     * @param cid The conversation id
+     * @param msgDate The message date
+     * @return The messages
+     */
     override fun getMessages(userId: Int, cid: String, msgDate: String) : List<Message> =
         handle.createQuery("select * from dbo.Message where user_id = :userId and cid = :cid and msg_date > TO_TIMESTAMP(:msg_date, 'YYYY-MM-DD HH24:MI:SS')")
             .bind("userId", userId)
@@ -156,12 +177,23 @@ class JdbiUserRepository(
             .mapTo<Message>()
             .list()
 
+    /**
+     * Gets the user's session info
+     * @param id The user's id
+     * @return The user's session info
+     */
     override fun getUserSession(id: Int): String =
         handle.createQuery("select session_info from dbo.User where id = :id")
             .bind("id", id)
             .mapTo<String>()
             .one()
 
+    /**
+     * Updates the user's session info
+     * @param id The user's id
+     * @param sessionInfoPath The session info path
+     * @return if the session info was updated
+     */
     override fun updateSessionInfo(id: Int, sessionInfoPath: String): Boolean =
         handle.createUpdate("update dbo.User set session_info = :sessionInfoPath where id = :id")
             .bind("id", id)

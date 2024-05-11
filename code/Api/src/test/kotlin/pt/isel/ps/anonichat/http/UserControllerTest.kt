@@ -5,10 +5,7 @@ package pt.isel.ps.anonichat.http
  import org.springframework.util.LinkedMultiValueMap
  import org.springframework.util.MultiValueMap
  import org.springframework.web.reactive.function.BodyInserters
- import pt.isel.ps.anonichat.http.controllers.user.models.GetUserInformationOutputModel
- import pt.isel.ps.anonichat.http.controllers.user.models.GetUsersCountOutputModel
- import pt.isel.ps.anonichat.http.controllers.user.models.LoginOutputModel
- import pt.isel.ps.anonichat.http.controllers.user.models.RegisterOutputModel
+ import pt.isel.ps.anonichat.http.controllers.user.models.*
  import pt.isel.ps.anonichat.http.hypermedia.SirenEntity
  import pt.isel.ps.anonichat.http.hypermedia.SirenEntityEmbeddedLinkModel
  import pt.isel.ps.anonichat.http.hypermedia.SirenEntityEmbeddedRepresentationModel
@@ -55,21 +52,21 @@ class UserControllerTest : HttpTest() {
     }
 
     @Test
-    fun `can create a user, obtain a token, access user home and logout`() {
+    fun `can create a user, obtain a token and sessionInfo, access user home and logout`() {
         // given: a user
         val (name, email, password, _, ip) = testUserData()
         registerTestUserHttp(name, email, password)
 
         // when: creating a token
         // then: the response is a 200
-        val body: MultiValueMap<String, String> = LinkedMultiValueMap()
-        body.add("name", name)
-        body.add("password", password)
-        body.add("ip", ip)
+        val bodyLogin: MultiValueMap<String, String> = LinkedMultiValueMap()
+        bodyLogin.add("name", name)
+        bodyLogin.add("password", password)
+        bodyLogin.add("ip", ip)
 
-        val (token, _) = client.post().uri(api("/login"))
+        val (token, _, _) = client.post().uri(api("/login"))
             .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-            .body(BodyInserters.fromFormData(body))
+            .body(BodyInserters.fromFormData(bodyLogin))
             .exchange()
             .expectStatus().isOk
             .expectBody<SirenEntity<LoginOutputModel>>()
@@ -91,10 +88,17 @@ class UserControllerTest : HttpTest() {
             .expectHeader().valueEquals("WWW-Authenticate", "bearer")
             .expectHeader().valueEquals("Content-Type", "application/problem+json")
 
+        val session = "123"
+
+        val bodyLogout: MultiValueMap<String, String> = LinkedMultiValueMap()
+        bodyLogout.add("sessionInfo", session)
+
         // when: revoking the token
         // then: response is a 200
         client.post().uri(api("/logout"))
+            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
             .header("Authorization", "Bearer $token")
+            .body(BodyInserters.fromFormData(bodyLogout))
             .exchange()
             .expectStatus().isOk
 
@@ -106,6 +110,16 @@ class UserControllerTest : HttpTest() {
             .expectStatus().isUnauthorized
             .expectHeader().valueEquals("WWW-Authenticate", "bearer")
             .expectHeader().valueEquals("Content-Type", "application/problem+json")
+
+        val (_, _, sessionInfo) = client.post().uri(api("/login"))
+            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+            .body(BodyInserters.fromFormData(bodyLogin))
+            .exchange()
+            .expectStatus().isOk
+            .expectBody<SirenEntity<LoginOutputModel>>()
+            .returnResult().responseBody?.properties!!
+
+        assertEquals(session, sessionInfo)
     }
 
     @Test
@@ -148,6 +162,67 @@ class UserControllerTest : HttpTest() {
         }
     }
 
+    @Test
+    fun `can get and save messages`(){
+        val (name, email, password, _, ip) = testUserData()
+        registerTestUserHttp(name, email, password)
+        val cid = testCid()
+        val msgs = listOf("msg1", "msg2", "msg3")
+        val msgDateList = List(msgs.size) {
+            Thread.sleep(1000)
+            testTimestamp()
+        }
+
+        val bodyLogin: MultiValueMap<String, String> = LinkedMultiValueMap()
+        bodyLogin.add("name", name)
+        bodyLogin.add("password", password)
+        bodyLogin.add("ip", ip)
+
+        val (token, _, _) = client.post().uri(api("/login"))
+            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+            .body(BodyInserters.fromFormData(bodyLogin))
+            .exchange()
+            .expectStatus().isOk
+            .expectBody<SirenEntity<LoginOutputModel>>()
+            .returnResult().responseBody?.properties!!
+        for (i in msgs.indices) {
+            val bodyPost: MultiValueMap<String, String> = LinkedMultiValueMap()
+            bodyPost.add("cid", cid)
+            bodyPost.add("message", msgs[i])
+            bodyPost.add("msgDate", msgDateList[i])
+
+            client.post().uri(api("/messages"))
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body(BodyInserters.fromFormData(bodyPost))
+                .exchange()
+                .expectStatus().isOk
+        }
+
+        val response = client.get().uri(api("/messages?cid=$cid&msgDate=${msgDateList.first()}"))
+            .header("Authorization", "Bearer $token")
+            .exchange()
+            .expectStatus().isOk
+            .expectBody<SirenEntityEmbeddedRepresentationModel<GetMessagesOutputModel>>()
+            .returnResult().responseBody
+
+        val messages = response?.entities!!.map { entity ->
+            getMessageOutputModel(entity.properties as LinkedHashMap<*, *>)
+        }
+        assertNotNull(messages)
+        assertEquals(2, messages.size)
+        assertNotNull(messages.firstOrNull() { it.message == msgs[1] })
+        assertNotNull(messages.firstOrNull() { it.message == msgs[2] })
+
+    }
+
+    private fun getMessageOutputModel(map: LinkedHashMap<*, *>): GetMessageOutputModel {
+        return GetMessageOutputModel(
+            map["cid"] as String,
+            map["message"] as String,
+            map["msgDate"] as String,
+        )
+    }
     private fun getUserOutputModel(map: LinkedHashMap<*, *>): GetUserInformationOutputModel {
         return GetUserInformationOutputModel(
             map["id"] as Int,
