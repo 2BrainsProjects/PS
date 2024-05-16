@@ -19,6 +19,12 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
     private val aCipher = Cipher.getInstance(ALG_ASYMMETRIC)
     private val keyFactory = KeyFactory.getInstance(ALG_ASYMMETRIC)
 
+    fun encryptWithPwd(toEncrypt: String, password: String): String =
+        xorStringWithPwd(toEncrypt, password)
+
+    fun decryptWithPwd(toDecrypt: String, password: String): String =
+        xorStringWithPwd(toDecrypt, password)
+
     /**
      * Method to generate the CSR for the client.
      * @param port - port of the client
@@ -39,6 +45,148 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
             File(path).delete()
             return csrContent
         }
+    }
+
+    /**
+     * Method to generate the key pair.
+     * @param port - port of the host
+     */
+    fun generatePrivateKey(port: Int) {
+        val keyPairGenerator = KeyPairGenerator.getInstance(ALG_ASYMMETRIC)
+        keyPairGenerator.initialize(2048)
+        val keyPair = keyPairGenerator.generateKeyPair()
+
+        val privateKey = keyPair.private.encoded
+        createAndWriteFile(privateKey, "$basePath/priv$port.pem")
+    }
+
+    /**
+     * Method to encipher a message using hybrid mode.
+     * @param plain - message to encipher
+     * @param port - port of the host to encipher the message
+     * @return the enciphered message
+     */
+    fun encipher(
+        plain: String,
+        port: Int,
+    ): String {
+        try {
+            val pubKeyBytes = File("$basePath\\pub$port.pem").readBytes()
+            val keySpec = X509EncodedKeySpec(pubKeyBytes)
+            val publicKey = keyFactory.generatePublic(keySpec)
+
+            val keyGenerator = KeyGenerator.getInstance(ALG_SYMMETRIC)
+            keyGenerator.init(KEY_SIZE)
+            val symmetricKey = keyGenerator.generateKey()
+            val iv = IvParameterSpec(PASSWORD.toByteArray())
+            return encipherString(plain, JWE_HEADER, symmetricKey, publicKey, iv, MARK_SIZE)
+        } catch (e: Exception) {
+            throw RuntimeException(e)
+        }
+    }
+
+    /**
+     * Method to encipher a message using hybrid mode.
+     * @param plain - message to encipher
+     * @param certificate - certificate of the host to encipher the message
+     * @return the enciphered message
+     */
+    fun encipher(
+        plain: String,
+        certificate: X509Certificate,
+    ): String {
+        try {
+            val publicKey = certificate.publicKey
+
+            val keyGenerator = KeyGenerator.getInstance(ALG_SYMMETRIC)
+            keyGenerator.init(KEY_SIZE)
+            val symmetricKey = keyGenerator.generateKey()
+            val iv = IvParameterSpec(PASSWORD.toByteArray())
+            return encipherString(plain, JWE_HEADER, symmetricKey, publicKey, iv, MARK_SIZE)
+        } catch (e: Exception) {
+            throw RuntimeException(e)
+        }
+    }
+
+    /**
+     * Method to build an object X509Certificate from its content.
+     * @param certificateContent - content of the certificate
+     * @return the certificate object
+     */
+    fun buildCertificate(certificateContent: String): X509Certificate {
+        val factory = CertificateFactory.getInstance(STD_CERTIFICATE)
+        val bais = ByteArrayInputStream(certificateContent.toByteArray(Charsets.UTF_8))
+        val cert: X509Certificate = factory.generateCertificate(bais) as X509Certificate
+        bais.close()
+        return cert
+    }
+
+    /**
+     * Method to decipher a message using hybrid mode.
+     * @param cipheredText - text to decipher
+     * @param port - port of the host to decipher the message
+     * @return the deciphered message
+     */
+    @Throws(Exception::class)
+    fun decipher(
+        cipheredText: String,
+        port: Int,
+    ): String {
+        val parts = cipheredText.split(".").map { s -> Base64.getDecoder().decode(s) }
+
+        val (header, encryptedKeyStr, ivStr, encryptedMsg, markStr) = parts
+
+        val headerParts = String(header).split(",\"").toMutableList()
+
+        headerParts[0] = headerParts[0].substring(2)
+        val headerArgs = emptyList<String>().toMutableList()
+        for (i in headerParts.indices) {
+            headerArgs.add(headerParts[i].split("\"")[2])
+        }
+        var toReturn = ""
+        try {
+            val privateKey = getPrivateKey("$basePath\\priv$port.pem")
+            val keyCipher = Cipher.getInstance(headerArgs[0])
+
+            keyCipher.init(Cipher.DECRYPT_MODE, privateKey)
+
+            val decipherKey = keyCipher.doFinal(encryptedKeyStr)
+            val symmetricKey: SecretKey = SecretKeySpec(decipherKey, 0, decipherKey.size, ALG_SYMMETRIC)
+
+            val textCipher = Cipher.getInstance(headerArgs[1])
+            val gcmParameterSpec = GCMParameterSpec(markStr.size * 8, ivStr)
+
+            textCipher.init(Cipher.DECRYPT_MODE, symmetricKey, gcmParameterSpec)
+
+            val outputStream = ByteArrayOutputStream()
+            outputStream.write(encryptedMsg)
+            outputStream.write(markStr)
+
+            val decipherText = outputStream.toByteArray()
+
+            // nas teoricas ver uma regra do perfil PKIX que verifica se existe mais do que 1 certificado folha na cadeia
+            val decipheredText = textCipher.doFinal(decipherText)
+            toReturn = (String(decipheredText))
+        } catch (e: Exception) {
+            println(e.message)
+        }
+        return toReturn
+    }
+
+
+
+    private fun xorStringWithPwd(string: String, pwdHash: String): String {
+        val keySize = pwdHash.length
+        var resultText = ""
+
+        for (i in string.indices) {
+            val char = string[i]
+            val keyChar = pwdHash[i % keySize]
+            val encryptedChar = (char.code xor keyChar.code).toChar()
+            resultText += encryptedChar
+        }
+
+        return resultText
     }
 
     /**
@@ -82,19 +230,6 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
     }
 
     /**
-     * Method to generate the key pair.
-     * @param port - port of the host
-     */
-    fun generatePrivateKey(port: Int) {
-        val keyPairGenerator = KeyPairGenerator.getInstance(ALG_ASYMMETRIC)
-        keyPairGenerator.initialize(2048)
-        val keyPair = keyPairGenerator.generateKeyPair()
-
-        val privateKey = keyPair.private.encoded
-        createAndWriteFile(privateKey, "$basePath/priv$port.pem")
-    }
-
-    /**
      * Method to create a file and write a key in it.
      * @param key - key to write in the file
      * @param filePath - path of the file
@@ -107,67 +242,6 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
         if (file2.exists()) file2.delete()
         file2.createNewFile()
         file2.writeBytes(key)
-    }
-
-    /**
-     * Method to encipher a message using hybrid mode.
-     * @param plain - message to encipher
-     * @param port - port of the host to encipher the message
-     * @return the enciphered message
-     */
-    fun encipher(
-        plain: String,
-        port: Int,
-    ): String {
-        try {
-            val pubKeyBytes = File("$basePath\\pub$port.pem").readBytes()
-            val keySpec = X509EncodedKeySpec(pubKeyBytes)
-            val publicKey = keyFactory.generatePublic(keySpec)
-
-            val keyGenerator = KeyGenerator.getInstance(ALG_SYMMETRIC)
-            keyGenerator.init(KEY_SIZE)
-            val symmetricKey = keyGenerator.generateKey()
-            val iv = IvParameterSpec(PASSWORD.toByteArray())
-            return encipherString(plain, JWE_HEADER, symmetricKey, publicKey, iv, MARK_SIZE)
-        } catch (e: Exception) {
-            throw RuntimeException(e)
-        }
-    }
-
-    /**
-     * Method to encipher a message using hybrid mode.
-     * @param plain - message to encipher
-     * @param port - port of the host to encipher the message
-     * @return the enciphered message
-     */
-    fun encipher(
-        plain: String,
-        certificate: X509Certificate,
-    ): String {
-        try {
-            val publicKey = certificate.publicKey
-
-            val keyGenerator = KeyGenerator.getInstance(ALG_SYMMETRIC)
-            keyGenerator.init(KEY_SIZE)
-            val symmetricKey = keyGenerator.generateKey()
-            val iv = IvParameterSpec(PASSWORD.toByteArray())
-            return encipherString(plain, JWE_HEADER, symmetricKey, publicKey, iv, MARK_SIZE)
-        } catch (e: Exception) {
-            throw RuntimeException(e)
-        }
-    }
-
-    /**
-     * Method to build an object X509Certificate from its content.
-     * @param certificateContent - content of the certificate
-     * @return the certificate object
-     */
-    fun buildCertificate(certificateContent: String): X509Certificate {
-        val factory = CertificateFactory.getInstance(STD_CERTIFICATE)
-        val bais = ByteArrayInputStream(certificateContent.toByteArray(Charsets.UTF_8))
-        val cert: X509Certificate = factory.generateCertificate(bais) as X509Certificate
-        bais.close()
-        return cert
     }
 
     /**
@@ -236,58 +310,6 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
         certificatePath: String,
     ): String {
         return "$certificatePath/$certificateName"
-    }
-
-    /**
-     * Method to decipher a message using hybrid mode.
-     * @param cipheredText - text to decipher
-     * @param port - port of the host to decipher the message
-     * @return the deciphered message
-     */
-    @Throws(Exception::class)
-    fun decipher(
-        cipheredText: String,
-        port: Int,
-    ): String {
-        val parts = cipheredText.split(".").map { s -> Base64.getDecoder().decode(s) }
-
-        val (header, encryptedKeyStr, ivStr, encryptedMsg, markStr) = parts
-
-        val headerParts = String(header).split(",\"").toMutableList()
-
-        headerParts[0] = headerParts[0].substring(2)
-        val headerArgs = emptyList<String>().toMutableList()
-        for (i in headerParts.indices) {
-            headerArgs.add(headerParts[i].split("\"")[2])
-        }
-        var toReturn = ""
-        try {
-            val privateKey = getPrivateKey("$basePath\\priv$port.pem")
-            val keyCipher = Cipher.getInstance(headerArgs[0])
-
-            keyCipher.init(Cipher.DECRYPT_MODE, privateKey)
-
-            val decipherKey = keyCipher.doFinal(encryptedKeyStr)
-            val symmetricKey: SecretKey = SecretKeySpec(decipherKey, 0, decipherKey.size, ALG_SYMMETRIC)
-
-            val textCipher = Cipher.getInstance(headerArgs[1])
-            val gcmParameterSpec = GCMParameterSpec(markStr.size * 8, ivStr)
-
-            textCipher.init(Cipher.DECRYPT_MODE, symmetricKey, gcmParameterSpec)
-
-            val outputStream = ByteArrayOutputStream()
-            outputStream.write(encryptedMsg)
-            outputStream.write(markStr)
-
-            val decipherText = outputStream.toByteArray()
-
-            // nas teoricas ver uma regra do perfil PKIX que verifica se existe mais do que 1 certificado folha na cadeia
-            val decipheredText = textCipher.doFinal(decipherText)
-            toReturn = (String(decipheredText))
-        } catch (e: Exception) {
-            println(e.message)
-        }
-        return toReturn
     }
 
     companion object {

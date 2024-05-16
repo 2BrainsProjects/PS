@@ -4,6 +4,7 @@ import Crypto
 import com.google.gson.internal.LinkedTreeMap
 import domain.Client
 import domain.ClientInformation
+import domain.Message
 import domain.Router
 import http.siren.SirenEntity
 import http.siren.SubEntity
@@ -27,8 +28,6 @@ fun SirenEntity<*>.extractElements(crypto: Crypto): List<*> =
             Router(id, ip, certificate)
         }
     } ?: emptyList<Any>()
-
-
 
 /**
  * Extracts the clients from a siren response
@@ -56,6 +55,20 @@ fun SirenEntity<*>.extractClients(crypto: Crypto): List<ClientInformation> =
         val certificateContent = it.extractProperty<String>("certificate")
         val certificate = crypto.buildCertificate(certificateContent)
         ClientInformation(id, ip, name, certificate)
+    } ?: emptyList()
+
+/**
+ * Extracts the messages from a siren response
+ * @return the list of messages
+
+ */
+fun SirenEntity<*>.extractMessages() : List<Message> =
+    entities?.map {
+        require(it.properties is LinkedTreeMap<*, *>){ "Problem extracting messages from siren response" }
+        val cid = it.extractProperty<String>("cid")
+        val msgDate = it.extractProperty<String>("msgDate")
+        val message = it.extractProperty<String>("message")
+        Message(cid, msgDate, message)
     } ?: emptyList()
 
 /**

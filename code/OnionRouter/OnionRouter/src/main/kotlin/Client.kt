@@ -1,7 +1,8 @@
 import commands.Login
+import commands.Logout
 import commands.Register
 import domain.RouterStorage
-import domain.UserStorage
+import domain.Session
 import http.HttpRequests
 import kotlin.random.Random
 
@@ -11,7 +12,7 @@ class Client(
     private val sendMsg: (Int, String) -> Unit
 ) {
     private var routerStorage: RouterStorage? = null
-    private var userStorage: UserStorage? = null
+    private var userStorage: Session? = null
 
     /*
     initialization menu
@@ -31,13 +32,17 @@ class Client(
         - logout
     */
 
-    fun getInfo(): Pair<UserStorage?, RouterStorage?> = Pair(userStorage, routerStorage)
+    fun getInfo(): Pair<Session?, RouterStorage?> = Pair(userStorage, routerStorage)
 
     fun deleteNode(){
         val userStorage = userStorage
         val routerStorage = routerStorage
         if (userStorage != null) {
-            userStorage.token?.let { httpRequests.logoutClient(it.token) }
+            val pwd = userStorage.pwd
+            val token = userStorage.token
+            requireNotNull(pwd) { "Password is null" }
+            requireNotNull(token) { "Token is null" }
+            Logout(httpRequests, userStorage).execute(listOf(pwd, token.token))
         }
         if (routerStorage != null) {
             httpRequests.deleteRouter(routerStorage.id, routerStorage.pwd)
@@ -90,7 +95,7 @@ class Client(
                     args.add(csr)
                     args.add(ip)
                     try{
-                        userStorage = UserStorage()
+                        userStorage = Session()
                         Register(httpRequests, userStorage!!).execute(args)
                         break
                     } catch (e: Exception) {
@@ -104,7 +109,7 @@ class Client(
 
                     args.add(1, ip)
                     try {
-                        userStorage = UserStorage()
+                        userStorage = Session()
                         Login(httpRequests, userStorage!!).execute(args)
                         break
                     } catch (e: Exception) {

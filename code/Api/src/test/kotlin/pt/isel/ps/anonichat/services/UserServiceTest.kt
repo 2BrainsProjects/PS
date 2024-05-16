@@ -2,7 +2,6 @@ package pt.isel.ps.anonichat.services
 
 import pt.isel.ps.anonichat.domain.exceptions.UserException.UserNotFoundException
 import pt.isel.ps.anonichat.domain.exceptions.UserException.UserAlreadyExistsException
-import kotlin.math.min
 import kotlin.test.*
 
 class UserServiceTest : ServicesTest() {
@@ -119,9 +118,9 @@ class UserServiceTest : ServicesTest() {
         val cid = testCid()
         val msgDate = testTimestamp()
         val msgs = listOf("hello, how you doing?", "well and you?")
-        assertTrue(usersServices.saveMessages(userId, cid, msgs.first(), msgDate))
+        assertTrue(usersServices.saveMessage(userId, cid, msgs.first(), msgDate))
         Thread.sleep(1000)
-        assertTrue(usersServices.saveMessages(userId, cid, msgs.last(), testTimestamp()))
+        assertTrue(usersServices.saveMessage(userId, cid, msgs.last(), testTimestamp()))
 
         val messages = usersServices.getMessages(userId, cid, null)
         assertEquals(2, messages.size)
@@ -138,7 +137,7 @@ class UserServiceTest : ServicesTest() {
         // when: registering the user
         val invalidId = usersServices.getLastId() + 1
 
-        assertFailsWith<UserNotFoundException> { usersServices.saveMessages(invalidId, cid, "oi", testTimestamp()) }
+        assertFailsWith<UserNotFoundException> { usersServices.saveMessage(invalidId, cid, "oi", testTimestamp()) }
         assertFailsWith<UserNotFoundException> { usersServices.getMessages(invalidId, cid, null) }
     }
 

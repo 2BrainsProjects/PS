@@ -141,7 +141,7 @@ class JdbiUserRepository(
      * @param msgDate The message date
      * @return if the message was saved
      */
-    override fun saveMessages(userId: Int, cid: String, message: String, msgDate: String): Boolean =
+    override fun saveMessage(userId: Int, cid: String, message: String, msgDate: String): Boolean =
         handle.createUpdate("insert into dbo.Message (user_id, cid, message, msg_date) values (:userId, :cid, :message, TO_TIMESTAMP(:msg_date, 'YYYY-MM-DD HH24:MI:SS'))")
             .bind("userId", userId)
             .bind("cid", cid)

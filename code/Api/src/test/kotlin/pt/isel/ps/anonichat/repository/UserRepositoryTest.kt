@@ -92,11 +92,11 @@ class UserRepositoryTest : RepositoryTest() {
         val message1 = "hello, how you doing?"
         val message2 = "Well and you?"
         val msgDate1 = testTimestamp()
-        assertTrue(usersRepository.saveMessages(userId, cid, message1, msgDate1))
+        assertTrue(usersRepository.saveMessage(userId, cid, message1, msgDate1))
         Thread.sleep(1000)
 
         val msgDate2 = testTimestamp()
-        usersRepository.saveMessages(userId, cid, message2, msgDate2)
+        usersRepository.saveMessage(userId, cid, message2, msgDate2)
 
         val messages = usersRepository.getMessages(userId, cid)
         assertEquals(2, messages.size)

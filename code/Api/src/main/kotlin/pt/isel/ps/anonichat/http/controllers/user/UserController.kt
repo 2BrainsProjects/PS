@@ -211,11 +211,11 @@ class UserController(
      * @return the response
      */
     @PostMapping(Uris.User.MESSAGES)
-    fun saveMessages(
+    fun saveMessage(
         user: Session,
         body: SaveMessagesInputModel
     ): ResponseEntity<*> {
-        services.saveMessages(user.user.id, body.cid, body.message, body.msgDate)
+        services.saveMessage(user.user.id, body.cid, body.message, body.msgDate)
         return SirenEntity<Unit>(
             clazz = listOf(Rels.User.MESSAGES),
             links = listOfNotNull(

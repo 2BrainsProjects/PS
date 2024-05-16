@@ -2,10 +2,7 @@ package http
 
 import Crypto
 import com.google.gson.Gson
-import domain.Client
-import domain.ClientInformation
-import domain.Router
-import domain.Token
+import domain.*
 import http.siren.SirenEntity
 
 fun main() {
@@ -14,9 +11,9 @@ fun main() {
     val pass = "Joao1234?"
     val csr = crypto.generateClientCSR(1, "cn", pass).joinToString("\n")
     val h = HttpRequests(crypto)
-    val token = h.loginClient(name, "123", pass).token
+    val (token, _) = h.loginClient(name, "123", pass)
     println(token)
-    val client = h.getClient(token) // h.registerClient(name, email, pass, csr)
+    val client = h.getClient(token.token) // h.registerClient(name, email, pass, csr)
     println(client)
 }
 
@@ -61,11 +58,18 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
         return clientId
     }
 
+    /**
+     * This function makes a request to the API to login a client
+     * @param nameOrEmail the name or email of the client
+     * @param ip the ip of the client
+     * @param password the password of the client
+     * @return the token of the client
+     */
     fun loginClient(
         nameOrEmail: String,
         ip: String,
         password: String,
-    ): Token {
+    ): Pair<Token, UserStorage> {
         val body =
             if (nameOrEmail.contains("@")) {
                 hashMapOf("email" to nameOrEmail, "ip" to ip, "password" to password)
@@ -87,13 +91,20 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
         val siren = transformBodyToSiren(responseBody)
         val token = siren.extractProperty<String>("token")
         val expiresIn = siren.extractProperty<Double>("expiresIn").toLong()
+        val sessionInfo = siren.extractProperty<String>("sessionInfo")
 
-        return Token(token, expiresIn)
+        val decryptedSessionInfo = crypto.decryptWithPwd(sessionInfo, password.hashCode().toString())
+        val storage = gson.fromJson(decryptedSessionInfo, UserStorage::class.java)
+
+        return Pair(Token(token, expiresIn), storage)
     }
 
-    fun logoutClient(token: String): Boolean {
+    fun logoutClient(pwd: String, token: String, storage: UserStorage): Boolean {
+        val gson = Gson().toJson(storage)
+        val encryptedStorage = Crypto().encryptWithPwd(gson, pwd)
         val headers = hashMapOf("Content-Type" to json, "Authorization" to "Bearer $token")
-        val logoutResponse = httpUtils.postRequest(headers, "$apiUri/logout", hashMapOf(), "Error logout in")
+        val body = hashMapOf("sessionInfo" to encryptedStorage)
+        val logoutResponse = httpUtils.postRequest(headers, "$apiUri/logout", body, "Error logout in")
 
         return logoutResponse.isSuccessful
     }
@@ -106,6 +117,30 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
 
         val client = transformBodyToSiren(responseBody).extractClient()
         return client
+    }
+
+    fun getMessages(token: String, cid: String, msgDate: String? = null): List<Message> {
+        val headers = hashMapOf("Content-Type" to json, "Authorization" to "Bearer $token")
+        val query = hashMapOf("cid" to cid, "msgDate" to msgDate.toString())
+        val response = httpUtils.getRequest(headers, "$apiUri/messages", query,"Error getting messages")
+        val body = response.body?.string()
+        requireNotNull(body)
+
+        val messages = transformBodyToSiren(body).extractMessages()
+        return messages
+    }
+
+    fun saveMessage(
+        token: String,
+        cid: String,
+        message: String,
+        msgDate: String
+    ): Boolean {
+        val headers = hashMapOf("Content-Type" to json, "Authorization" to "Bearer $token")
+        val body = hashMapOf("cid" to cid, "message" to message, "msgDate" to msgDate)
+        val response = httpUtils.postRequest(headers, "$apiUri/messages", body, "Error saving message")
+
+        return response.isSuccessful
     }
 
     /**

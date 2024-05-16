@@ -196,10 +196,10 @@ class UserService(
      * @param msgDate The message date
      * @throws UserNotFoundException if the user was not found
      */
-    fun saveMessages(userId: Int, cid: String, message: String, msgDate: String) =
+    fun saveMessage(userId: Int, cid: String, message: String, msgDate: String) =
         tm.run {
             requireOrThrow<UserNotFoundException>(it.userRepository.isUser(userId)) { "User was not Found" }
-            it.userRepository.saveMessages(userId, cid, message, msgDate)
+            it.userRepository.saveMessage(userId, cid, message, msgDate)
         }
 
     /**

@@ -1,8 +1,3 @@
 package domain
 
-class UserStorage {
-    var id: Int? = null
-    var name: String? = null
-    var token: Token? = null
-    val client : MutableList<ClientInformation> = mutableListOf()
-}
+data class UserStorage(val id: Int, val name: String, val contacts: List<Contact>)
