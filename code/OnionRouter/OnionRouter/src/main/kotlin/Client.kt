@@ -13,7 +13,7 @@ class Client(
 ) {
     private var routerStorage: RouterStorage? = null
     private var userStorage: Session? = null
-
+    private val localMemory = LocalMemory(httpRequests, crypto)
     /*
     initialization menu
         - client
@@ -42,7 +42,7 @@ class Client(
             val token = userStorage.token
             requireNotNull(pwd) { "Password is null" }
             requireNotNull(token) { "Token is null" }
-            Logout(httpRequests, userStorage).execute(listOf(pwd, token.token))
+            Logout(httpRequests, userStorage, localMemory).execute(listOf(pwd, token.token))
         }
         if (routerStorage != null) {
             httpRequests.deleteRouter(routerStorage.id, routerStorage.pwd)
@@ -96,7 +96,7 @@ class Client(
                     args.add(ip)
                     try{
                         userStorage = Session()
-                        Register(httpRequests, userStorage!!).execute(args)
+                        Register(httpRequests, userStorage!!, localMemory).execute(args)
                         break
                     } catch (e: Exception) {
                         println("Something went wrong. Try again.")
@@ -110,7 +110,7 @@ class Client(
                     args.add(1, ip)
                     try {
                         userStorage = Session()
-                        Login(httpRequests, userStorage!!).execute(args)
+                        Login(httpRequests, userStorage!!, localMemory).execute(args)
                         break
                     } catch (e: Exception) {
                         println("Something went wrong. Try again.")

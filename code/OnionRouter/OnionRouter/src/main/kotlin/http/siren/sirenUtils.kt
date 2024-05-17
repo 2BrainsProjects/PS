@@ -1,4 +1,4 @@
-package http
+package http.siren
 
 import Crypto
 import com.google.gson.internal.LinkedTreeMap
@@ -6,8 +6,6 @@ import domain.Client
 import domain.ClientInformation
 import domain.Message
 import domain.Router
-import http.siren.SirenEntity
-import http.siren.SubEntity
 
 /**
  * Extracts the elements from a siren response

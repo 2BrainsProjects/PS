@@ -3,7 +3,7 @@ package http
 import Crypto
 import com.google.gson.Gson
 import domain.*
-import http.siren.SirenEntity
+import http.siren.*
 
 fun main() {
     val crypto = Crypto()
