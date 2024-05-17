@@ -14,8 +14,8 @@ class Logout(
     override fun execute(args: List<String>) {  // pwd, token
         //Temos de ir buscar as mensagens
         val token = args[1]
-        val pwd = args[0]
-        val loginTimestamp = clientStorage.loginTimestamp
+        val pwdHash = args[0]
+        val loginTimestamp = clientStorage.timestamp
         requireNotNull(loginTimestamp)
         localMemory.saveMessages(token, loginTimestamp, clientStorage.contacts)
 
@@ -24,10 +24,9 @@ class Logout(
         requireNotNull(id)
         requireNotNull(name)
         val storage = UserStorage(id, name, clientStorage.contacts.map { Contact(it.id, it.name) })
-        httpRequests.logoutClient(pwd, token, storage)
+        httpRequests.logoutClient(pwdHash, token, storage)
         clientStorage.token = null
-        clientStorage.logoutTimestamp = System.currentTimeMillis().toString()
-
-        localMemory.saveSession(clientStorage.logoutTimestamp!!)
+        val logoutTimestamp = System.currentTimeMillis().toString()
+        localMemory.saveSession(logoutTimestamp, pwdHash)
     }
 }

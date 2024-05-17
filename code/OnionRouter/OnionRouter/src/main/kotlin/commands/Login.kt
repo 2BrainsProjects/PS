@@ -4,7 +4,6 @@ import LocalMemory
 import domain.Contact
 import domain.Session
 import http.HttpRequests
-import java.io.File
 
 class Login(private val httpRequests: HttpRequests, private val clientStorage: Session, private val localMemory: LocalMemory) : Command {
 
@@ -17,16 +16,15 @@ class Login(private val httpRequests: HttpRequests, private val clientStorage: S
             clientStorage.name = c.name
             clientStorage.contacts = emptyList<Contact>().toMutableList()
         } else{
-            clientStorage.contacts = storage.contacts.toMutableList()
             clientStorage.id = storage.id
             clientStorage.name = storage.name
-            
+            clientStorage.contacts = storage.contacts.toMutableList()
         }
         
-        clientStorage.loginTimestamp = System.currentTimeMillis().toString()
+        clientStorage.timestamp = System.currentTimeMillis().toString()
         clientStorage.pwd = pwdHash
         clientStorage.token = token
-        
+
         localMemory.contactsFilesSetup(clientStorage.id!!, pwdHash, token.token, clientStorage.contacts)
         //criar as pastas
         // Verificar se existe memoria local

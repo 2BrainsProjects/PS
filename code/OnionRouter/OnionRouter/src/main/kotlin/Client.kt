@@ -1,15 +1,16 @@
+import com.google.gson.Gson
 import commands.Login
 import commands.Logout
 import commands.Register
-import domain.RouterStorage
-import domain.Session
+import domain.*
 import http.HttpRequests
+import java.io.File
 import kotlin.random.Random
 
 class Client(
     private val crypto: Crypto,
     private val httpRequests: HttpRequests,
-    private val sendMsg: (Int, String) -> Unit
+    private val sendMsg: (Int, String, String) -> String?
 ) {
     private var routerStorage: RouterStorage? = null
     private var userStorage: Session? = null
@@ -40,9 +41,8 @@ class Client(
         if (userStorage != null) {
             val pwd = userStorage.pwd
             val token = userStorage.token
-            requireNotNull(pwd) { "Password is null" }
-            requireNotNull(token) { "Token is null" }
-            Logout(httpRequests, userStorage, localMemory).execute(listOf(pwd, token.token))
+            if (pwd != null && token != null)
+                Logout(httpRequests, userStorage, localMemory).execute(listOf(pwd, token.token))
         }
         if (routerStorage != null) {
             httpRequests.deleteRouter(routerStorage.id, routerStorage.pwd)
@@ -139,9 +139,59 @@ class Client(
                     println("Enter the name or id of the contact")
                 }
                 "2" -> {
-                    val args = getInputs(listOf("Id of the contact", "Message"))
-                    sendMsg(args[0].toInt(), args[1])
-                    //println("Load more")
+                    val args = getInputs(listOf("Name of the contact"))
+
+                    val contactId = userStorage?.contacts?.firstOrNull { it.name == args.first() }?.id
+
+                    if(contactId == null) {
+                        println("Contact not found")
+                        continue
+                    }
+
+                    val msgs = localMemory.getMessages(args[0], userStorage?.pwd!!)
+
+                    val cid = localMemory.buildCid(userStorage?.id!!, contactId, userStorage?.pwd!!)
+                    /*
+                    for(i in msgs.takeLast(10)) {
+                        if(i.content.split(":").first().toInt() == userStorage?.id) {
+                            println(rgbfg(0,255,0) + i + RC)
+                        } else {
+                            println(i)
+                        }
+                    }
+                     */
+
+                    while (true){
+                        println("1 - Send message")
+                        println("2 - Load next messages")
+                        println("3 - Load previous messages")
+                        println("4 - Exit")
+                        print("> ")
+                        val option = readln()
+
+                        when (option) {
+                            "1" -> {
+                                val msg = getInputs(listOf("Message")).first()
+                                val msgDate = System.currentTimeMillis().toString()
+                                val sentMsg = sendMsg(contactId, msg, msgDate)
+                                if (sentMsg == null) {
+                                    println("Message not sent")
+                                    continue
+                                }
+                                val message = Message(cid, sentMsg, msgDate)
+                                localMemory.saveMessageInFile(message, userStorage?.pwd!!)
+                            }
+                            "2" -> {
+                                // sliding window to get the files(?)
+                            }
+                            "3" -> {
+
+                            }
+                            "4" -> {
+                                break
+                            }
+                        }
+                    }
                 }
                 "3" -> {
                     // sliding window to get the files(?)
@@ -154,6 +204,7 @@ class Client(
             }
         }
     }
+
 
     private fun initializeRouter(ip: String, csr: String? = null){
         val password = "Pa\$\$w0rd${Random.nextInt()}"

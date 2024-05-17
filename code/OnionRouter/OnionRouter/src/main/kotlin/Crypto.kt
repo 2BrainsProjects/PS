@@ -176,6 +176,7 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
 
 
     private fun xorStringWithPwd(string: String, pwdHash: String): String {
+        println(string)
         val keySize = pwdHash.length
         var resultText = ""
 
@@ -185,7 +186,7 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
             val encryptedChar = (char.code xor keyChar.code).toChar()
             resultText += encryptedChar
         }
-
+        println(resultText)
         return resultText
     }
 

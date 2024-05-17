@@ -91,12 +91,13 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
     private fun sendMessage(
         clientId: Int,
         msg: String,
-    ) {
+        msgDate: String
+    ): String? {
         val client = getClientData(clientId)
 
         if (client == null) {
             println("Client Not Fount")
-            return
+            return null
         }
 
         val path = buildMessagePath().map { Pair(it.ip, it.certificate) } + Pair(client.ip, client.certificate)
@@ -108,13 +109,15 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
             }
 
         val sender = this.client.getInfo().first
-        val msgToSend = "final:${sender?.id}:${sender?.name}:$msg"
+        val msgToSend = "final:${sender?.id}:${sender?.name}:$msg:${msgDate}"
         val encipherMsg = encipherMessage(msgToSend, path.reversed())
 
         if (socket != null) {
             val newMsgBytes = encipherMsg.toByteArray(Charsets.UTF_8)
             writeToClient(newMsgBytes, socket)
         }
+
+        return msgToSend.replace("final:", "")
     }
 
     private fun getClientData(clientId: Int): ClientInformation? {

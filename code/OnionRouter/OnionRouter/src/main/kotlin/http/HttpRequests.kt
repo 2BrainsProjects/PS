@@ -69,7 +69,7 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
         nameOrEmail: String,
         ip: String,
         password: String,
-    ): Pair<Token, UserStorage> {
+    ): Pair<Token, UserStorage?> {
         val body =
             if (nameOrEmail.contains("@")) {
                 hashMapOf("email" to nameOrEmail, "ip" to ip, "password" to password)

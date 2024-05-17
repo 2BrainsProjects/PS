@@ -5,7 +5,6 @@ class Session {
     var pwd: String? = null                                   // nada
     var name: String? = null                                  // api
     var token: Token? = null                                  // nada
-    var loginTimestamp: String? = null                        // nada
-    var logoutTimestamp: String? = null                       // local
+    var timestamp: String? = null                             // nada
     var contacts : MutableList<Contact> = mutableListOf()     // api
 }

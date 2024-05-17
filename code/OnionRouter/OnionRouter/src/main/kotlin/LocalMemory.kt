@@ -1,6 +1,6 @@
 import com.google.gson.Gson
 import domain.Contact
-import domain.Conversation
+import domain.Message
 import http.HttpRequests
 import java.io.File
 import java.sql.Timestamp
@@ -26,7 +26,7 @@ class LocalMemory(private val httpRequests: HttpRequests, private val crypto: Cr
         contacts.forEach {
             val cid = buildCid(storageId, it.id, pwdHash)
             val messages = httpRequests.getMessages(token, cid, msgDate)
-            val file = File(System.getProperty("user.dir") + "client/conversations/${it.name}.txt")
+            val file = File("$pathConversation/${it.name}.txt")
             file.createNewFile()
             file.appendText(messages.joinToString("\n"))
         }
@@ -38,9 +38,8 @@ class LocalMemory(private val httpRequests: HttpRequests, private val crypto: Cr
             val path = pathConversation +"/${it.name}.txt"
             val file = File(path)
             if(file.exists()){
-                val content = file.readLines().joinToString("\n")
-                val conversation = gson.fromJson(content, Conversation::class.java)
-                val messages = conversation.messages.filter { m -> m.timestamp.toLong() > timestamp.toLong() }
+                val conversation = file.readLines().map { msg-> gson.fromJson(msg, Message::class.java) }
+                val messages = conversation.filter { m -> m.timestamp.toLong() > timestamp.toLong() }
                 messages.forEach{ msg ->
                     val t = Timestamp(msg.timestamp.toLong()).toString()
                     httpRequests.saveMessage(token, msg.conversationId, msg.content, t)
@@ -49,9 +48,39 @@ class LocalMemory(private val httpRequests: HttpRequests, private val crypto: Cr
         }
     }
 
-    fun saveSession(timestamp: String) {
+    fun saveSession(timestamp: String, pwdHash: String) {
         val file = File("$basePath/session.txt")
-        file.writeText("timestamp: $timestamp")
+        file.delete()
+        file.createNewFile()
+        val text = "timestamp: $timestamp"
+        val encryptText = crypto.encryptWithPwd(text, pwdHash)
+        file.writeText(encryptText)
+    }
+
+    fun getMessages(name: String, pwdHash: String): List<Message> {
+        val path = "$pathConversation/$name.txt"
+        val file = File(path)
+        return if (file.exists()) {
+            file.readLines()
+                .map {
+                    val msg = Gson().fromJson(it, Message::class.java)
+                    val decryptContent = crypto.decryptWithPwd(msg.content, pwdHash)
+                    msg.copy(content = decryptContent)
+                }
+
+        }else{
+            file.createNewFile()
+            emptyList()
+        }
+    }
+
+    fun saveMessageInFile(msg: Message, pwdHash: String){
+        val path = pathConversation +"/${msg.conversationId}.txt"
+        val file = File(path)
+        val gson = Gson()
+        val contentEncrypt = crypto.encryptWithPwd(msg.content, pwdHash)
+        val newMsg = Message(msg.conversationId, contentEncrypt, msg.timestamp)
+        file.appendText(gson.toJson(newMsg) + "\n")
     }
 
     /**
@@ -65,7 +94,8 @@ class LocalMemory(private val httpRequests: HttpRequests, private val crypto: Cr
         return if (file.exists()) {
             val contentFile = file.readLines().joinToString("\n")
             val decryptContent = crypto.decryptWithPwd(contentFile, pwdHash)
-            decryptContent.split("\n").firstOrNull{ it.contains("timestamp") }?.replace("timestamp: ", "")
+            val timestamp = decryptContent.split("\n").firstOrNull{ it.contains("timestamp") }?.replace("timestamp: ", "")
+            timestamp
         }else{
             file.createNewFile()
             null
@@ -74,7 +104,7 @@ class LocalMemory(private val httpRequests: HttpRequests, private val crypto: Cr
 
     private fun createFolders(path: String) = File(path).mkdirs()
 
-    private fun buildCid(id1: Int, id2: Int, pwdHash: String): String {
+    fun buildCid(id1: Int, id2: Int, pwdHash: String): String {
         val cid = "$id1$id2${id1*id2+id1}"
         return crypto.encryptWithPwd(cid, pwdHash)
     }
