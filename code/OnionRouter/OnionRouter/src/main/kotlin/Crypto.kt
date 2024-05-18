@@ -14,6 +14,16 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
+fun main() {
+    val crypto = Crypto()
+    val text = "timestamp:2024-02-18 18:24:49"
+    val password = "password".hashCode().toString()
+    val encryptedText = crypto.encryptWithPwd(text, password)
+    println("encryptedText: $encryptedText")
+    val decryptedText = crypto.decryptWithPwd(encryptedText, password)
+    println("decryptedText: $decryptedText")
+}
+
 class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\crypto") {
     private val sCipher = Cipher.getInstance("AES/GCM/NoPadding")
     private val aCipher = Cipher.getInstance(ALG_ASYMMETRIC)
@@ -176,18 +186,16 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
 
 
     private fun xorStringWithPwd(string: String, pwdHash: String): String {
-        println(string)
         val keySize = pwdHash.length
-        var resultText = ""
+        val resultText = StringBuilder()
 
         for (i in string.indices) {
             val char = string[i]
             val keyChar = pwdHash[i % keySize]
             val encryptedChar = (char.code xor keyChar.code).toChar()
-            resultText += encryptedChar
+            resultText.append(encryptedChar)
         }
-        println(resultText)
-        return resultText
+        return resultText.toString()
     }
 
     /**

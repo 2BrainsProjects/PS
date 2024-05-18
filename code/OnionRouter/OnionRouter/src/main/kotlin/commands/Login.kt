@@ -4,6 +4,8 @@ import LocalMemory
 import domain.Contact
 import domain.Session
 import http.HttpRequests
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class Login(private val httpRequests: HttpRequests, private val clientStorage: Session, private val localMemory: LocalMemory) : Command {
 
@@ -21,12 +23,16 @@ class Login(private val httpRequests: HttpRequests, private val clientStorage: S
             clientStorage.contacts = storage.contacts.toMutableList()
         }
         
-        clientStorage.timestamp = System.currentTimeMillis().toString()
+
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+        val current = LocalDateTime.now().format(formatter)
+        clientStorage.timestamp = current
+
         clientStorage.pwd = pwdHash
         clientStorage.token = token
 
         localMemory.contactsFilesSetup(clientStorage.id!!, pwdHash, token.token, clientStorage.contacts)
-        //criar as pastas
+        // criar as pastas
         // Verificar se existe memoria local
         // pedir as conversas:
         // Verificar se existe memoria local

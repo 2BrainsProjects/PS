@@ -121,7 +121,7 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
 
     fun getMessages(token: String, cid: String, msgDate: String? = null): List<Message> {
         val headers = hashMapOf("Content-Type" to json, "Authorization" to "Bearer $token")
-        val query = hashMapOf("cid" to cid, "msgDate" to msgDate.toString())
+        val query = hashMapOf("cid" to cid, "msgDate" to msgDate)
         val response = httpUtils.getRequest(headers, "$apiUri/messages", query,"Error getting messages")
         val body = response.body?.string()
         requireNotNull(body)

@@ -35,11 +35,12 @@ class LocalMemory(private val httpRequests: HttpRequests, private val crypto: Cr
     fun saveMessages(token: String, timestamp: String, contacts: List<Contact>) {
         val gson = Gson()
         contacts.forEach {
+            println("name: ${it.name}")
             val path = pathConversation +"/${it.name}.txt"
             val file = File(path)
             if(file.exists()){
                 val conversation = file.readLines().map { msg-> gson.fromJson(msg, Message::class.java) }
-                val messages = conversation.filter { m -> m.timestamp.toLong() > timestamp.toLong() }
+                val messages = conversation.filter { m -> m.timestamp > timestamp }
                 messages.forEach{ msg ->
                     val t = Timestamp(msg.timestamp.toLong()).toString()
                     httpRequests.saveMessage(token, msg.conversationId, msg.content, t)
@@ -52,7 +53,7 @@ class LocalMemory(private val httpRequests: HttpRequests, private val crypto: Cr
         val file = File("$basePath/session.txt")
         file.delete()
         file.createNewFile()
-        val text = "timestamp: $timestamp"
+        val text = "timestamp:$timestamp"
         val encryptText = crypto.encryptWithPwd(text, pwdHash)
         file.writeText(encryptText)
     }
@@ -61,6 +62,8 @@ class LocalMemory(private val httpRequests: HttpRequests, private val crypto: Cr
         val path = "$pathConversation/$name.txt"
         val file = File(path)
         return if (file.exists()) {
+            //Temos de mudar o readLines para readText devido as possiveis mundanças de linhas
+            //na encriptação do conteudo das messagens
             file.readLines()
                 .map {
                     val msg = Gson().fromJson(it, Message::class.java)
@@ -92,10 +95,17 @@ class LocalMemory(private val httpRequests: HttpRequests, private val crypto: Cr
     private fun getMsgDate(path: String, pwdHash: String): String? {
         val file = File(path)
         return if (file.exists()) {
-            val contentFile = file.readLines().joinToString("\n")
+            val contentFile = file.readText()
             val decryptContent = crypto.decryptWithPwd(contentFile, pwdHash)
-            val timestamp = decryptContent.split("\n").firstOrNull{ it.contains("timestamp") }?.replace("timestamp: ", "")
-            timestamp
+            val timestamp = decryptContent.split("\n").firstOrNull{ it.contains("timestamp") }?.replace("timestamp:'", "")
+            if (timestamp == null)
+                null
+            else {
+                println(timestamp)
+                val t = Timestamp(timestamp.toLong()).toString()
+                println(t)
+                t
+            }
         }else{
             file.createNewFile()
             null

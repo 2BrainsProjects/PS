@@ -27,7 +27,7 @@ class HttpUtils {
 
     /**
      * This method makes a get request to the API
-     * @param mediaType the media type of the request
+     * @param headers the headers of the request
      * @param uri the uri of the request
      * @param query the query of the request
      * @param lazyMessage the message to be shown if the request fails
@@ -36,10 +36,10 @@ class HttpUtils {
     fun getRequest(
         headers: HashMap<String, String>,
         uri: String,
-        query: HashMap<String, String>? = null,
+        query: HashMap<String, String?>? = null,
         lazyMessage: String,
     ): Response {
-        val finalQuery = query?.let { "?" + query.map { (k, v) -> "$k=$v" }.joinToString("&") } ?: ""
+        val finalQuery = query?.let { "?" + query.mapNotNull { (k, v) -> v.let { "$k=$it" } }.joinToString("&") } ?: ""
         val request =
             createGetRequest(
                 headers,
@@ -51,10 +51,9 @@ class HttpUtils {
 
     /**
      * This method makes a delete request to the API
-     * @param mediaType the media type of the request
+     * @param headers the headers of the request
      * @param uri the uri of the request
      * @param query the query of the request
-     * @param body the body of the request
      * @param lazyMessage the message to be shown if the request fails
      * @return the response of the request
      */

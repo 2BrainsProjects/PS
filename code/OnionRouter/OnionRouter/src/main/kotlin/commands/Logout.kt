@@ -5,6 +5,8 @@ import domain.Contact
 import domain.Session
 import domain.UserStorage
 import http.HttpRequests
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class Logout(
     private val httpRequests: HttpRequests,
@@ -26,7 +28,9 @@ class Logout(
         val storage = UserStorage(id, name, clientStorage.contacts.map { Contact(it.id, it.name) })
         httpRequests.logoutClient(pwdHash, token, storage)
         clientStorage.token = null
-        val logoutTimestamp = System.currentTimeMillis().toString()
-        localMemory.saveSession(logoutTimestamp, pwdHash)
+
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+        val current = LocalDateTime.now().format(formatter)
+        localMemory.saveSession(current, pwdHash)
     }
 }

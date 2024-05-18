@@ -1,20 +1,22 @@
-import com.google.gson.Gson
 import commands.Login
 import commands.Logout
 import commands.Register
 import domain.*
 import http.HttpRequests
-import java.io.File
+import java.security.cert.X509Certificate
 import kotlin.random.Random
 
 class Client(
     private val crypto: Crypto,
     private val httpRequests: HttpRequests,
-    private val sendMsg: (Int, String, String) -> String?
+    private val sendMsg: (ClientInformation, String, String) -> String
 ) {
     private var routerStorage: RouterStorage? = null
     private var userStorage: Session? = null
     private val localMemory = LocalMemory(httpRequests, crypto)
+    private val pathSize = 2
+    private val routersAmountRequest = 4
+
     /*
     initialization menu
         - client
@@ -135,8 +137,21 @@ class Client(
             command = readln()
             when (command) {
                 "1" -> {
-                    // poder adicionar por nome ou por id (?)
-                    println("Enter the name or id of the contact")
+                    var clientId: Int?
+                    while(true) {
+                        val args = getInputs(listOf("Enter id of the contact"))
+                        clientId = args.first().toIntOrNull()
+                        if (clientId != null) {
+                            val client = getClientData(clientId)
+                            if (client == null) {
+                                println("Client not found")
+                                break
+                            }
+                            userStorage?.contacts?.add(Contact(clientId, client.name))
+                            println("User ${client.name} added!")
+                            break
+                        }
+                    }
                 }
                 "2" -> {
                     val args = getInputs(listOf("Name of the contact"))
@@ -148,18 +163,23 @@ class Client(
                         continue
                     }
 
+                    val client = getClientData(contactId)
+                    if(client == null) {
+                        println("Contact not found")
+                        continue
+                    }
+
                     val msgs = localMemory.getMessages(args[0], userStorage?.pwd!!)
 
                     val cid = localMemory.buildCid(userStorage?.id!!, contactId, userStorage?.pwd!!)
-                    /*
-                    for(i in msgs.takeLast(10)) {
+
+                    /*for(i in msgs.takeLast(10)) {
                         if(i.content.split(":").first().toInt() == userStorage?.id) {
                             println(rgbfg(0,255,0) + i + RC)
                         } else {
                             println(i)
                         }
-                    }
-                     */
+                    }*/
 
                     while (true){
                         println("1 - Send message")
@@ -173,11 +193,8 @@ class Client(
                             "1" -> {
                                 val msg = getInputs(listOf("Message")).first()
                                 val msgDate = System.currentTimeMillis().toString()
-                                val sentMsg = sendMsg(contactId, msg, msgDate)
-                                if (sentMsg == null) {
-                                    println("Message not sent")
-                                    continue
-                                }
+                                val sentMsg = sendMsg(client, msg, msgDate)
+
                                 val message = Message(cid, sentMsg, msgDate)
                                 localMemory.saveMessageInFile(message, userStorage?.pwd!!)
                             }
@@ -203,6 +220,45 @@ class Client(
                 }
             }
         }
+    }
+
+    private fun getClientData(clientId: Int): ClientInformation? {
+        val count = httpRequests.getClientCount()
+        val ids: MutableList<Int> = (0..count).shuffled().take(routersAmountRequest).toMutableList()
+
+        ids.add(clientId)
+        val idsListToSend = ids.toSet().shuffled()
+
+        val list = httpRequests.getClients(idsListToSend)
+
+        val client = list.firstOrNull { it.id == clientId }
+
+        return client
+    }
+
+    fun buildMessagePath(): List<Router> {
+        val count = httpRequests.getRouterCount()
+        val ids = (0..count).shuffled().take(routersAmountRequest)
+
+        val list = httpRequests.getRouters(ids)
+
+        val pathRouters = list.shuffled().take(pathSize)
+        return pathRouters
+    }
+
+    fun encipherMessage(
+        message: String,
+        list: List<Pair<String, X509Certificate>>,
+    ): String {
+        var finalMsg = message
+
+        for (i in 0 until list.size - 1) {
+            val element = list[i]
+            finalMsg = crypto.encipher(finalMsg, element.second)
+            finalMsg += "||${element.first}"
+        }
+        finalMsg = crypto.encipher(finalMsg, list.last().second)
+        return finalMsg
     }
 
 

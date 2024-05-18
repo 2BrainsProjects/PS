@@ -1,5 +1,4 @@
 import domain.ClientInformation
-import domain.Router
 import http.HttpRequests
 import sun.misc.Signal
 import java.io.IOException
@@ -9,16 +8,12 @@ import java.nio.channels.SelectionKey
 import java.nio.channels.Selector
 import java.nio.channels.ServerSocketChannel
 import java.nio.channels.SocketChannel
-import java.security.cert.X509Certificate
-import kotlin.random.Random
 import kotlin.system.exitProcess
 /**
  * This class represents an Onion Router
  */
 class OnionRouter(private val ip: InetSocketAddress, path: String = System.getProperty("user.dir") + "\\crypto") {
     private val timeout = 5000L
-    private val pathSize = 2
-    private val routersAmountRequest = 4
     private val selector = Selector.open()
     private val socketsList = emptyList<SocketChannel>().toMutableList()
     private val crypto = Crypto(path)
@@ -89,28 +84,23 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
     }
 
     private fun sendMessage(
-        clientId: Int,
+        clientInformation: ClientInformation,
         msg: String,
         msgDate: String
-    ): String? {
-        val client = getClientData(clientId)
+    ): String {
 
-        if (client == null) {
-            println("Client Not Fount")
-            return null
-        }
-
-        val path = buildMessagePath().map { Pair(it.ip, it.certificate) } + Pair(client.ip, client.certificate)
+        val path = client.buildMessagePath().map { Pair(it.ip, it.certificate) } + Pair(clientInformation.ip, clientInformation.certificate)
         val firstNodeIp = path.first().first
+
+        val sender = this.client.getInfo().first
+        val msgToSend = "final:${sender?.id}:${sender?.name}:$msg:${msgDate}"
+        val encipherMsg = client.encipherMessage(msgToSend, path.reversed())
+
         putConnectionIfAbsent(firstNodeIp)
         val socket =
             socketsList.firstOrNull { // /127.0.0.1:8083
                 it.remoteAddress.toString().contains(firstNodeIp)
             }
-
-        val sender = this.client.getInfo().first
-        val msgToSend = "final:${sender?.id}:${sender?.name}:$msg:${msgDate}"
-        val encipherMsg = encipherMessage(msgToSend, path.reversed())
 
         if (socket != null) {
             val newMsgBytes = encipherMsg.toByteArray(Charsets.UTF_8)
@@ -118,45 +108,6 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
         }
 
         return msgToSend.replace("final:", "")
-    }
-
-    private fun getClientData(clientId: Int): ClientInformation? {
-        val count = httpRequests.getClientCount()
-        val ids: MutableList<Int> = (0..count).shuffled().take(routersAmountRequest).toMutableList()
-
-        ids.add(clientId)
-        val idsListToSend = ids.toSet().shuffled()
-
-        val list = httpRequests.getClients(idsListToSend)
-
-        val client = list.firstOrNull { it.id == clientId }
-
-        return client
-    }
-
-    private fun buildMessagePath(): List<Router> {
-        val count = httpRequests.getRouterCount()
-        val ids = (0..count).shuffled().take(routersAmountRequest)
-
-        val list = httpRequests.getRouters(ids)
-
-        val pathRouters = list.shuffled().take(pathSize)
-        return pathRouters
-    }
-
-    private fun encipherMessage(
-        message: String,
-        list: List<Pair<String, X509Certificate>>,
-    ): String {
-        var finalMsg = message
-
-        for (i in 0 until list.size - 1) {
-            val element = list[i]
-            finalMsg = crypto.encipher(finalMsg, element.second)
-            finalMsg += "||${element.first}"
-        }
-        finalMsg = crypto.encipher(finalMsg, list.last().second)
-        return finalMsg
     }
 
     /**
@@ -219,6 +170,8 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
     private fun processMessage(msg: String) {
         println("processing...")
         if (msg.isBlank() || msg.isEmpty()) return
+        println(msg)
+        println(ip.port)
         val plainText = crypto.decipher(msg, ip.port)
         println("deciphered message: $plainText")
 
