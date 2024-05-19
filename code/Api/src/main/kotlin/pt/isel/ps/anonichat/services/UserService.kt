@@ -20,6 +20,7 @@ import pt.isel.ps.anonichat.services.models.TokenModel
 import pt.isel.ps.anonichat.services.models.UserModel.Companion.toModel
 import pt.isel.ps.anonichat.services.models.UsersModel
 import java.io.File
+import java.util.*
 
 @Component
 class UserService(
@@ -52,6 +53,7 @@ class UserService(
             val sessionInfoPath = System.getProperty("user.dir") + "\\sessions\\user$userId.txt"
             val file = File(sessionInfoPath)
             File(file.parent).mkdirs()
+            file.delete()
             file.createNewFile()
 
             it.userRepository.updateSessionInfo(userId, sessionInfoPath)

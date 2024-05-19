@@ -4,6 +4,8 @@ import commands.Register
 import domain.*
 import http.HttpRequests
 import java.security.cert.X509Certificate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import kotlin.random.Random
 
 class Client(
@@ -15,7 +17,7 @@ class Client(
     private var userStorage: Session? = null
     private val localMemory = LocalMemory(httpRequests, crypto)
     private val pathSize = 2
-    private val routersAmountRequest = 4
+    private val amountRequest = 4
 
     /*
     initialization menu
@@ -183,8 +185,8 @@ class Client(
 
                     while (true){
                         println("1 - Send message")
-                        println("2 - Load next messages")
-                        println("3 - Load previous messages")
+                        println("2 - Load previous messages")
+                        println("3 - Load next messages")
                         println("4 - Exit")
                         print("> ")
                         val option = readln()
@@ -192,11 +194,14 @@ class Client(
                         when (option) {
                             "1" -> {
                                 val msg = getInputs(listOf("Message")).first()
-                                val msgDate = System.currentTimeMillis().toString()
+
+                                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                                val msgDate = LocalDateTime.now().format(formatter)
+
                                 val sentMsg = sendMsg(client, msg, msgDate)
 
                                 val message = Message(cid, sentMsg, msgDate)
-                                localMemory.saveMessageInFile(message, userStorage?.pwd!!)
+                                localMemory.saveMessageInFile(message, userStorage?.pwd!!, client.name)
                             }
                             "2" -> {
                                 // sliding window to get the files(?)
@@ -224,7 +229,7 @@ class Client(
 
     private fun getClientData(clientId: Int): ClientInformation? {
         val count = httpRequests.getClientCount()
-        val ids: MutableList<Int> = (0..count).shuffled().take(routersAmountRequest).toMutableList()
+        val ids: MutableList<Int> = (0..count).shuffled().take(amountRequest).toMutableList()
 
         ids.add(clientId)
         val idsListToSend = ids.toSet().shuffled()
@@ -238,7 +243,7 @@ class Client(
 
     fun buildMessagePath(): List<Router> {
         val count = httpRequests.getRouterCount()
-        val ids = (0..count).shuffled().take(routersAmountRequest)
+        val ids = (0..count).shuffled().take(amountRequest)
 
         val list = httpRequests.getRouters(ids)
 

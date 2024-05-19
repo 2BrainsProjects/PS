@@ -1,5 +1,5 @@
 import java.net.InetSocketAddress
 
 fun main() {
-    OnionRouter(InetSocketAddress("127.0.0.1", 8081)).start()
+    OnionRouter(InetSocketAddress("127.0.0.1", 8084)).start()
 }

@@ -31,6 +31,6 @@ class Logout(
 
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
         val current = LocalDateTime.now().format(formatter)
-        localMemory.saveSession(current, pwdHash)
+        localMemory.saveSession(id, current, pwdHash)
     }
 }

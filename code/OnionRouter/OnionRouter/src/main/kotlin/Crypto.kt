@@ -47,6 +47,7 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
         cn: String,
         pwd: String,
     ): List<String> {
+        File(basePath).mkdirs()
         generatePrivateKey(port)
         answeringCSRCreation(port, cn, pwd)
         val path = "$basePath/$port.csr"
@@ -247,10 +248,10 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
         key: ByteArray,
         filePath: String,
     ) {
-        val file2 = File(filePath)
-        if (file2.exists()) file2.delete()
-        file2.createNewFile()
-        file2.writeBytes(key)
+        val file = File(filePath)
+        if (file.exists()) file.delete()
+        file.createNewFile()
+        file.writeBytes(key)
     }
 
     /**

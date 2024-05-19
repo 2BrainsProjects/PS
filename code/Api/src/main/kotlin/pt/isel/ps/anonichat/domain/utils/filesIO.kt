@@ -24,7 +24,8 @@ fun readFile(filePath: String): String {
  * @param text The text to write
  */
 fun writeFile(filePath: String, text: String) {
+    
     val bufferedWriter = BufferedWriter(OutputStreamWriter(FileOutputStream(filePath)))
-    bufferedWriter.append(text)
+    bufferedWriter.write(text)
     bufferedWriter.close()
 }

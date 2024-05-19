@@ -32,7 +32,6 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
      * It also creates a thread to handle the connection with the client
      * and a thread to accept new clients
      * Has support to interruption of the program
-     * @param pwd the password of the router's CSR
      */
     fun start() {
         val sSocket = ServerSocketChannel.open().bind(ip)

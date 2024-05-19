@@ -39,7 +39,7 @@ class HttpUtils {
         query: HashMap<String, String?>? = null,
         lazyMessage: String,
     ): Response {
-        val finalQuery = query?.let { "?" + query.mapNotNull { (k, v) -> v.let { "$k=$it" } }.joinToString("&") } ?: ""
+        val finalQuery = query?.let { "?" + query.mapNotNull { (k, v) -> v?.let { "$k=$v" } }.joinToString("&") } ?: ""
         val request =
             createGetRequest(
                 headers,

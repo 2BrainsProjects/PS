@@ -66,7 +66,7 @@ fun SirenEntity<*>.extractMessages() : List<Message> =
         val cid = it.extractProperty<String>("cid")
         val msgDate = it.extractProperty<String>("msgDate")
         val message = it.extractProperty<String>("message")
-        Message(cid, msgDate, message)
+        Message(cid, message, msgDate)
     } ?: emptyList()
 
 /**

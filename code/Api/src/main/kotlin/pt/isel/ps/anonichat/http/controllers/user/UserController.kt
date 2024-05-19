@@ -185,8 +185,8 @@ class UserController(
         user: Session,
         @RequestParam @Valid
         cid: String,
-        @RequestParam @Valid
-        msgDate: String
+        @Valid
+        msgDate: String?
     ): ResponseEntity<*> {
         val messages = services.getMessages(user.user.id, cid, msgDate)
         return SirenEntity(

@@ -35,7 +35,7 @@ class CertificateDomain  {
         execute(signedCertificateCommand)
 
         // wait for the file to be written on
-        while(BufferedReader(FileInputStream(certFile).bufferedReader()).readLines().isEmpty()){}
+        while(BufferedReader(FileInputStream(certFile).bufferedReader()).readLines().isEmpty());
         csrFile.delete()
         return "$path/$clientId.cer"
     }

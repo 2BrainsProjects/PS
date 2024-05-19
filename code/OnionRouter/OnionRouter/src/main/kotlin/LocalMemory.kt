@@ -3,7 +3,8 @@ import domain.Contact
 import domain.Message
 import http.HttpRequests
 import java.io.File
-import java.sql.Timestamp
+import java.time.format.DateTimeFormatter
+import java.util.*
 
 class LocalMemory(private val httpRequests: HttpRequests, private val crypto: Crypto) {
 
@@ -21,7 +22,7 @@ class LocalMemory(private val httpRequests: HttpRequests, private val crypto: Cr
         createFolders(pathConversation)
         // Verificar se existe memoria local
         // criar class que trate de guardar e ler ficheiros
-        val path = "$basePath/session.txt"
+        val path = "$basePath/session${storageId}.txt"
         val msgDate = getMsgDate(path, pwdHash)
         contacts.forEach {
             val cid = buildCid(storageId, it.id, pwdHash)
@@ -35,22 +36,20 @@ class LocalMemory(private val httpRequests: HttpRequests, private val crypto: Cr
     fun saveMessages(token: String, timestamp: String, contacts: List<Contact>) {
         val gson = Gson()
         contacts.forEach {
-            println("name: ${it.name}")
             val path = pathConversation +"/${it.name}.txt"
             val file = File(path)
             if(file.exists()){
                 val conversation = file.readLines().map { msg-> gson.fromJson(msg, Message::class.java) }
                 val messages = conversation.filter { m -> m.timestamp > timestamp }
                 messages.forEach{ msg ->
-                    val t = Timestamp(msg.timestamp.toLong()).toString()
-                    httpRequests.saveMessage(token, msg.conversationId, msg.content, t)
+                    httpRequests.saveMessage(token, msg.conversationId, msg.content, msg.timestamp)
                 }
             }
         }
     }
 
-    fun saveSession(timestamp: String, pwdHash: String) {
-        val file = File("$basePath/session.txt")
+    fun saveSession(storageId: Int, timestamp: String, pwdHash: String) {
+        val file = File("$basePath/session$storageId.txt")
         file.delete()
         file.createNewFile()
         val text = "timestamp:$timestamp"
@@ -62,14 +61,12 @@ class LocalMemory(private val httpRequests: HttpRequests, private val crypto: Cr
         val path = "$pathConversation/$name.txt"
         val file = File(path)
         return if (file.exists()) {
-            //Temos de mudar o readLines para readText devido as possiveis mundanças de linhas
-            //na encriptação do conteudo das messagens
             file.readLines()
-                .map {
-                    val msg = Gson().fromJson(it, Message::class.java)
-                    val decryptContent = crypto.decryptWithPwd(msg.content, pwdHash)
-                    msg.copy(content = decryptContent)
-                }
+            .map {
+                val msg = Gson().fromJson(it, Message::class.java)
+                val decryptContent = crypto.decryptWithPwd(String(Base64.getDecoder().decode(msg.content)), pwdHash)
+                msg.copy(content = decryptContent)
+            }
 
         }else{
             file.createNewFile()
@@ -77,12 +74,13 @@ class LocalMemory(private val httpRequests: HttpRequests, private val crypto: Cr
         }
     }
 
-    fun saveMessageInFile(msg: Message, pwdHash: String){
-        val path = pathConversation +"/${msg.conversationId}.txt"
+    fun saveMessageInFile(msg: Message, pwdHash: String, name: String){
+        val path = pathConversation +"/${name}.txt"
         val file = File(path)
         val gson = Gson()
         val contentEncrypt = crypto.encryptWithPwd(msg.content, pwdHash)
-        val newMsg = Message(msg.conversationId, contentEncrypt, msg.timestamp)
+        val content = Base64.getEncoder().encodeToString(contentEncrypt.toByteArray())
+        val newMsg = Message(msg.conversationId, content, msg.timestamp)
         file.appendText(gson.toJson(newMsg) + "\n")
     }
 
@@ -97,14 +95,13 @@ class LocalMemory(private val httpRequests: HttpRequests, private val crypto: Cr
         return if (file.exists()) {
             val contentFile = file.readText()
             val decryptContent = crypto.decryptWithPwd(contentFile, pwdHash)
-            val timestamp = decryptContent.split("\n").firstOrNull{ it.contains("timestamp") }?.replace("timestamp:'", "")
+            val timestamp = decryptContent.split("\n").firstOrNull{ it.contains("timestamp") }
+                ?.replace("timestamp:", "")
             if (timestamp == null)
                 null
             else {
-                println(timestamp)
-                val t = Timestamp(timestamp.toLong()).toString()
-                println(t)
-                t
+                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                timestamp.format(formatter)
             }
         }else{
             file.createNewFile()
