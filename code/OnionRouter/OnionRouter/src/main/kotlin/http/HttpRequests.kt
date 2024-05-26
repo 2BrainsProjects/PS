@@ -5,17 +5,6 @@ import com.google.gson.Gson
 import domain.*
 import http.siren.*
 
-fun main() {
-    val crypto = Crypto()
-    val name = "Joao"
-    val pass = "Joao1234?"
-    val csr = crypto.generateClientCSR(1, "cn", pass).joinToString("\n")
-    val h = HttpRequests(crypto)
-    val (token, _) = h.loginClient(name, "123", pass)
-    println(token)
-    val client = h.getClient(token.token) // h.registerClient(name, email, pass, csr)
-    println(client)
-}
 
 class HttpRequests(private val crypto: Crypto = Crypto()) {
     private val httpUtils = HttpUtils()

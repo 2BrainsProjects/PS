@@ -14,16 +14,6 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-fun main() {
-    val crypto = Crypto()
-    val text = "timestamp:2024-02-18 18:24:49"
-    val password = "password".hashCode().toString()
-    val encryptedText = crypto.encryptWithPwd(text, password)
-    println("encryptedText: $encryptedText")
-    val decryptedText = crypto.decryptWithPwd(encryptedText, password)
-    println("decryptedText: $decryptedText")
-}
-
 class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\crypto") {
     private val sCipher = Cipher.getInstance("AES/GCM/NoPadding")
     private val aCipher = Cipher.getInstance(ALG_ASYMMETRIC)
@@ -268,7 +258,7 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
     /**
      * Method to encipher a message using hybrid mode and JWE.
      * @param strToCypher - message to encipher
-     * @param aditionalData - additional data to add to the header
+     * @param additionalData - additional data to add to the header
      * @param symmetricKey - symmetric key to encipher the message
      * @param publicKey - public key to encipher the symmetric key
      * @param iv - initialization vector
@@ -278,7 +268,7 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
     @Throws(Exception::class)
     private fun encipherString(
         strToCypher: String,
-        aditionalData: String,
+        additionalData: String,
         symmetricKey: SecretKey,
         publicKey: PublicKey,
         iv: IvParameterSpec,
@@ -300,7 +290,7 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
         val encryptedKey = aCipher.doFinal(symmetricKey.encoded)
         val encryptedKeyStr: String = Base64.getEncoder().encodeToString(encryptedKey)
 
-        val header: String = Base64.getEncoder().encodeToString(aditionalData.toByteArray())
+        val header: String = Base64.getEncoder().encodeToString(additionalData.toByteArray())
 
         val markStr: String = Base64.getEncoder().encodeToString(mark)
         val ivStr: String = Base64.getEncoder().encodeToString(iv.iv)
