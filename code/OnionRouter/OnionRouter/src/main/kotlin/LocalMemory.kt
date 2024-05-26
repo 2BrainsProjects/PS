@@ -11,9 +11,10 @@ class LocalMemory(private val httpRequests: HttpRequests, private val crypto: Cr
     private val basePath = System.getProperty("user.dir") + "/client"
     private val pathConversation = "$basePath/conversations"
     private val gson = Gson()
+
     init {
-        createFolders(basePath)
-        createFolders(pathConversation)
+        File(basePath).mkdirs()
+        File(pathConversation).mkdirs()
     }
 
     /**
@@ -170,10 +171,4 @@ class LocalMemory(private val httpRequests: HttpRequests, private val crypto: Cr
             null
         }
     }
-
-    /**
-     * Creates the folders if they don't exist
-     * @param path the path to the folder
-     */
-    private fun createFolders(path: String) = File(path).mkdirs()
 }

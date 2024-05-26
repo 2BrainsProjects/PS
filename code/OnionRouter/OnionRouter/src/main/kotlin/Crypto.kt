@@ -23,11 +23,23 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
         File(basePath).mkdirs()
     }
 
-    fun encryptWithPwd(toEncrypt: String, password: String): String =
-        xorStringWithPwd(toEncrypt, password)
+    /**
+     * Method to encrypt a string with a password.
+     * @param toEncrypt - string to encrypt
+     * @param pwdHash - password hash to encrypt the string
+     * @return the encrypted string
+     */
+    fun encryptWithPwd(toEncrypt: String, pwdHash: String): String =
+        xorStringWithPwd(toEncrypt, pwdHash)
 
-    fun decryptWithPwd(toDecrypt: String, password: String): String =
-        xorStringWithPwd(toDecrypt, password)
+    /**
+     * Method to decrypt a string with a password.
+     * @param toDecrypt - string to decrypt
+     * @param pwdHash - password hash to decrypt the string
+     * @return the decrypted string
+     */
+    fun decryptWithPwd(toDecrypt: String, pwdHash: String): String =
+        xorStringWithPwd(toDecrypt, pwdHash)
 
     /**
      * Method to generate the CSR for the client.
@@ -41,7 +53,6 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
         cn: String,
         pwd: String,
     ): List<String> {
-        File(basePath).mkdirs()
         generatePrivateKey(port)
         answeringCSRCreation(port, cn, pwd)
         val path = "$basePath/$port.csr"
@@ -63,6 +74,22 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
 
         val privateKey = keyPair.private.encoded
         createAndWriteFile(privateKey, "$basePath/priv$port.pem")
+    }
+
+    /**
+     * Method to generate the key pair.
+     * @param port - port of the host
+     */
+    fun generateKeys(port: Int) {
+        val keyPairGenerator = KeyPairGenerator.getInstance(ALG_ASYMMETRIC)
+        keyPairGenerator.initialize(2048)
+        val keyPair = keyPairGenerator.generateKeyPair()
+
+        val privateKey = keyPair.private.encoded
+        createAndWriteFile(privateKey, "$basePath/priv$port.pem")
+
+        val publicKey = keyPair.public.encoded
+        createAndWriteFile(publicKey, "$basePath/pub$port.pem")
     }
 
     /**
@@ -194,7 +221,7 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
     }
 
     /**
-     * Method to anwser the enumerous questions of the CSR creation.
+     * Method to answer the numerous questions of the CSR creation.
      * @param port - port of the host
      * @param cn - common name of the host
      * @param password - password of the host
@@ -301,19 +328,6 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
 
         val jweToken = String.format("%s.%s.%s.%s.%s", header, encryptedKeyStr, ivStr, encryptedMsg, markStr)
         return jweToken
-    }
-
-    /**
-     * Method to get the path of a certificate.
-     * @param certificateName - name of the certificate
-     * @param certificatePath - path of the certificate
-     * @return the path of the certificate
-     */
-    private fun getCertificatePath(
-        certificateName: String,
-        certificatePath: String,
-    ): String {
-        return "$certificatePath/$certificateName"
     }
 
     companion object {

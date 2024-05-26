@@ -10,24 +10,17 @@ class CryptoTest {
     private fun generateIp() = listOf("", "", "", "").joinToString(".") { it + Random.nextInt(0, 256) }
 
     @Test
-    fun `can generate keys`(){
+    fun `can generate private key`(){
         val port = generateRandomPort()
         crypto.generatePrivateKey(port)
 
         val privKeyFile = File("$path\\priv$port.pem")
-        val pubKeyFile = File("$path\\pub$port.pem")
 
         assertTrue(privKeyFile.exists())
-        assertTrue(pubKeyFile.exists())
 
         val privContent = privKeyFile.readText(Charsets.UTF_8)
-
         assertFalse { privContent.isEmpty() }
         assertFalse { privContent.isBlank() }
-
-        val pubContent = pubKeyFile.readText(Charsets.UTF_8)
-        assertFalse { pubContent.isEmpty() }
-        assertFalse { pubContent.isBlank() }
     }
 
     @Test
@@ -35,13 +28,11 @@ class CryptoTest {
         val port = generateRandomPort()
         val ip = "localhost:" + generateIp()
         val pwd = "P4\$\$w0rd"
-        crypto.generateClientCSR(port, ip, pwd)
+        val csrContent = crypto.generateClientCSR(port, ip, pwd).joinToString("\n")
 
         val csrFile = File("$path\\$port.csr")
 
-        assertTrue(csrFile.exists())
-
-        val csrContent = csrFile.readText(Charsets.UTF_8)
+        assertFalse(csrFile.exists())
 
         assertFalse { csrContent.isEmpty() }
         assertFalse { csrContent.isBlank() }
@@ -50,7 +41,7 @@ class CryptoTest {
     @Test
     fun `can encipher and decipher a message`() {
         val port = generateRandomPort()
-        crypto.generatePrivateKey(port)
+        crypto.generateKeys(port)
 
         val message = "Hello, World!"
 
@@ -66,8 +57,8 @@ class CryptoTest {
         val port1 = generateRandomPort()
         val port2 = generateRandomPort()
 
-        crypto.generatePrivateKey(port1)
-        crypto.generatePrivateKey(port2)
+        crypto.generateKeys(port1)
+        crypto.generateKeys(port2)
 
         val message = "Hello, World!"
 
@@ -75,6 +66,29 @@ class CryptoTest {
         assertEquals(5, encMsg.split(".").size)
 
         val decMsg = crypto.decipher(encMsg, port2)
+        assertNotEquals(message, decMsg)
+    }
+
+    @Test
+    fun `can encrypt and decrypt with password`(){
+        val message = "Hello, World!"
+        val pwdHash = "P4\$\$w0rd".hashCode().toString()
+
+        val encMsg = crypto.encryptWithPwd(message, pwdHash)
+        val decMsg = crypto.decryptWithPwd(encMsg, pwdHash)
+
+        assertEquals(message, decMsg)
+    }
+
+    @Test
+    fun `can't decrypt with wrong password`() {
+        val message = "Hello, World!"
+        val pwdHash1 = "P4\$\$w0rd".hashCode().toString()
+        val pwdHash2 = "P4\$\$word".hashCode().toString()
+
+        val encMsg = crypto.encryptWithPwd(message, pwdHash1)
+        val decMsg = crypto.decryptWithPwd(encMsg, pwdHash2)
+
         assertNotEquals(message, decMsg)
     }
 }
