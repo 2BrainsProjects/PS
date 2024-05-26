@@ -56,20 +56,6 @@ class JdbiTokenRepository(
             .singleOrNull()
 
     /**
-     * Updates the user's token hash
-     * @param id The user's id
-     * @param tokenHash The new token hash
-     * @return if the token hash was updated
-     */
-    override fun updateUserTokenHash(id: Int, tokenHash: String): Boolean =
-        handle.createUpdate("update dbo.Token set token_hash = :tokenHash where user_id = :id")
-            .bind("id", id)
-            .bind("tokenHash", tokenHash)
-            .executeAndReturnGeneratedKeys()
-            .mapTo<String>()
-            .one() != null
-
-    /**
      * Gets the user and token by the token hash
      * @param tokenHash The token hash
      * @return The user and token

@@ -16,6 +16,7 @@ e.g.
             id:35,
             name:diogo
         },
-    ]
+    ],
+    privateKey: "asdasd"
 }
 */
