@@ -6,8 +6,6 @@ object Uris {
 
     const val PREFIX = "/api"
 
-    const val HOME = "/"
-    fun home() = URI(HOME)
 
     object User {
         const val HOME = "/me"

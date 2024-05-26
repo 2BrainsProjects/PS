@@ -5,6 +5,7 @@ build/
 !**/src/test/**/build/
 certificates/users
 certificates/routers
+sessions
 
 ### STS ###
 .apt_generated

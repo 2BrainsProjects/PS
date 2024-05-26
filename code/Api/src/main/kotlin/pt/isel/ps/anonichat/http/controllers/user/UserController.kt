@@ -44,8 +44,7 @@ class UserController(
                 session.user.name
             ),
             links = listOf(
-                Links.self(Uris.User.HOME),
-                Links.home()
+                Links.self(Uris.User.HOME)
             ),
             actions = listOf(
                 Actions.User.logout()
@@ -70,8 +69,7 @@ class UserController(
         val userId = services.registerUser(body.name, body.email, body.password, body.clientCSR)
         return SirenEntity(
             clazz = listOf(Rels.User.REGISTER),
-            properties = RegisterOutputModel(userId),
-            links = listOf(Links.home())
+            properties = RegisterOutputModel(userId)
         ).created(Uris.User.home())
     }
 
@@ -92,7 +90,7 @@ class UserController(
         return SirenEntity(
             clazz = listOf(Rels.User.LOGIN),
             properties = LoginOutputModel(token.value, token.expiration.epochSeconds, sessionInfo),
-            links = listOf(Links.home(), Links.userHome())
+            links = listOf(Links.userHome())
         ).ok()
     }
 
@@ -112,8 +110,7 @@ class UserController(
         services.revokeToken(user.token)
         response.removeCookie()
         return SirenEntity<Unit>(
-            clazz = listOf(Rels.User.LOGOUT),
-            links = listOf(Links.home())
+            clazz = listOf(Rels.User.LOGOUT)
         ).ok()
     }
 
