@@ -88,6 +88,13 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
         return Pair(Token(token, expiresIn), storage)
     }
 
+    /**
+     * This function makes a request to the API to logout a client
+     * @param pwd the password of the client
+     * @param token the token of the client
+     * @param storage the storage of the client
+     * @return true if the client was logged out successfully
+     */
     fun logoutClient(pwd: String, token: String, storage: UserStorage): Boolean {
         val gson = Gson().toJson(storage)
         val encryptedStorage = Crypto().encryptWithPwd(gson, pwd)
@@ -98,6 +105,11 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
         return logoutResponse.isSuccessful
     }
 
+    /**
+     * This function makes a request to the API to get the client information
+     * @param token the token of the client
+     * @return the client
+     */
     fun getClient(token: String): Client {
         val headers = hashMapOf("Content-Type" to json, "Authorization" to "Bearer $token")
         val response = httpUtils.getRequest(headers, "$apiUri/user", hashMapOf(), "Error getting user")
@@ -108,6 +120,14 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
         return client
     }
 
+    /**
+     * This function makes a request to the API to get the messages of a conversation
+     * if msgDate is null, it will return all the messages, otherwise it will return the messages after msgDate.
+     * @param token the token of the client
+     * @param cid the conversation id
+     * @param msgDate the date of the message
+     * @return a list of messages
+     */
     fun getMessages(token: String, cid: String, msgDate: String? = null): List<Message> {
         val headers = hashMapOf("Content-Type" to json, "Authorization" to "Bearer $token")
         val query = hashMapOf("cid" to cid, "msgDate" to msgDate)
@@ -119,6 +139,14 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
         return messages
     }
 
+    /**
+     * This function makes a request to the API to save a message
+     * @param token the token of the client
+     * @param cid the conversation id
+     * @param message the message
+     * @param msgDate the date of the message
+     * @return true if the message was saved successfully
+     */
     fun saveMessage(
         token: String,
         cid: String,
@@ -152,6 +180,12 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
         val clients = transformBodyToSiren(body).extractClients(crypto)
         return clients
     }
+
+    /**
+     * This function makes a request to the API to get the number of clients
+     * @return the number of clients
+     */
+    fun getClientCount(): Int = getCount("$userUrl/count")
 
     /**
      * This function makes a request to the API to create a new onion router
@@ -213,12 +247,6 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
     fun getRouterCount(): Int = getCount("$routerUrl/count")
 
     /**
-     * This function makes a request to the API to get the number of clients
-     * @return the number of clients
-     */
-    fun getClientCount(): Int = getCount("$userUrl/count")
-
-    /**
      * This function sends a DELETE request to the API to remove the router from the list of routers
      * and then closes the server socket
      * @param routerId the id of the router to be removed
@@ -227,13 +255,14 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
     fun deleteRouter(
         routerId: Int,
         pwd: String,
-    ) {
-        httpUtils.deleteRequest(
+    ): Boolean {
+        val response = httpUtils.deleteRequest(
             hashMapOf("Content-Type" to json),
             "$routerUrl/$routerId",
             hashMapOf("pwd" to pwd),
             "Error deleting Router",
         )
+        return response.isSuccessful
     }
 
     /**
