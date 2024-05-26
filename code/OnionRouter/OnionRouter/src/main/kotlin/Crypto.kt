@@ -19,6 +19,10 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
     private val aCipher = Cipher.getInstance(ALG_ASYMMETRIC)
     private val keyFactory = KeyFactory.getInstance(ALG_ASYMMETRIC)
 
+    init {
+        File(basePath).mkdirs()
+    }
+
     fun encryptWithPwd(toEncrypt: String, password: String): String =
         xorStringWithPwd(toEncrypt, password)
 

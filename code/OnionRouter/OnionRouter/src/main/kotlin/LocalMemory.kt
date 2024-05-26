@@ -11,6 +11,11 @@ class LocalMemory(private val httpRequests: HttpRequests, private val crypto: Cr
     private val basePath = System.getProperty("user.dir") + "/client"
     private val pathConversation = "$basePath/conversations"
     private val gson = Gson()
+    init {
+        createFolders(basePath)
+        createFolders(pathConversation)
+    }
+
     /**
      * Creates the files if they don't exist and saves the messages in the files
      * @param storageId the storage id
@@ -19,7 +24,6 @@ class LocalMemory(private val httpRequests: HttpRequests, private val crypto: Cr
      * @param contacts the contacts
      */
     fun contactsFilesSetup(storageId: Int, pwdHash: String, token: String, contacts: List<Contact>) {
-        createFolders(pathConversation)
         val path = "$basePath/session${storageId}.txt"
         val msgDate = getMsgDate(path, pwdHash)
         contacts.forEach {
