@@ -2,6 +2,7 @@ package pt.isel.ps.anonichat.repository
 
 import pt.isel.ps.anonichat.AnonichatTest
 import pt.isel.ps.anonichat.domain.user.utils.Sha256TokenEncoder
+import pt.isel.ps.anonichat.repository.jdbi.JdbiMessageRepository
 import pt.isel.ps.anonichat.repository.jdbi.JdbiRouterRepository
 import pt.isel.ps.anonichat.repository.jdbi.JdbiTokenRepository
 import pt.isel.ps.anonichat.repository.jdbi.JdbiUserRepository
@@ -16,6 +17,7 @@ open class RepositoryTest : AnonichatTest() {
     val usersRepository = JdbiUserRepository(handle)
     val tokenRepository = JdbiTokenRepository(handle)
     val routersRepository = JdbiRouterRepository(handle)
+    val messagesRepository = JdbiMessageRepository(handle)
 
     fun registerTestUser(
         username: String = testUsername(),

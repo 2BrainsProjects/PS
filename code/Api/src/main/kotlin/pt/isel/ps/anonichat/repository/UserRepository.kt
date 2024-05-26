@@ -15,9 +15,6 @@ interface UserRepository {
     fun getLastId(): Int
     fun updateIp(id: Int, ip: String): Boolean
     fun updateCert(id: Int, certPath: String): Boolean
-    fun saveMessage(userId: Int, cid: String, message: String, msgDate: String): Boolean
-    fun getMessages(userId: Int, cid: String): List<Message>
-    fun getMessages(userId: Int, cid: String, msgDate: String): List<Message>
     fun getUserSession(id: Int): String
     fun updateSessionInfo(id: Int, sessionInfoPath: String): Boolean
 }
