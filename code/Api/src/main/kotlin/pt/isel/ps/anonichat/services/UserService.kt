@@ -20,7 +20,6 @@ import pt.isel.ps.anonichat.services.models.TokenModel
 import pt.isel.ps.anonichat.services.models.UserModel.Companion.toModel
 import pt.isel.ps.anonichat.services.models.UsersModel
 import java.io.File
-import java.util.*
 
 @Component
 class UserService(
