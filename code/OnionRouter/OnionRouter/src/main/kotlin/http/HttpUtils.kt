@@ -123,7 +123,7 @@ class HttpUtils {
 
     /**
      * This function create a get request to the API
-     * @param mediaType the media type of the request
+     * @param headers headers of the request
      * @param url the url of the request
      * @param query the query of the request
      * @return the request created
@@ -144,7 +144,7 @@ class HttpUtils {
 
     /**
      * This function create a get request to the API
-     * @param mediaType the media type of the request
+     * @param headers headers of the request
      * @param url the url of the request
      * @param body the body of the request
      * @return the request created
@@ -165,7 +165,7 @@ class HttpUtils {
 
     /**
      * This function create a delete request to the API
-     * @param mediaType the media type of the request
+     * @param headers headers of the request
      * @param url the url of the request
      * @param query the query of the request
      * @return the request created

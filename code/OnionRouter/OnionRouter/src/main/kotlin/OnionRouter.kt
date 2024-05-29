@@ -11,6 +11,8 @@ import java.nio.channels.SocketChannel
 import kotlin.system.exitProcess
 /**
  * This class represents an Onion Router
+ * @param ip the ip address of the onion router
+ * @param path the path to the crypto files
  */
 class OnionRouter(private val ip: InetSocketAddress, path: String = System.getProperty("user.dir") + "\\crypto") {
     private val timeout = 5000L
