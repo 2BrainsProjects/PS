@@ -6,6 +6,7 @@ import http.HttpRequests
 import java.security.cert.X509Certificate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Scanner
 import kotlin.random.Random
 
 class Client(
@@ -60,20 +61,25 @@ class Client(
             "2 - Router",
             "3 - Both"
         )
-        val command = readln()
-        when (command) {
-            "1" -> {
-                authenticationMenu(ip)
-                operationsMenu()
+        try{
+            val command = readln()
+            when (command) {
+                "1" -> {
+                    authenticationMenu(ip)
+                    operationsMenu()
+                }
+                "2" -> {
+                    initializeRouter(ip)
+                }
+                "3" -> {
+                    val csr = authenticationMenu(ip)
+                    initializeRouter(ip, csr)
+                    operationsMenu()
+                }
             }
-            "2" -> {
-                initializeRouter(ip)
-            }
-            "3" -> {
-                val csr = authenticationMenu(ip)
-                initializeRouter(ip, csr)
-                operationsMenu()
-            }
+        } catch (e: Exception) {
+            println("Something went wrong. Try again.")
+            println(e.message)
         }
     }
 
@@ -204,10 +210,11 @@ class Client(
                                 localMemory.saveMessageInFile(message, userStorage?.pwd!!, client.name)
                             }
                             "2" -> {
+                                println("Not implemented yet")
                                 // sliding window to get the files(?)
                             }
                             "3" -> {
-
+                                println("Not implemented yet")
                             }
                             "4" -> {
                                 break
@@ -216,6 +223,7 @@ class Client(
                     }
                 }
                 "3" -> {
+                    println("Not implemented yet")
                     // sliding window to get the files(?)
                 }
                 "4" -> {
