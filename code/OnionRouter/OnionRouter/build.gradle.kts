@@ -27,4 +27,5 @@ tasks.register<JavaExec>("launch") {
     group = "launch"
     this.mainClass.set("MainKt")
     classpath = sourceSets["main"].runtimeClasspath
+    standardInput = System.`in`
 }
