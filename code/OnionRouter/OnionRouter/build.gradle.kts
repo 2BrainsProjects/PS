@@ -22,3 +22,9 @@ tasks.test {
 kotlin {
     jvmToolchain(21)
 }
+
+tasks.register<JavaExec>("launch") {
+    group = "launch"
+    this.mainClass.set("MainKt")
+    classpath = sourceSets["main"].runtimeClasspath
+}

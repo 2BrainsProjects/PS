@@ -2,7 +2,6 @@ package pt.isel.ps.anonichat.repository
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class RouterRepositoryTest : RepositoryTest() {
@@ -30,7 +29,6 @@ class RouterRepositoryTest : RepositoryTest() {
 
     @Test
     fun `get last router`() {
-
         registerTestRouter()
 
         val maxId = routersRepository.lastRouterId()

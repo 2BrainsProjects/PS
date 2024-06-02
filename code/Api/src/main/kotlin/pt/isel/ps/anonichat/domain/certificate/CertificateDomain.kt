@@ -7,10 +7,9 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.OutputStreamWriter
-import java.nio.file.Files
 
 @Component
-class CertificateDomain  {
+class CertificateDomain {
 
     /**
      * this function requires openssl installed in system's PATH.
@@ -28,14 +27,14 @@ class CertificateDomain  {
         val csrFile = createCSRTempFile(clientId, clientCSR, path)
         File(path).mkdirs()
         val certFile = File("$path/$clientId.cer")
-        if(certFile.exists()) certFile.delete()
+        if (certFile.exists()) certFile.delete()
         certFile.createNewFile()
 
         val signedCertificateCommand = signedCertificateCommand(clientId, path)
         execute(signedCertificateCommand)
 
         // wait for the file to be written on
-        while(BufferedReader(FileInputStream(certFile).bufferedReader()).readLines().isEmpty());
+        while (BufferedReader(FileInputStream(certFile).bufferedReader()).readLines().isEmpty());
         csrFile.delete()
         return "$path/$clientId.cer"
     }
@@ -47,7 +46,7 @@ class CertificateDomain  {
                 .start()
 
             process.waitFor()
-        }catch (e: Exception){
+        } catch (e: Exception) {
             throw IllegalStateException(e.message)
         }
     }
@@ -67,7 +66,7 @@ class CertificateDomain  {
     private fun signedCertificateCommand(clientId: Int, path: String): String =
         "openssl x509 -req -days 365 -in $path/$clientId.csr -CA $SERVER_PATH/certificate.crt -CAkey $SERVER_PATH/privateKey.key -out $path/$clientId.cer"
 
-    companion object{
+    companion object {
         private val SERVER_PATH
             get() = path()
         private fun path() = System.getProperty("user.dir") + "\\certificates"

@@ -53,7 +53,7 @@ class AnonichatApplication {
 @Configuration
 class PipelineConfigurer(
     val authenticationInterceptor: AuthenticationInterceptor,
-    val authenticatedUserArgumentResolver: SessionArgumentResolver,
+    val authenticatedUserArgumentResolver: SessionArgumentResolver
 ) : WebMvcConfigurer {
 
     override fun addInterceptors(registry: InterceptorRegistry) {

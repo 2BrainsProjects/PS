@@ -2,7 +2,6 @@ package pt.isel.ps.anonichat.repository
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class UserRepositoryTest : RepositoryTest() {
@@ -80,8 +79,9 @@ class UserRepositoryTest : RepositoryTest() {
 
         assertTrue(totalUsers <= lastId)
     }
+
     @Test
-    fun `update and get user session`(){
+    fun `update and get user session`() {
         val username = testUsername()
         val email = testEmail()
         val password = HASHED_TEST_PASSWORD

@@ -1,6 +1,5 @@
 package pt.isel.ps.anonichat.repository
 
-import pt.isel.ps.anonichat.domain.user.Message
 import pt.isel.ps.anonichat.domain.user.User
 
 interface UserRepository {

@@ -3,10 +3,16 @@ package pt.isel.ps.anonichat
 import org.jdbi.v3.core.Jdbi
 import org.postgresql.ds.PGSimpleDataSource
 import pt.isel.ps.anonichat.repository.jdbi.utils.configure
-import java.io.*
-import java.sql.Timestamp
+import java.io.BufferedReader
+import java.io.BufferedWriter
+import java.io.File
+import java.io.FileInputStream
+import java.io.InputStreamReader
+import java.io.OutputStreamWriter
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Random
+import java.util.UUID
 
 open class AnonichatTest {
     data class UserTest(val username: String, val email: String, val password: String, val publicKey: String, val ip: String)
@@ -20,18 +26,28 @@ open class AnonichatTest {
         private fun pathBuilder() = System.getProperty("user.dir") + "\\src\\test\\kotlin\\pt\\isel\\ps\\anonichat\\certificates"
 
         fun testUsername() = "testUser${UUID.randomUUID().toString().substring(0, 6)}"
+
         fun testPassword() = "Password123!"
+
         fun testEmail() = "${testUsername()}@gmail.com"
+
         fun testUserCSR() = generateClientCSR(generateRandomId(), testUsername(), testEmail(), testPassword())
-        private fun testRouterCSR(ip: String, pwd: String) = generateRouterCSR(generateRandomId(), ip, pwd)
+
+        private fun testRouterCSR(
+            ip: String,
+            pwd: String,
+        ) = generateRouterCSR(generateRandomId(), ip, pwd)
+
         private fun generateRandomId() = Random().nextInt(Int.MAX_VALUE)
-        fun testUserData() = UserTest(
-            testUsername(),
-            testEmail(),
-            testPassword(),
-            testUserCSR(),
-            testIp()
-        )
+
+        fun testUserData() =
+            UserTest(
+                testUsername(),
+                testEmail(),
+                testPassword(),
+                testUserCSR(),
+                testIp(),
+            )
 
         fun testRouterData(): Triple<String, String, String> {
             val ip = testIp()
@@ -39,31 +55,51 @@ open class AnonichatTest {
             return Triple(ip, testRouterCSR(ip, pwd), pwd)
         }
 
-        private fun generateCSR(id: Int, pseudoname: String, email: String, pwd: String, extraPath: String): String {
+        private fun generateCSR(
+            id: Int,
+            pseudoname: String,
+            email: String,
+            pwd: String,
+            extraPath: String,
+        ): String {
             answeringCSRCreation(id, pseudoname, email, pwd, extraPath)
             BufferedReader(InputStreamReader(FileInputStream("$basePath$extraPath/$id.csr"))).use {
                 return it.readLines().joinToString("\n")
             }
         }
 
-        private fun generateClientCSR(userId: Int, username: String, email: String, pwd: String): String =
-            generateCSR(userId, username, email, pwd, USERS)
+        private fun generateClientCSR(
+            userId: Int,
+            username: String,
+            email: String,
+            pwd: String,
+        ): String = generateCSR(userId, username, email, pwd, USERS)
 
-        private fun generateRouterCSR(userId: Int, username: String, pwd: String): String =
-            generateCSR(userId, username, "", pwd, ROUTERS)
+        private fun generateRouterCSR(
+            userId: Int,
+            username: String,
+            pwd: String,
+        ): String = generateCSR(userId, username, "", pwd, ROUTERS)
 
-        private fun answeringCSRCreation(id: Int, name: String, email: String, password: String, extraPath: String) {
+        private fun answeringCSRCreation(
+            id: Int,
+            name: String,
+            email: String,
+            password: String,
+            extraPath: String,
+        ) {
             File("$basePath$extraPath").mkdirs()
             val command =
                 "openssl req -out $basePath$extraPath/$id.csr -new -newkey rsa:2048 -nodes -keyout $basePath$extraPath/$id.key"
             try {
-                val process = ProcessBuilder(command.split(" "))
-                    .redirectErrorStream(true)
-                    .start()
+                val process =
+                    ProcessBuilder(command.split(" "))
+                        .redirectErrorStream(true)
+                        .start()
 
                 // Provide input to the process
                 val writer = BufferedWriter(OutputStreamWriter(process.outputStream))
-                repeat(5){
+                repeat(5) {
                     writer.write("\n")
                     writer.flush()
                 }
@@ -78,24 +114,24 @@ open class AnonichatTest {
                 writer.close()
 
                 process.waitFor()
-            }catch (e: Exception){
+            } catch (e: Exception) {
                 throw IllegalStateException(e.message)
             }
         }
 
-        fun testIp(): String{
+        fun testIp(): String {
             val random = Random()
             return "${random.nextInt(256)}.${random.nextInt(256)}.${random.nextInt(256)}.${random.nextInt(256)}"
         }
 
-        fun testTimestamp(): String{
+        fun testTimestamp(): String {
             // Make sure to adjust the date format ('YYYY-MM-DD HH24:MI:SS') according to the format of the timestamp you're passing.
             val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
             val currentTime = Date()
             return dateFormat.format(currentTime)
         }
 
-        fun testCid() : String{
+        fun testCid(): String {
             val random = Random()
             return "cid${random.nextInt()}"
         }
@@ -103,15 +139,16 @@ open class AnonichatTest {
         fun testCertificate(): String {
             val certContent = UUID.randomUUID().toString()
             return "-----BEGIN CERTIFICATE-----\n" +
-                    certContent + "\n" +
-                    "-----END CERTIFICATE-----"
-            }
+                certContent + "\n" +
+                "-----END CERTIFICATE-----"
+        }
 
-        val jdbi = Jdbi.create(
-            PGSimpleDataSource().apply {
-                setURL(Environment.getDbUrl())
-            }
-        ).configure()
+        val jdbi =
+            Jdbi.create(
+                PGSimpleDataSource().apply {
+                    setURL(Environment.getDbUrl())
+                },
+            ).configure()
 
         fun resetUsers() {
             jdbi.useHandle<Exception> { handle ->

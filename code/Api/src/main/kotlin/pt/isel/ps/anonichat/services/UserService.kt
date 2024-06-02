@@ -26,7 +26,7 @@ class UserService(
     private val tm: TransactionManager,
     private val domain: UserDomain,
     private val cd: CertificateDomain,
-    private val clock: Clock,
+    private val clock: Clock
 ) {
     /**
      * Registers a new user
@@ -108,10 +108,10 @@ class UserService(
             val users = usersIds.mapNotNull { id ->
                 if (tr.userRepository.isUser(id)) tr.userRepository.getUser(id) else null
             }
-            .map { user ->
-                val cert = if(user.certificate != null) readFile(user.certificate) else ""
-                user.toModel(cert)
-            }
+                .map { user ->
+                    val cert = if (user.certificate != null) readFile(user.certificate) else ""
+                    user.toModel(cert)
+                }
             UsersModel(users)
         }
     }
@@ -214,9 +214,9 @@ class UserService(
     fun getMessages(userId: Int, cid: String, msgDate: String?): List<Message> =
         tm.run {
             requireOrThrow<UserNotFoundException>(it.userRepository.isUser(userId)) { "User was not Found" }
-            if(msgDate != null){
+            if (msgDate != null) {
                 it.messageRepository.getMessages(userId, cid, msgDate)
-            }else{
+            } else {
                 it.messageRepository.getMessages(userId, cid)
             }
         }
@@ -227,7 +227,7 @@ class UserService(
      * @param sessionInfo The session info
      * @throws UserNotFoundException if the user was not found
      */
-    fun saveSessionInfo(userId: Int, sessionInfo: String){
+    fun saveSessionInfo(userId: Int, sessionInfo: String) {
         val sessionInfoPath = tm.run {
             requireOrThrow<UserNotFoundException>(it.userRepository.isUser(userId)) { "User was not Found" }
             it.userRepository.getUserSession(userId)
@@ -286,7 +286,7 @@ class UserService(
             tokenModel to sessionInfo
         }
 
-    companion object{
+    companion object {
         private val basePath
             get() = path()
         private fun path() = System.getProperty("user.dir") + "\\certificates\\users"

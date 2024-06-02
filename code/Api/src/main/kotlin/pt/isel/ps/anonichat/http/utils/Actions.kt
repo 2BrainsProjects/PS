@@ -1,7 +1,6 @@
 package pt.isel.ps.anonichat.http.utils
 
 import pt.isel.ps.anonichat.http.media.siren.Action
-import pt.isel.ps.anonichat.http.media.siren.Action.Field
 
 object Actions {
 

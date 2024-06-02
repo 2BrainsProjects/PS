@@ -79,7 +79,7 @@ class JdbiRouterRepository(
      * @param certPath The router's certificate path
      * @return if the router's certificate was updated
      */
-    override fun updateRouter(id: Int, ip: String, certPath: String) : Boolean =
+    override fun updateRouter(id: Int, ip: String, certPath: String): Boolean =
         handle.createUpdate("update dbo.Router set ip = :ip, certificate = :certPath where id = :id")
             .bind("id", id)
             .bind("ip", ip)

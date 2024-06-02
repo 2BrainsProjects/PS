@@ -1,18 +1,23 @@
 package pt.isel.ps.anonichat.http
 
- import org.springframework.http.MediaType
- import org.springframework.test.web.reactive.server.expectBody
- import org.springframework.util.LinkedMultiValueMap
- import org.springframework.util.MultiValueMap
- import org.springframework.web.reactive.function.BodyInserters
- import pt.isel.ps.anonichat.http.controllers.user.models.*
- import pt.isel.ps.anonichat.http.hypermedia.SirenEntity
- import pt.isel.ps.anonichat.http.hypermedia.SirenEntityEmbeddedLinkModel
- import pt.isel.ps.anonichat.http.hypermedia.SirenEntityEmbeddedRepresentationModel
- import kotlin.test.Test
- import kotlin.test.assertEquals
- import kotlin.test.assertNotNull
- import kotlin.test.assertTrue
+import org.springframework.http.MediaType
+import org.springframework.test.web.reactive.server.expectBody
+import org.springframework.util.LinkedMultiValueMap
+import org.springframework.util.MultiValueMap
+import org.springframework.web.reactive.function.BodyInserters
+import pt.isel.ps.anonichat.http.controllers.user.models.GetMessageOutputModel
+import pt.isel.ps.anonichat.http.controllers.user.models.GetMessagesOutputModel
+import pt.isel.ps.anonichat.http.controllers.user.models.GetUserInformationOutputModel
+import pt.isel.ps.anonichat.http.controllers.user.models.GetUsersCountOutputModel
+import pt.isel.ps.anonichat.http.controllers.user.models.LoginOutputModel
+import pt.isel.ps.anonichat.http.controllers.user.models.RegisterOutputModel
+import pt.isel.ps.anonichat.http.hypermedia.SirenEntity
+import pt.isel.ps.anonichat.http.hypermedia.SirenEntityEmbeddedLinkModel
+import pt.isel.ps.anonichat.http.hypermedia.SirenEntityEmbeddedRepresentationModel
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class UserControllerTest : HttpTest() {
 
@@ -150,7 +155,7 @@ class UserControllerTest : HttpTest() {
             .expectBody<SirenEntityEmbeddedRepresentationModel<GetUsersCountOutputModel>>()
             .returnResult().responseBody
 
-        //val usersCount = response?.properties?.count!!
+        // val usersCount = response?.properties?.count!!
         val users = response?.entities!!.map { entity ->
             getUserOutputModel(entity.properties as LinkedHashMap<*, *>)
         }
@@ -163,7 +168,7 @@ class UserControllerTest : HttpTest() {
     }
 
     @Test
-    fun `can get and save messages`(){
+    fun `can get and save messages`() {
         val (name, email, password, _, ip) = testUserData()
         registerTestUserHttp(name, email, password)
         val cid = testCid()
@@ -213,14 +218,13 @@ class UserControllerTest : HttpTest() {
         assertEquals(2, messages.size)
         assertNotNull(messages.firstOrNull() { it.message == msgs[1] })
         assertNotNull(messages.firstOrNull() { it.message == msgs[2] })
-
     }
 
     private fun getMessageOutputModel(map: LinkedHashMap<*, *>): GetMessageOutputModel {
         return GetMessageOutputModel(
             map["cid"] as String,
             map["message"] as String,
-            map["msgDate"] as String,
+            map["msgDate"] as String
         )
     }
     private fun getUserOutputModel(map: LinkedHashMap<*, *>): GetUserInformationOutputModel {

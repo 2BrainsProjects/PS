@@ -1,15 +1,14 @@
 package pt.isel.ps.anonichat.repository
 
-import pt.isel.ps.anonichat.AnonichatTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-class MessageRepositoryTest: RepositoryTest() {
+class MessageRepositoryTest : RepositoryTest() {
 
     @Test
-    fun `save and get message`(){
+    fun `save and get message`() {
         val username = testUsername()
         val email = testEmail()
         val password = HASHED_TEST_PASSWORD
@@ -28,13 +27,13 @@ class MessageRepositoryTest: RepositoryTest() {
         val messages = messagesRepository.getMessages(userId, cid)
         assertEquals(2, messages.size)
 
-        val msg = messages.firstOrNull{it.message == message2}
+        val msg = messages.firstOrNull { it.message == message2 }
         assertNotNull(msg)
         assertEquals(message2, msg.message)
         assertEquals(userId, msg.userId)
         assertEquals(cid, msg.cid)
         assertEquals(msgDate2, msg.msgDate)
-        assertNotNull(messages.firstOrNull{it.message == message1})
+        assertNotNull(messages.firstOrNull { it.message == message1 })
 
         val messagesWithTime = messagesRepository.getMessages(userId, cid, msgDate1)
 
@@ -45,5 +44,4 @@ class MessageRepositoryTest: RepositoryTest() {
         assertEquals(cid, msgWithTime.cid)
         assertEquals(msgDate2, msgWithTime.msgDate)
     }
-
 }

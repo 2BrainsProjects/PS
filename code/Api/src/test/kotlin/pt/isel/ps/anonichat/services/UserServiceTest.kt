@@ -1,12 +1,16 @@
 package pt.isel.ps.anonichat.services
 
-import pt.isel.ps.anonichat.domain.exceptions.UserException.UserNotFoundException
 import pt.isel.ps.anonichat.domain.exceptions.UserException.UserAlreadyExistsException
-import kotlin.test.*
+import pt.isel.ps.anonichat.domain.exceptions.UserException.UserNotFoundException
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class UserServiceTest : ServicesTest() {
-
     private val path = basePath + USERS
+
     @Test
     fun `register a user`() {
         // given: a user
@@ -65,7 +69,6 @@ class UserServiceTest : ServicesTest() {
 
     @Test
     fun `get users`() {
-
         val ids = emptyList<Int>().toMutableList()
         for (i in 0..3) {
             // given: a user
@@ -78,9 +81,9 @@ class UserServiceTest : ServicesTest() {
         val maxId = usersServices.getLastId()
 
         // then: when getting the users, the user is present
-        ids.add(maxId+1)
+        ids.add(maxId + 1)
         val (users) = usersServices.getUsers(ids)
-        ids.remove(maxId+1)
+        ids.remove(maxId + 1)
         assertEquals(ids.size, users.size)
         assertTrue(users.map { it.id }.containsAll(ids))
     }
@@ -109,7 +112,7 @@ class UserServiceTest : ServicesTest() {
     }
 
     @Test
-    fun `save and get messages`(){
+    fun `save and get messages`() {
         val (name, email, password, clientCSR) = testUserData()
 
         // when: registering the user
@@ -124,7 +127,7 @@ class UserServiceTest : ServicesTest() {
 
         val messages = usersServices.getMessages(userId, cid, null)
         assertEquals(2, messages.size)
-        assertEquals(2, messages.map { if (msgs.contains(it.message)) it.message}.size)
+        assertEquals(2, messages.map { if (msgs.contains(it.message)) it.message }.size)
 
         val messagesWithTime = usersServices.getMessages(userId, cid, msgDate)
         assertEquals(1, messagesWithTime.size)
@@ -132,7 +135,7 @@ class UserServiceTest : ServicesTest() {
     }
 
     @Test
-    fun `try to save and get messages with invalid user`(){
+    fun `try to save and get messages with invalid user`() {
         val cid = testCid()
         // when: registering the user
         val invalidId = usersServices.getLastId() + 1
@@ -142,7 +145,7 @@ class UserServiceTest : ServicesTest() {
     }
 
     @Test
-    fun `save and get sessionInfo`(){
+    fun `save and get sessionInfo`() {
         val (name, email, password, clientCSR) = testUserData()
 
         // when: registering the user
@@ -152,7 +155,5 @@ class UserServiceTest : ServicesTest() {
 
         val (_, session) = usersServices.loginUser(name, null, password, testIp(), path)
         assertEquals(sessionInfo, session)
-
-
     }
 }

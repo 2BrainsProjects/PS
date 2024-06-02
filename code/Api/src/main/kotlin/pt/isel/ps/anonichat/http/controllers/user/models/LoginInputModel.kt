@@ -16,6 +16,6 @@ data class LoginInputModel(
     @field:NotBlank
     val password: String,
 
-    val ip: String,
+    val ip: String
 )
 // name/email -> id -> certPath -> certContent

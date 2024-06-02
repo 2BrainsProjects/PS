@@ -127,7 +127,7 @@ class Client(
     }
 
     private fun operationsMenu(){
-        var command = ""
+        var command: String
         while (true) {
             showMenu(
                 "Menu",

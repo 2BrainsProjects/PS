@@ -7,6 +7,7 @@ import kotlin.test.assertTrue
 class RouterServiceTest : ServicesTest() {
 
     private val path = basePath + ROUTERS
+
     @Test
     fun `register a router`() {
         // given: a user

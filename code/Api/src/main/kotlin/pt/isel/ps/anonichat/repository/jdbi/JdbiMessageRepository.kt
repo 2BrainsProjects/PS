@@ -30,7 +30,7 @@ class JdbiMessageRepository(
      * @param cid The conversation id
      * @return The messages
      */
-    override fun getMessages(userId: Int, cid: String) : List<Message> =
+    override fun getMessages(userId: Int, cid: String): List<Message> =
         handle.createQuery("select * from dbo.Message where user_id = :userId and cid = :cid")
             .bind("userId", userId)
             .bind("cid", cid)
@@ -44,12 +44,11 @@ class JdbiMessageRepository(
      * @param msgDate The message date
      * @return The messages
      */
-    override fun getMessages(userId: Int, cid: String, msgDate: String) : List<Message> =
+    override fun getMessages(userId: Int, cid: String, msgDate: String): List<Message> =
         handle.createQuery("select * from dbo.Message where user_id = :userId and cid = :cid and msg_date > TO_TIMESTAMP(:msg_date, 'YYYY-MM-DD HH24:MI:SS')")
             .bind("userId", userId)
             .bind("cid", cid)
             .bind("msg_date", msgDate)
             .mapTo<Message>()
             .list()
-
 }

@@ -7,7 +7,6 @@ import pt.isel.ps.anonichat.repository.jdbi.JdbiRouterRepository
 import pt.isel.ps.anonichat.repository.jdbi.JdbiTokenRepository
 import pt.isel.ps.anonichat.repository.jdbi.JdbiUserRepository
 import java.security.SecureRandom
-import java.security.Timestamp
 import java.util.*
 
 open class RepositoryTest : AnonichatTest() {
@@ -28,7 +27,7 @@ open class RepositoryTest : AnonichatTest() {
 
     fun registerTestRouter(
         ip: String = testIp()
-    ): Int{
+    ): Int {
         return routersRepository.createRouter(ip)
     }
 

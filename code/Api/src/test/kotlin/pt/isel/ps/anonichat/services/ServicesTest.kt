@@ -5,7 +5,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import pt.isel.ps.anonichat.AnonichatTest
 import pt.isel.ps.anonichat.domain.certificate.CertificateDomain
 import pt.isel.ps.anonichat.domain.user.UsersTest
-import pt.isel.ps.anonichat.domain.user.utils.Sha256TokenEncoder
 import pt.isel.ps.anonichat.repository.jdbi.transaction.JdbiTransactionManager
 
 open class ServicesTest : AnonichatTest() {

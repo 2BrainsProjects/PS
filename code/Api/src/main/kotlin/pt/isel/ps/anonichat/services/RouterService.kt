@@ -15,8 +15,8 @@ import java.io.File
 class RouterService(
     private val passwordEncoder: PasswordEncoder,
     private val tm: TransactionManager,
-    private val cd: CertificateDomain,
-    ) {
+    private val cd: CertificateDomain
+) {
     /**
      * Gets the routers count
      * @param list The list of id
@@ -27,14 +27,18 @@ class RouterService(
             val routers = list.mapNotNull { id ->
                 if (tr.routerRepository.isRouter(id)) {
                     tr.routerRepository.getRouterById(id)
-                } else null
+                } else {
+                    null
+                }
             }
                 .map { router ->
-                val cert = if(router.certificate != null) {
-                    readFile(router.certificate)
-                } else ""
-                router.toModel(cert)
-            }
+                    val cert = if (router.certificate != null) {
+                        readFile(router.certificate)
+                    } else {
+                        ""
+                    }
+                    router.toModel(cert)
+                }
             RoutersModel(routers)
         }
     }
@@ -61,7 +65,7 @@ class RouterService(
             // Hash the password
             val passwordHash = passwordEncoder.encode(pwd)
 
-            //Create the router
+            // Create the router
             val id = it.routerRepository.createRouter(passwordHash)
 
             // Certificate need the router's id to be created
@@ -92,7 +96,7 @@ class RouterService(
         }
     }
 
-    companion object{
+    companion object {
         private val basePath
             get() = path()
         private fun path() = System.getProperty("user.dir") + "\\certificates\\routers"

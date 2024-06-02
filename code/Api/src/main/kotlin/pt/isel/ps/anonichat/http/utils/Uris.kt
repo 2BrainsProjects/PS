@@ -6,7 +6,6 @@ object Uris {
 
     const val PREFIX = "/api"
 
-
     object User {
         const val HOME = "/me"
         const val REGISTER = "/users"

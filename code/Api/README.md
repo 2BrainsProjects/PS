@@ -129,6 +129,12 @@ The implementation of the controllers with the `SirenEntity` class was a bit cha
 While implementing the JDBI repository methods, we ended up having problems with the JDBI mappers, specially with the nested properties of the classes that were needed to map, such as the Game and Player mappers. 
 Instead of the implementing multiple column mappers to allow the mapping of those two classes, we implemented row mapper for each one of them, which seemed easier to understand.
 
+## Deployment
+
+To run the application, make sure you have Docker Desktop installed, and execute the following command:
+```bash
+docker-compose up
+```
 # Conclusion
 
 In conclusion, this technical document provides an in-depth overview of the Anonichat backend service. It outlines the application architecture, data model, software organization and various implementation details of the server.

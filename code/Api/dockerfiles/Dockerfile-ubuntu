@@ -1,3 +1,4 @@
 FROM ubuntu
 RUN apt -y update
 RUN apt -y install dnsutils
+RUN apt -y install openssl

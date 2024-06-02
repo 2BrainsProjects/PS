@@ -17,7 +17,6 @@ class RouterControllerTest : HttpTest() {
 
     @Test
     fun `register router`() {
-
         val (ip, routerCSR, pwd) = testRouterData()
 
         val body: MultiValueMap<String, String> = LinkedMultiValueMap()

@@ -1,4 +1,8 @@
-FROM openjdk:17
+FROM openjdk:17-alpine
+
+RUN wget -O - https://www.openssl.org/source/openssl-3.3.0.tar.gz | tar zxf -
+RUN cd openssl-3.3.0
+
 ARG DEPENDENCY=build/dependency
 # first layer with the external libs (i.e. the files that change the least).
 COPY ${DEPENDENCY}/BOOT-INF/lib /app/lib
