@@ -7,7 +7,7 @@ This document contains the frontend internal software organization and the main 
 The frontend application is a console application built using threads and sockets to communicate with the backend server.
 
 The Anonichat API documentation can be found [here](/docs/README.md).
-The backend internal software organization can be found [here](../Api/README.md).
+The backend internal software organization can be found [here](https://github.com/2BrainsProjects/PS/blob/main/code/Api/README.md).
 
 ## API Communication
 
