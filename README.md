@@ -8,11 +8,11 @@
 
 <br>
 
-The **HTTP API documentation** for a frontend client application is available [here](docs\README.md).
+The **HTTP API documentation** for a frontend client application is available [here](https://github.com/2BrainsProjects/PS/blob/main/docs/README.md).
 
-The **backend technical document** containing the backend service implementation is available [here](code\Api\README.md).
+The **backend technical document** containing the backend service implementation is available [here](https://github.com/2BrainsProjects/PS/blob/main/code/Api/README.md).
 
-The **frontend technical document** containing the frontend service implementation is available [here](code\OnionRouter\OnionRouter)
+The **frontend technical document** containing the frontend service implementation is available [here](https://github.com/2BrainsProjects/PS/blob/main/code/OnionRouter/OnionRouter/README.md)
 
 # How to run
 
