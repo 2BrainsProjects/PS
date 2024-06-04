@@ -70,7 +70,7 @@ gradlew launch
 
 * To execute an instance of Onion routers, use the command:
 ```sh
-gradlew launch <port>
+gradlew launch --args=<port>
 ```
 
 The network should consist of at least two clients and 4 routers.
