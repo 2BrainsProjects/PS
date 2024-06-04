@@ -73,8 +73,9 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
             }
 
             client.initializationMenu(addrString)
-            if(client.getInfo().second != null)
+            if (client.getInfo().second != null) {
                 getInput()
+            }
         } catch (e: IOException) {
             println(e.message)
         } finally {
@@ -88,15 +89,14 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
     private fun sendMessage(
         clientInformation: ClientInformation,
         msg: String,
-        msgDate: String
+        msgDate: String,
     ): String {
-
         val path = client.buildMessagePath().map { Pair(it.ip, it.certificate) } + Pair(clientInformation.ip, clientInformation.certificate)
         val firstNodeIp = path.first().first
 
-        val sender = this.client.getInfo().first
-        val msgToSend = "final:${sender?.id}:${sender?.name}:$msg:${msgDate}"
-        val encipherMsg = client.encipherMessage(msgToSend, path.reversed())
+        // val sender = this.client.getInfo().first
+        // val msgToSend = "final:${sender?.id}:${sender?.name}:$msg:$msgDate"
+        val encipherMsg = client.encipherMessage(msg, path.reversed())
 
         putConnectionIfAbsent(firstNodeIp)
         val socket =
@@ -109,7 +109,7 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
             writeToClient(newMsgBytes, socket)
         }
 
-        return msgToSend.replace("final:", "")
+        return msg
     }
 
     /**
@@ -118,8 +118,8 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
      */
     private fun getInput() {
         while (true) {
-            //println("Command:")
-            //print(">")
+            // println("Command:")
+            // print(">")
             command = readln()
             when (command) {
                 "exit" -> {
@@ -177,9 +177,14 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
         val plainText = crypto.decipher(msg, ip.port)
         println("deciphered message: $plainText")
 
-        //final:id:name:msg
-        if(plainText.startsWith("final:")){
-            readMsg(plainText)
+        // final:id:name:msg
+        if (plainText.startsWith("final:")) {
+            client.readFinalMsg(plainText)
+            return
+        }
+
+        if (plainText.startsWith("confirmation:")) {
+            client.readConfirmationMsg(plainText)
             return
         }
 
@@ -204,17 +209,6 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
         if (socket != null) {
             writeToClient(newMsgBytes, socket)
         }
-    }
-
-    private fun readMsg(msg:String){
-        //final:id:name:msg
-        val info = msg.split(":").drop(1)
-        val id = info.first()
-        val name = info[1]
-        val message = info.drop(2).joinToString(":")
-        println("$name,$id:$message")
-        // se user tiver na conversa com $name então ele vê a msg
-        // guardamos sempre essa mensagem no ficheiro $name.txt
     }
 
     /**

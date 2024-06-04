@@ -6,19 +6,18 @@ import http.HttpRequests
 import java.security.cert.X509Certificate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Scanner
 import kotlin.random.Random
 
 class Client(
     private val crypto: Crypto,
     private val httpRequests: HttpRequests,
-    private val sendMsg: (ClientInformation, String, String) -> String
+    private val sendMsg: (ClientInformation, String, String) -> String,
 ) {
     private var routerStorage: RouterStorage? = null
     private var userStorage: Session? = null
     private val localMemory = LocalMemory(httpRequests, crypto)
     private val pathSize = 2
-    private val amountRequest = 4
+    private val amountRequest = 2
 
     /*
     initialization menu
@@ -36,32 +35,61 @@ class Client(
         - list contacts
         - send message
         - logout
-    */
+     */
 
     fun getInfo(): Pair<Session?, RouterStorage?> = Pair(userStorage, routerStorage)
 
-    fun deleteNode(){
+    fun deleteNode() {
         val userStorage = userStorage
         val routerStorage = routerStorage
         if (userStorage != null) {
             val pwd = userStorage.pwd
             val token = userStorage.token
-            if (pwd != null && token != null)
+            if (pwd != null && token != null) {
                 Logout(httpRequests, userStorage, localMemory).execute(listOf(pwd, token.token))
+            }
         }
         if (routerStorage != null) {
             httpRequests.deleteRouter(routerStorage.id, routerStorage.pwd)
         }
     }
 
-    fun initializationMenu(ip: String){
+    fun readFinalMsg(msg: String) {
+        // final:id:name:msg:timestamp
+        val info = msg.split(":").drop(1)
+        val idContact = info.first().toIntOrNull()
+        val name = info[1]
+        val message = info.dropLast(3).joinToString(":")
+        val timestamp = info.takeLast(3).joinToString(":")
+        val id = userStorage?.id
+        val pwd = userStorage?.pwd
+        if (id != null && idContact != null && pwd != null) {
+            val cid = localMemory.buildCid(id, idContact, pwd)
+            val msgToSave = Message(cid, message, timestamp)
+            localMemory.saveMessageInFile(msgToSave, pwd, name)
+            val client = getClientData(idContact)
+            if (client != null) {
+                sendMsg(client, "confirmation:$message", System.currentTimeMillis().toString())
+            }
+        }
+    }
+
+    fun readConfirmationMsg(msg: String) {
+        // final:id:name:msg
+        val info = msg.split(":").drop(1)
+        val name = info[1]
+        val message = info.drop(2).joinToString(":")
+        println("$name received the message: $message")
+    }
+
+    fun initializationMenu(ip: String) {
         showMenu(
             "Would you like to initialize as:",
             "1 - Client",
             "2 - Router",
-            "3 - Both"
+            "3 - Both",
         )
-        try{
+        try {
             val command = readln()
             when (command) {
                 "1" -> {
@@ -83,14 +111,14 @@ class Client(
         }
     }
 
-    private fun authenticationMenu(ip: String):String? {
+    private fun authenticationMenu(ip: String): String? {
         var command: String
-        var csr : String? = null
+        var csr: String? = null
         while (true) {
             showMenu(
                 "Menu",
                 "1 - Register",
-                "2 - Login"
+                "2 - Login",
             )
             command = readln()
             when (command) {
@@ -104,7 +132,7 @@ class Client(
                     csr = crypto.generateClientCSR(port, name, pwd).joinToString("\n")
                     args.add(csr)
                     args.add(ip)
-                    try{
+                    try {
                         userStorage = Session()
                         Register(httpRequests, userStorage!!, localMemory).execute(args)
                         break
@@ -132,7 +160,7 @@ class Client(
         return csr
     }
 
-    private fun operationsMenu(){
+    private fun operationsMenu() {
         var command: String
         while (true) {
             showMenu(
@@ -140,13 +168,13 @@ class Client(
                 "1 - Add contact",
                 "2 - Contact messages",
                 "3 - List contacts",
-                "4 - Logout"
+                "4 - Logout",
             )
             command = readln()
             when (command) {
                 "1" -> {
                     var clientId: Int?
-                    while(true) {
+                    while (true) {
                         val args = getInputs(listOf("Enter id of the contact"))
                         clientId = args.first().toIntOrNull()
                         if (clientId != null) {
@@ -166,13 +194,13 @@ class Client(
 
                     val contactId = userStorage?.contacts?.firstOrNull { it.name == args.first() }?.id
 
-                    if(contactId == null) {
+                    if (contactId == null) {
                         println("Contact not found")
                         continue
                     }
 
                     val client = getClientData(contactId)
-                    if(client == null) {
+                    if (client == null) {
                         println("Contact not found")
                         continue
                     }
@@ -189,7 +217,7 @@ class Client(
                         }
                     }*/
 
-                    while (true){
+                    while (true) {
                         println("1 - Send message")
                         println("2 - Load previous messages")
                         println("3 - Load next messages")
@@ -203,8 +231,8 @@ class Client(
 
                                 val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
                                 val msgDate = LocalDateTime.now().format(formatter)
-
-                                val sentMsg = sendMsg(client, msg, msgDate)
+                                val msgToSend = "final:${userStorage?.id}:${userStorage?.name}:$msg:$msgDate"
+                                val sentMsg = sendMsg(client, msgToSend, msgDate).replace("final:", "")
 
                                 val message = Message(cid, sentMsg, msgDate)
                                 localMemory.saveMessageInFile(message, userStorage?.pwd!!, client.name)
@@ -274,13 +302,15 @@ class Client(
         return finalMsg
     }
 
-
-    private fun initializeRouter(ip: String, csr: String? = null){
+    private fun initializeRouter(
+        ip: String,
+        csr: String? = null,
+    ) {
         val password = "Pa\$\$w0rd${Random.nextInt()}"
         val port = ip.split(":").last().toInt()
         println("running on port $port")
         val csrToUser = csr ?: crypto.generateClientCSR(port, "router", password).joinToString("\n")
-        val routerId = httpRequests.registerOnionRouter(csrToUser, ip , password)
+        val routerId = httpRequests.registerOnionRouter(csrToUser, ip, password)
         routerStorage = RouterStorage(routerId, password)
     }
 
@@ -290,9 +320,9 @@ class Client(
         print("> ")
     }
 
-    private fun getInputs(list: List<String>): List<String>{
+    private fun getInputs(list: List<String>): List<String> {
         val inputs = mutableListOf<String>()
-        for (i in list){
+        for (i in list) {
             var input = ""
             while (input.isEmpty() || input.isBlank()) {
                 println("$i ")
