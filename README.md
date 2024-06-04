@@ -18,6 +18,8 @@ The **frontend technical document** containing the frontend service implementati
 
 To run, follow the steps below:
 * install openssl version 3.3.0;
+* add openssl/bin to PATH;
+* install PostgreSQL 15;
 * Configure the environment variable `DATABASE_URL` (e.g. jdbc:postgresql://localhost/postgres?user=postgres&password=postgres);
 
 * Build the database using the following commands:
