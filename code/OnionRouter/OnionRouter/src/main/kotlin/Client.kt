@@ -62,14 +62,15 @@ class Client(
         val pwd = session?.pwd
         if (id != null && idContact != null && pwd != null) {
             val cid = localMemory.buildCid(id, idContact, pwd)
-            val msgToSave = Message(cid, message, timestamp)
+            val msgToSave = Message(cid, "$idContact:$name:$message", timestamp)
             localMemory.saveMessageInFile(msgToSave, pwd, name)
             val client = getClientData(idContact)
+            println("$name:$message <$timestamp>")
             if (client != null) {
                 val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
                 val current = LocalDateTime.now().format(formatter)
-                sendMsg(client, "confirmation:$message at $current", current)
-                // sendMsg(client, msgToSend, msgDate).replace("final:", "")
+
+                sendMsg(client, "confirmation:$idContact:${session?.name}:$message:$current", current)
             }
         }
     }
@@ -195,18 +196,25 @@ class Client(
         while (true) {
             showMenu(
                 "Menu",
-                "1 - Add contact",
-                "2 - Contact messages",
-                "3 - List contacts",
-                "4 - Logout",
+                "1 - Show my personal details",
+                "2 - Add contact",
+                "3 - Contact messages",
+                "4 - List contacts",
+                "5 - Logout",
             )
             command = readln()
             when (command) {
                 "1" -> {
+                    println("Name: ${session?.name}")
+                    println("Id: ${session?.id}")
+                    println("Contacts: \n ${session?.contacts?.joinToString("\n") { "${it.id} - ${it.name}" }}")
+                }
+                "2" -> {
                     var clientId: Int?
                     while (true) {
                         val args = getInputs(listOf("Enter id of the contact"))
                         clientId = args.first().toIntOrNull()
+                        if (clientId == session?.id) continue
                         if (clientId != null) {
                             val client = getClientData(clientId)
                             if (client == null) {
@@ -219,7 +227,7 @@ class Client(
                         }
                     }
                 }
-                "2" -> {
+                "3" -> {
                     val args = getInputs(listOf("Name of the contact"))
 
                     val contactId = session?.contacts?.firstOrNull { it.name == args.first() }?.id
@@ -280,11 +288,11 @@ class Client(
                         }
                     }
                 }
-                "3" -> {
+                "4" -> {
                     println("Not implemented yet")
                     // sliding window to get the files(?)
                 }
-                "4" -> {
+                "5" -> {
                     deleteNode(port)
                     println("Logout successfully.")
                     break
@@ -343,7 +351,7 @@ class Client(
         val info = msg.split(":").drop(1)
         val idContact = info.first().toIntOrNull()
         val name = info[1]
-        val message = info.dropLast(3).joinToString(":")
+        val message = info.dropLast(3).drop(2).joinToString(":")
         val timestamp = info.takeLast(3).joinToString(":")
         return MessageData(idContact, name, message, timestamp)
     }
