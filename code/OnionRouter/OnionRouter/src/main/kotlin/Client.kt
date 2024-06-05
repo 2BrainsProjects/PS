@@ -14,10 +14,10 @@ class Client(
     private val sendMsg: (ClientInformation, String, String) -> String,
 ) {
     private var routerStorage: RouterStorage? = null
-    private var userStorage: Session? = null
+    private var session: Session? = null
     private val localMemory = LocalMemory(httpRequests, crypto)
     private val pathSize = 2
-    private val amountRequest = 2
+    private val amountRequest = 4
 
     /*
     initialization menu
@@ -37,16 +37,17 @@ class Client(
         - logout
      */
 
-    fun getInfo(): Pair<Session?, RouterStorage?> = Pair(userStorage, routerStorage)
+    fun getInfo(): Pair<Session?, RouterStorage?> = Pair(session, routerStorage)
 
-    fun deleteNode() {
-        val userStorage = userStorage
+    fun deleteNode(port: Int) {
+        val userStorage = session
         val routerStorage = routerStorage
         if (userStorage != null) {
             val pwd = userStorage.pwd
             val token = userStorage.token
+            val privateKey = crypto.getPrivateKey(port)
             if (pwd != null && token != null) {
-                Logout(httpRequests, userStorage, localMemory).execute(listOf(pwd, token.token))
+                Logout(httpRequests, userStorage, localMemory).execute(listOf(pwd, token.token, privateKey))
             }
         }
         if (routerStorage != null) {
@@ -56,30 +57,27 @@ class Client(
 
     fun readFinalMsg(msg: String) {
         // final:id:name:msg:timestamp
-        val info = msg.split(":").drop(1)
-        val idContact = info.first().toIntOrNull()
-        val name = info[1]
-        val message = info.dropLast(3).joinToString(":")
-        val timestamp = info.takeLast(3).joinToString(":")
-        val id = userStorage?.id
-        val pwd = userStorage?.pwd
+        val (idContact, name, message, timestamp) = extractDataFromMessage(msg)
+        val id = session?.id
+        val pwd = session?.pwd
         if (id != null && idContact != null && pwd != null) {
             val cid = localMemory.buildCid(id, idContact, pwd)
             val msgToSave = Message(cid, message, timestamp)
             localMemory.saveMessageInFile(msgToSave, pwd, name)
             val client = getClientData(idContact)
             if (client != null) {
-                sendMsg(client, "confirmation:$message", System.currentTimeMillis().toString())
+                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                val current = LocalDateTime.now().format(formatter)
+                sendMsg(client, "confirmation:$message at $current", current)
+                // sendMsg(client, msgToSend, msgDate).replace("final:", "")
             }
         }
     }
 
     fun readConfirmationMsg(msg: String) {
-        // final:id:name:msg
-        val info = msg.split(":").drop(1)
-        val name = info[1]
-        val message = info.drop(2).joinToString(":")
-        println("$name received the message: $message")
+        // confirmation:id:name:msg
+        val (_, name, message, timestamp) = extractDataFromMessage(msg)
+        println("$name received the message: $message at $timestamp")
     }
 
     fun initializationMenu(ip: String) {
@@ -94,7 +92,7 @@ class Client(
             when (command) {
                 "1" -> {
                     authenticationMenu(ip)
-                    operationsMenu()
+                    operationsMenu(ip)
                 }
                 "2" -> {
                     initializeRouter(ip)
@@ -102,13 +100,44 @@ class Client(
                 "3" -> {
                     val csr = authenticationMenu(ip)
                     initializeRouter(ip, csr)
-                    operationsMenu()
+                    operationsMenu(ip)
                 }
             }
         } catch (e: Exception) {
             println("Something went wrong. Try again.")
             println(e.message)
         }
+    }
+
+    fun buildMessagePath(): List<Router> {
+        val count = httpRequests.getRouterCount()
+        val ids = (0..count).shuffled().take(amountRequest)
+
+        // if(ids.size <= 1) throw Exception("Not enough routers to build a path")
+
+        while (ids.first() == routerStorage?.id) {
+            ids.shuffled()
+        }
+
+        val list = httpRequests.getRouters(ids)
+
+        val pathRouters = list.shuffled().take(pathSize)
+        return pathRouters
+    }
+
+    fun encipherMessage(
+        message: String,
+        list: List<Pair<String, X509Certificate>>,
+    ): String {
+        var finalMsg = message
+
+        for (i in 0 until list.size - 1) {
+            val element = list[i]
+            finalMsg = crypto.encipher(finalMsg, element.second)
+            finalMsg += "||${element.first}"
+        }
+        finalMsg = crypto.encipher(finalMsg, list.last().second)
+        return finalMsg
     }
 
     private fun authenticationMenu(ip: String): String? {
@@ -133,8 +162,8 @@ class Client(
                     args.add(csr)
                     args.add(ip)
                     try {
-                        userStorage = Session()
-                        Register(httpRequests, userStorage!!, localMemory).execute(args)
+                        session = Session()
+                        Register(httpRequests, session!!, localMemory).execute(args)
                         break
                     } catch (e: Exception) {
                         println("Something went wrong. Try again.")
@@ -147,8 +176,8 @@ class Client(
 
                     args.add(1, ip)
                     try {
-                        userStorage = Session()
-                        Login(httpRequests, userStorage!!, localMemory).execute(args)
+                        session = Session()
+                        Login(httpRequests, session!!, localMemory).execute(args)
                         break
                     } catch (e: Exception) {
                         println("Something went wrong. Try again.")
@@ -160,7 +189,8 @@ class Client(
         return csr
     }
 
-    private fun operationsMenu() {
+    private fun operationsMenu(ip: String) {
+        val port = ip.split(":").last().toInt()
         var command: String
         while (true) {
             showMenu(
@@ -183,7 +213,7 @@ class Client(
                                 println("Client not found")
                                 break
                             }
-                            userStorage?.contacts?.add(Contact(clientId, client.name))
+                            session?.contacts?.add(Contact(clientId, client.name))
                             println("User ${client.name} added!")
                             break
                         }
@@ -192,7 +222,7 @@ class Client(
                 "2" -> {
                     val args = getInputs(listOf("Name of the contact"))
 
-                    val contactId = userStorage?.contacts?.firstOrNull { it.name == args.first() }?.id
+                    val contactId = session?.contacts?.firstOrNull { it.name == args.first() }?.id
 
                     if (contactId == null) {
                         println("Contact not found")
@@ -205,9 +235,9 @@ class Client(
                         continue
                     }
 
-                    val msgs = localMemory.getMessages(args[0], userStorage?.pwd!!)
+                    val msgs = localMemory.getMessages(args[0], session?.pwd!!)
 
-                    val cid = localMemory.buildCid(userStorage?.id!!, contactId, userStorage?.pwd!!)
+                    val cid = localMemory.buildCid(session?.id!!, contactId, session?.pwd!!)
 
                     /*for(i in msgs.takeLast(10)) {
                         if(i.content.split(":").first().toInt() == userStorage?.id) {
@@ -231,11 +261,11 @@ class Client(
 
                                 val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
                                 val msgDate = LocalDateTime.now().format(formatter)
-                                val msgToSend = "final:${userStorage?.id}:${userStorage?.name}:$msg:$msgDate"
+                                val msgToSend = "final:${session?.id}:${session?.name}:$msg:$msgDate"
                                 val sentMsg = sendMsg(client, msgToSend, msgDate).replace("final:", "")
 
                                 val message = Message(cid, sentMsg, msgDate)
-                                localMemory.saveMessageInFile(message, userStorage?.pwd!!, client.name)
+                                localMemory.saveMessageInFile(message, session?.pwd!!, client.name)
                             }
                             "2" -> {
                                 println("Not implemented yet")
@@ -255,7 +285,7 @@ class Client(
                     // sliding window to get the files(?)
                 }
                 "4" -> {
-                    deleteNode()
+                    deleteNode(port)
                     println("Logout successfully.")
                     break
                 }
@@ -277,31 +307,6 @@ class Client(
         return client
     }
 
-    fun buildMessagePath(): List<Router> {
-        val count = httpRequests.getRouterCount()
-        val ids = (0..count).shuffled().take(amountRequest)
-
-        val list = httpRequests.getRouters(ids)
-
-        val pathRouters = list.shuffled().take(pathSize)
-        return pathRouters
-    }
-
-    fun encipherMessage(
-        message: String,
-        list: List<Pair<String, X509Certificate>>,
-    ): String {
-        var finalMsg = message
-
-        for (i in 0 until list.size - 1) {
-            val element = list[i]
-            finalMsg = crypto.encipher(finalMsg, element.second)
-            finalMsg += "||${element.first}"
-        }
-        finalMsg = crypto.encipher(finalMsg, list.last().second)
-        return finalMsg
-    }
-
     private fun initializeRouter(
         ip: String,
         csr: String? = null,
@@ -309,8 +314,8 @@ class Client(
         val password = "Pa\$\$w0rd${Random.nextInt()}"
         val port = ip.split(":").last().toInt()
         println("running on port $port")
-        val csrToUser = csr ?: crypto.generateClientCSR(port, "router", password).joinToString("\n")
-        val routerId = httpRequests.registerOnionRouter(csrToUser, ip, password)
+        val csrToUse = csr ?: crypto.generateClientCSR(port, "router", password).joinToString("\n")
+        val routerId = httpRequests.registerOnionRouter(csrToUse, ip, password)
         routerStorage = RouterStorage(routerId, password)
     }
 
@@ -332,5 +337,14 @@ class Client(
             inputs.add(input)
         }
         return inputs
+    }
+
+    private fun extractDataFromMessage(msg: String): MessageData {
+        val info = msg.split(":").drop(1)
+        val idContact = info.first().toIntOrNull()
+        val name = info[1]
+        val message = info.dropLast(3).joinToString(":")
+        val timestamp = info.takeLast(3).joinToString(":")
+        return MessageData(idContact, name, message, timestamp)
     }
 }

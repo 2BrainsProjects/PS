@@ -29,8 +29,10 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
      * @param pwdHash - password hash to encrypt the string
      * @return the encrypted string
      */
-    fun encryptWithPwd(toEncrypt: String, pwdHash: String): String =
-        xorStringWithPwd(toEncrypt, pwdHash)
+    fun encryptWithPwd(
+        toEncrypt: String,
+        pwdHash: String,
+    ): String = xorStringWithPwd(toEncrypt, pwdHash)
 
     /**
      * Method to decrypt a string with a password.
@@ -38,8 +40,10 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
      * @param pwdHash - password hash to decrypt the string
      * @return the decrypted string
      */
-    fun decryptWithPwd(toDecrypt: String, pwdHash: String): String =
-        xorStringWithPwd(toDecrypt, pwdHash)
+    fun decryptWithPwd(
+        toDecrypt: String,
+        pwdHash: String,
+    ): String = xorStringWithPwd(toDecrypt, pwdHash)
 
     /**
      * Method to generate the CSR for the client.
@@ -196,7 +200,6 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
 
             val decipherText = outputStream.toByteArray()
 
-            // nas teoricas ver uma regra do perfil PKIX que verifica se existe mais do que 1 certificado folha na cadeia
             val decipheredText = textCipher.doFinal(decipherText)
             toReturn = (String(decipheredText))
         } catch (e: Exception) {
@@ -205,9 +208,23 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
         return toReturn
     }
 
+    fun getPrivateKey(port: Int): String {
+        val privateKeyBytes = getPrivateKey("$basePath\\priv$port.pem").encoded
+        return Base64.getEncoder().encodeToString(privateKeyBytes)
+    }
 
+    fun buildPrivateKey(
+        port: Int,
+        content: String,
+    ) {
+        val privateKey = Base64.getDecoder().decode(content)
+        createAndWriteFile(privateKey, "$basePath/priv$port.pem")
+    }
 
-    private fun xorStringWithPwd(string: String, pwdHash: String): String {
+    private fun xorStringWithPwd(
+        string: String,
+        pwdHash: String,
+    ): String {
         val keySize = pwdHash.length
         val resultText = StringBuilder()
 

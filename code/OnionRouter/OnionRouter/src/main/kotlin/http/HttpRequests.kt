@@ -5,11 +5,10 @@ import com.google.gson.Gson
 import domain.*
 import http.siren.*
 
-
 class HttpRequests(private val crypto: Crypto = Crypto()) {
     private val httpUtils = HttpUtils()
     private val json = "application/json"
-        private val apiUri = "http://localhost:8080/api"
+    private val apiUri = "http://localhost:8080/api"
     private val routerUrl = "$apiUri/routers"
     private val userUrl = "$apiUri/users"
     private val gson = Gson()
@@ -83,8 +82,13 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
         val sessionInfo = siren.extractProperty<String>("sessionInfo")
 
         val decryptedSessionInfo = crypto.decryptWithPwd(sessionInfo, password.hashCode().toString())
-        val storage = gson.fromJson(decryptedSessionInfo, UserStorage::class.java)
+        val storage: UserStorage? = gson.fromJson(decryptedSessionInfo, UserStorage::class.java)
 
+        val privateKey = storage?.privateKey
+        val port = ip.split(":").last().toIntOrNull()
+        if (privateKey != null && port != null) {
+            crypto.buildPrivateKey(port, privateKey)
+        }
         return Pair(Token(token, expiresIn), storage)
     }
 
@@ -95,9 +99,13 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
      * @param storage the storage of the client
      * @return true if the client was logged out successfully
      */
-    fun logoutClient(pwd: String, token: String, storage: UserStorage): Boolean {
-        val gson = Gson().toJson(storage)
-        val encryptedStorage = Crypto().encryptWithPwd(gson, pwd)
+    fun logoutClient(
+        pwd: String,
+        token: String,
+        storage: UserStorage,
+    ): Boolean {
+        val gsonStorage = gson.toJson(storage)
+        val encryptedStorage = Crypto().encryptWithPwd(gsonStorage, pwd)
         val headers = hashMapOf("Content-Type" to json, "Authorization" to "Bearer $token")
         val body = hashMapOf("sessionInfo" to encryptedStorage)
         val logoutResponse = httpUtils.postRequest(headers, "$apiUri/logout", body, "Error logout in")
@@ -128,10 +136,14 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
      * @param msgDate the date of the message
      * @return a list of messages
      */
-    fun getMessages(token: String, cid: String, msgDate: String? = null): List<Message> {
+    fun getMessages(
+        token: String,
+        cid: String,
+        msgDate: String? = null,
+    ): List<Message> {
         val headers = hashMapOf("Content-Type" to json, "Authorization" to "Bearer $token")
         val query = hashMapOf("cid" to cid, "msgDate" to msgDate)
-        val response = httpUtils.getRequest(headers, "$apiUri/messages", query,"Error getting messages")
+        val response = httpUtils.getRequest(headers, "$apiUri/messages", query, "Error getting messages")
         val body = response.body?.string()
         requireNotNull(body)
 
@@ -151,7 +163,7 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
         token: String,
         cid: String,
         message: String,
-        msgDate: String
+        msgDate: String,
     ): Boolean {
         val headers = hashMapOf("Content-Type" to json, "Authorization" to "Bearer $token")
         val body = hashMapOf("cid" to cid, "message" to message, "msgDate" to msgDate)
@@ -256,12 +268,13 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
         routerId: Int,
         pwd: String,
     ): Boolean {
-        val response = httpUtils.deleteRequest(
-            hashMapOf("Content-Type" to json),
-            "$routerUrl/$routerId",
-            hashMapOf("pwd" to pwd),
-            "Error deleting Router",
-        )
+        val response =
+            httpUtils.deleteRequest(
+                hashMapOf("Content-Type" to json),
+                "$routerUrl/$routerId",
+                hashMapOf("pwd" to pwd),
+                "Error deleting Router",
+            )
         return response.isSuccessful
     }
 

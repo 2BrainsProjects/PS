@@ -67,7 +67,7 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
             Signal.handle(Signal("INT")) {
                 th.interrupt()
                 status = 1
-                client.deleteNode()
+                client.deleteNode(ip.port)
                 finalizeOnionRouter(sSocket, selector)
                 exitProcess(0)
             }
@@ -81,7 +81,7 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
         } finally {
             th.interrupt()
             status = 1
-            client.deleteNode()
+            client.deleteNode(ip.port)
             finalizeOnionRouter(sSocket, selector)
         }
     }
@@ -94,13 +94,11 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
         val path = client.buildMessagePath().map { Pair(it.ip, it.certificate) } + Pair(clientInformation.ip, clientInformation.certificate)
         val firstNodeIp = path.first().first
 
-        // val sender = this.client.getInfo().first
-        // val msgToSend = "final:${sender?.id}:${sender?.name}:$msg:$msgDate"
         val encipherMsg = client.encipherMessage(msg, path.reversed())
 
         putConnectionIfAbsent(firstNodeIp)
         val socket =
-            socketsList.firstOrNull { // /127.0.0.1:8083
+            socketsList.firstOrNull {
                 it.remoteAddress.toString().contains(firstNodeIp)
             }
 
