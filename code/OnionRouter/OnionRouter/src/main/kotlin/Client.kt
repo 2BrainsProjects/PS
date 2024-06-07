@@ -8,16 +8,19 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.random.Random
 
+const val ONE_MINUTE = 60000
+
 class Client(
     private val crypto: Crypto,
     private val httpRequests: HttpRequests,
-    private val sendMsg: (ClientInformation, String, String) -> String,
+    private val sendMsg: (ClientInformation, String) -> String,
 ) {
     private var routerStorage: RouterStorage? = null
     private var session: Session? = null
     private val localMemory = LocalMemory(httpRequests, crypto)
     private val pathSize = 2
     private val amountRequest = 4
+    private val messages = emptyList<String>().toMutableList()
 
     /*
     initialization menu
@@ -70,7 +73,7 @@ class Client(
                 val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
                 val current = LocalDateTime.now().format(formatter)
 
-                sendMsg(client, "confirmation:$idContact:${session?.name}:$message:$current", current)
+                sendMsg(client, "confirmation:$idContact:${session?.name}:$message:$current")
             }
         }
     }
@@ -78,6 +81,8 @@ class Client(
     fun readConfirmationMsg(msg: String) {
         // confirmation:id:name:msg
         val (_, name, message, timestamp) = extractDataFromMessage(msg)
+        println("removed msg: ${session?.id}:${session?.name}:$message")
+        messages.remove("${session?.id}:${session?.name}:$message")
         println("$name received the message: $message at $timestamp")
     }
 
@@ -112,15 +117,21 @@ class Client(
 
     fun buildMessagePath(): List<Router> {
         val count = httpRequests.getRouterCount()
-        val ids = (0..count).shuffled().take(amountRequest)
+        var ids : Set<Int>
 
         // if(ids.size <= 1) throw Exception("Not enough routers to build a path")
+        var counter = 0
+        do {
+            ids = (0..count).shuffled().take(amountRequest).toMutableSet()
+            counter++
+            if(counter >= 5){
+                println("Error creating path")
+                ids.remove(routerStorage?.id)
+                break
+            }
+        } while (ids.contains(routerStorage?.id))
 
-        while (ids.first() == routerStorage?.id) {
-            ids.shuffled()
-        }
-
-        val list = httpRequests.getRouters(ids)
+        val list = httpRequests.getRouters(ids.toList())
 
         val pathRouters = list.shuffled().take(pathSize)
         return pathRouters
@@ -207,12 +218,13 @@ class Client(
                 "1" -> {
                     println("Name: ${session?.name}")
                     println("Id: ${session?.id}")
-                    println("Contacts: \n ${session?.contacts?.joinToString("\n") { "${it.id} - ${it.name}" }}")
                 }
                 "2" -> {
                     var clientId: Int?
                     while (true) {
+                        println("-1 - Exit")
                         val args = getInputs(listOf("Enter id of the contact"))
+                        if (args.first() == "-1") break
                         clientId = args.first().toIntOrNull()
                         if (clientId == session?.id) continue
                         if (clientId != null) {
@@ -270,7 +282,22 @@ class Client(
                                 val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
                                 val msgDate = LocalDateTime.now().format(formatter)
                                 val msgToSend = "final:${session?.id}:${session?.name}:$msg:$msgDate"
-                                val sentMsg = sendMsg(client, msgToSend, msgDate).replace("final:", "")
+
+                                // id:name:msg
+                                val sentMsg = sendMsg(client, msgToSend).replace("final:", "").replace(":$msgDate", "")
+                                Thread{
+                                    println("added msg: $sentMsg")
+                                    messages.add(sentMsg)
+                                    val timer = System.currentTimeMillis()
+                                    while (System.currentTimeMillis() - timer < ONE_MINUTE);
+
+                                    val splitMsg = sentMsg.split(":")
+                                    val message = splitMsg.drop(2).joinToString(":")
+                                    if(messages.contains(sentMsg)) {
+                                        println("Your message: $message to ${client.name} wasn't delivered!")
+                                        messages.remove(msgToSend)
+                                    }
+                                }.start()
 
                                 val message = Message(cid, sentMsg, msgDate)
                                 localMemory.saveMessageInFile(message, session?.pwd!!, client.name)
@@ -289,7 +316,7 @@ class Client(
                     }
                 }
                 "4" -> {
-                    println("Not implemented yet")
+                    println("Contacts: \n ${session?.contacts?.joinToString("\n") { "${it.id} - ${it.name}" }}")
                     // sliding window to get the files(?)
                 }
                 "5" -> {

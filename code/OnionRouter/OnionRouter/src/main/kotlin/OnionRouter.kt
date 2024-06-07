@@ -89,7 +89,6 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
     private fun sendMessage(
         clientInformation: ClientInformation,
         msg: String,
-        msgDate: String,
     ): String {
         val path = client.buildMessagePath().map { Pair(it.ip, it.certificate) } + Pair(clientInformation.ip, clientInformation.certificate)
         val firstNodeIp = path.first().first
