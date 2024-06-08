@@ -5,7 +5,6 @@ import domain.*
 import http.HttpRequests
 import java.security.cert.X509Certificate
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import kotlin.random.Random
 
 const val ONE_MINUTE = 60000
@@ -70,8 +69,7 @@ class Client(
             val client = getClientData(idContact)
             println("$name:$message <$timestamp>")
             if (client != null) {
-                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-                val current = LocalDateTime.now().format(formatter)
+                val current = LocalDateTime.now().format()
 
                 sendMsg(client, "confirmation:$idContact:${session?.name}:$message:$current")
             }
@@ -220,24 +218,7 @@ class Client(
                     println("Id: ${session?.id}")
                 }
                 "2" -> {
-                    var clientId: Int?
-                    while (true) {
-                        println("-1 - Exit")
-                        val args = getInputs(listOf("Enter id of the contact"))
-                        if (args.first() == "-1") break
-                        clientId = args.first().toIntOrNull()
-                        if (clientId == session?.id) continue
-                        if (clientId != null) {
-                            val client = getClientData(clientId)
-                            if (client == null) {
-                                println("Client not found")
-                                break
-                            }
-                            session?.contacts?.add(Contact(clientId, client.name))
-                            println("User ${client.name} added!")
-                            break
-                        }
-                    }
+                    addContact()
                 }
                 "3" -> {
                     val args = getInputs(listOf("Name of the contact"))
@@ -255,9 +236,8 @@ class Client(
                         continue
                     }
 
+                    // TODO(paginação na API e nao aqui)
                     val msgs = localMemory.getMessages(args[0], session?.pwd!!)
-
-                    val cid = localMemory.buildCid(session?.id!!, contactId, session?.pwd!!)
 
                     /*for(i in msgs.takeLast(10)) {
                         if(i.content.split(":").first().toInt() == userStorage?.id) {
@@ -267,53 +247,7 @@ class Client(
                         }
                     }*/
 
-                    while (true) {
-                        println("1 - Send message")
-                        println("2 - Load previous messages")
-                        println("3 - Load next messages")
-                        println("4 - Exit")
-                        print("> ")
-                        val option = readln()
-
-                        when (option) {
-                            "1" -> {
-                                val msg = getInputs(listOf("Message")).first()
-
-                                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-                                val msgDate = LocalDateTime.now().format(formatter)
-                                val msgToSend = "final:${session?.id}:${session?.name}:$msg:$msgDate"
-
-                                // id:name:msg
-                                val sentMsg = sendMsg(client, msgToSend).replace("final:", "").replace(":$msgDate", "")
-                                Thread{
-                                    println("added msg: $sentMsg")
-                                    messages.add(sentMsg)
-                                    val timer = System.currentTimeMillis()
-                                    while (System.currentTimeMillis() - timer < ONE_MINUTE);
-
-                                    val splitMsg = sentMsg.split(":")
-                                    val message = splitMsg.drop(2).joinToString(":")
-                                    if(messages.contains(sentMsg)) {
-                                        println("Your message: $message to ${client.name} wasn't delivered!")
-                                        messages.remove(msgToSend)
-                                    }
-                                }.start()
-
-                                val message = Message(cid, sentMsg, msgDate)
-                                localMemory.saveMessageInFile(message, session?.pwd!!, client.name)
-                            }
-                            "2" -> {
-                                println("Not implemented yet")
-                                // sliding window to get the files(?)
-                            }
-                            "3" -> {
-                                println("Not implemented yet")
-                            }
-                            "4" -> {
-                                break
-                            }
-                        }
-                    }
+                    conversationMenu(client)
                 }
                 "4" -> {
                     println("Contacts: \n ${session?.contacts?.joinToString("\n") { "${it.id} - ${it.name}" }}")
@@ -324,6 +258,91 @@ class Client(
                     println("Logout successfully.")
                     break
                 }
+            }
+        }
+    }
+
+    private fun conversationMenu(client: ClientInformation) {
+
+        val id = session?.id
+        val pwd = session?.pwd
+        val name = session?.name
+
+        if (id == null || pwd == null || name == null) {
+            println("Something went wrong. Try again.")
+            return
+        }
+
+        val cid = localMemory.buildCid(id, client.id, pwd)
+
+        while (true) {
+            println("1 - Send message")
+            println("2 - Load previous messages")
+            println("3 - Load next messages")
+            println("4 - Exit")
+            print("> ")
+            val option = readln()
+
+            when (option) {
+                "1" -> {
+                    val msg = getInputs(listOf("Message")).first()
+
+                    val msgDate = LocalDateTime.now().format()
+                    val msgToSend = "final:${id}:${name}:$msg:$msgDate"
+
+                    // id:name:msg
+                    val sentMsg = sendMsg(client, msgToSend).replace("final:", "").replace(":$msgDate", "")
+                    Thread{
+                        println("added msg: $sentMsg")
+                        messages.add(sentMsg)
+                        val timer = System.currentTimeMillis()
+                        while (System.currentTimeMillis() - timer < ONE_MINUTE);
+
+                        val splitMsg = sentMsg.split(":")
+                        val message = splitMsg.drop(2).joinToString(":")
+                        if(messages.contains(sentMsg)) {
+                            println("Your message: $message to ${client.name} wasn't delivered!")
+                            messages.remove(msgToSend)
+                        }
+                    }.start()
+
+                    val message = Message(cid, sentMsg, msgDate)
+                    localMemory.saveMessageInFile(message, pwd, client.name)
+                }
+                "2" -> {
+                    println("Not implemented yet")
+                    // sliding window to get the files(?)
+                }
+                "3" -> {
+                    println("Not implemented yet")
+                }
+                "4" -> {
+                    break
+                }
+            }
+        }
+    }
+
+    private fun addContact(){
+        while (true) {
+            println("-1 - Exit")
+            val args = getInputs(listOf("Enter id of the contact"))
+            if (args.first() == "-1") break
+            val clientId = args.first().toIntOrNull()
+            if (clientId != null) {
+                if (clientId == session?.id || clientId < 0) continue
+                if (session?.contacts?.firstOrNull { it.id == clientId } != null) {
+                    println("Contact already added!")
+                    continue
+                }
+                val client = getClientData(clientId)
+                if (client == null) {
+                    println("Client not found")
+                    continue
+                }
+                session?.contacts?.add(Contact(clientId, client.name))
+                println("User ${client.name} added!")
+                break
             }
         }
     }

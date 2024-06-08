@@ -1,3 +1,4 @@
+import java.net.SocketException
 import java.nio.ByteBuffer
 import java.nio.channels.Selector
 import java.nio.channels.ServerSocketChannel
@@ -16,8 +17,17 @@ fun readFromClient(
     val buffer = ByteBuffer.allocate(1024)
     buffer.clear()
     var msg = ""
-    var size: Int = client.read(buffer)
-    if (size == -1) {
+
+    var size: Int
+    try {
+        size = client.read(buffer)
+    } catch (ex: SocketException) {
+        client.close()
+        socketsList.removeIf { !it.isOpen }
+        return null
+    }
+
+    if (size <= 0) {
         client.close()
         socketsList.removeIf { !it.isOpen }
         return null

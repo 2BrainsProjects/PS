@@ -3,7 +3,6 @@ import domain.Contact
 import domain.Message
 import http.HttpRequests
 import java.io.File
-import java.time.format.DateTimeFormatter
 import java.util.*
 
 class LocalMemory(private val httpRequests: HttpRequests, private val crypto: Crypto) {
@@ -196,12 +195,7 @@ class LocalMemory(private val httpRequests: HttpRequests, private val crypto: Cr
             val timestamp =
                 decryptContent.split("\n").firstOrNull { it.contains("timestamp") }
                     ?.replace("timestamp:", "")
-            if (timestamp == null) {
-                null
-            } else {
-                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-                timestamp.format(formatter)
-            }
+            timestamp?.format()
         } else {
             file.createNewFile()
             null

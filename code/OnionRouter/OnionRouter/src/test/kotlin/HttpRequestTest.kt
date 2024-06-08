@@ -2,7 +2,12 @@ import domain.Message
 import domain.UserStorage
 import http.HttpRequests
 import kotlin.random.Random
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class HttpRequestTest {
     private val crypto = Crypto()
@@ -113,9 +118,9 @@ class HttpRequestTest {
         httpRequests.registerClient(name, "$name@gmail.com", pwd, csr)
         val ids =
             List(2) {
-                val (name, ip, pwd) = userInformation()
-                val csr = generateCsr(ip, pwd)
-                httpRequests.registerClient(name, "$name@gmail.com", pwd, csr)
+                val (contactName, contactIp, contactPwd) = userInformation()
+                val contactCsr = generateCsr(contactIp, contactPwd)
+                httpRequests.registerClient(contactName, "$contactName@gmail.com", contactPwd, contactCsr)
             }
 
         val clientCount = httpRequests.getClientCount()
@@ -143,6 +148,7 @@ class HttpRequestTest {
         val message = "oi, tudo bem?"
         val encipherMsg = crypto.encipher(message, port)
         val decipherMdg = crypto.decipher(encipherMsg, port)
+        assertEquals(message, decipherMdg)
     }
 
     @Test
