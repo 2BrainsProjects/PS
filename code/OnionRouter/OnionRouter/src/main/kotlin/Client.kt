@@ -20,6 +20,7 @@ class Client(
     private val pathSize = 2
     private val amountRequest = 4
     private val messages = emptyList<String>().toMutableList()
+    private val messagesPerPage = 10
 
     /*
     initialization menu
@@ -79,7 +80,7 @@ class Client(
     fun readConfirmationMsg(msg: String) {
         // confirmation:id:name:msg
         val (_, name, message, timestamp) = extractDataFromMessage(msg)
-        println("removed msg: ${session?.id}:${session?.name}:$message")
+        // println("removed msg: ${session?.id}:${session?.name}:$message")
         messages.remove("${session?.id}:${session?.name}:$message")
         println("$name received the message: $message at $timestamp")
     }
@@ -115,14 +116,14 @@ class Client(
 
     fun buildMessagePath(): List<Router> {
         val count = httpRequests.getRouterCount()
-        var ids : Set<Int>
+        var ids: Set<Int>
 
         // if(ids.size <= 1) throw Exception("Not enough routers to build a path")
         var counter = 0
         do {
             ids = (0..count).shuffled().take(amountRequest).toMutableSet()
             counter++
-            if(counter >= 5){
+            if (counter >= 5) {
                 println("Error creating path")
                 ids.remove(routerStorage?.id)
                 break
@@ -212,6 +213,7 @@ class Client(
                 "5 - Logout",
             )
             command = readln()
+            clearConsole()
             when (command) {
                 "1" -> {
                     println("Name: ${session?.name}")
@@ -236,17 +238,6 @@ class Client(
                         continue
                     }
 
-                    // TODO(paginação na API e nao aqui)
-                    val msgs = localMemory.getMessages(args[0], session?.pwd!!)
-
-                    /*for(i in msgs.takeLast(10)) {
-                        if(i.content.split(":").first().toInt() == userStorage?.id) {
-                            println(rgbfg(0,255,0) + i + RC)
-                        } else {
-                            println(i)
-                        }
-                    }*/
-
                     conversationMenu(client)
                 }
                 "4" -> {
@@ -263,7 +254,6 @@ class Client(
     }
 
     private fun conversationMenu(client: ClientInformation) {
-
         val id = session?.id
         val pwd = session?.pwd
         val name = session?.name
@@ -274,33 +264,40 @@ class Client(
         }
 
         val cid = localMemory.buildCid(id, client.id, pwd)
+        var n = 0
+
+        val m = localMemory.getMessagesPage(client.name, n, messagesPerPage, pwd)
+        m.forEach { println(it.content + " <" + it.timestamp + ">") }
 
         while (true) {
-            println("1 - Send message")
-            println("2 - Load previous messages")
-            println("3 - Load next messages")
-            println("4 - Exit")
-            print("> ")
+            showMenu(
+                "Conversation of ${client.name}",
+                "1 - Send message",
+                "2 - Load previous messages",
+                "3 - Load next messages",
+                "4 - Exit",
+            )
             val option = readln()
+            clearConsole()
 
             when (option) {
                 "1" -> {
                     val msg = getInputs(listOf("Message")).first()
 
                     val msgDate = LocalDateTime.now().format()
-                    val msgToSend = "final:${id}:${name}:$msg:$msgDate"
+                    val msgToSend = "final:$id:$name:$msg:$msgDate"
 
                     // id:name:msg
                     val sentMsg = sendMsg(client, msgToSend).replace("final:", "").replace(":$msgDate", "")
-                    Thread{
-                        println("added msg: $sentMsg")
+                    Thread {
+                        // println("added msg: $sentMsg")
                         messages.add(sentMsg)
                         val timer = System.currentTimeMillis()
                         while (System.currentTimeMillis() - timer < ONE_MINUTE);
 
                         val splitMsg = sentMsg.split(":")
                         val message = splitMsg.drop(2).joinToString(":")
-                        if(messages.contains(sentMsg)) {
+                        if (messages.contains(sentMsg)) {
                             println("Your message: $message to ${client.name} wasn't delivered!")
                             messages.remove(msgToSend)
                         }
@@ -310,11 +307,19 @@ class Client(
                     localMemory.saveMessageInFile(message, pwd, client.name)
                 }
                 "2" -> {
-                    println("Not implemented yet")
-                    // sliding window to get the files(?)
+                    if (localMemory.hasMessagesInPage(client.name, n + 1, messagesPerPage, pwd)) {
+                        val messages = localMemory.getMessagesPage(client.name, n++, messagesPerPage, pwd)
+                        messages.forEach { println(it.content + " <" + it.timestamp + ">") }
+                    }
                 }
                 "3" -> {
-                    println("Not implemented yet")
+                    val newPage = n - 1
+                    if (newPage >= 0) {
+                        if (localMemory.hasMessagesInPage(client.name, newPage, messagesPerPage, pwd)) {
+                            val messages = localMemory.getMessagesPage(client.name, n--, messagesPerPage, pwd)
+                            messages.forEach { println(it.content + " <" + it.timestamp + ">") }
+                        }
+                    }
                 }
                 "4" -> {
                     break
@@ -323,7 +328,7 @@ class Client(
         }
     }
 
-    private fun addContact(){
+    private fun addContact() {
         while (true) {
             println("-1 - Exit")
             val args = getInputs(listOf("Enter id of the contact"))
@@ -390,6 +395,7 @@ class Client(
             }
             inputs.add(input)
         }
+        clearConsole()
         return inputs
     }
 
@@ -400,5 +406,12 @@ class Client(
         val message = info.dropLast(3).drop(2).joinToString(":")
         val timestamp = info.takeLast(3).joinToString(":")
         return MessageData(idContact, name, message, timestamp)
+    }
+
+    private fun clearConsole() {
+        print("\u001b[H\u001b[2J")
+        /*repeat(40) {
+            println("\n")
+        }*/
     }
 }

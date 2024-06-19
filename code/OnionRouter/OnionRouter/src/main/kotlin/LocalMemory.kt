@@ -179,6 +179,48 @@ class LocalMemory(private val httpRequests: HttpRequests, private val crypto: Cr
     }
 
     /**
+     * Get the messages from the file
+     * @param contactName the name of the contact
+     * @param passHash the password hash
+     * @param page the page
+     * @param n the number of messages
+     * @return the list of messages
+     * Note: page starts at 0
+     */
+    fun getMessagesPage(
+        contactName: String,
+        page: Int,
+        n: Int,
+        passHash: String,
+    ): List<Message> {
+        val msgs = getMessages(contactName, passHash)
+        println("page: $page")
+        println("____________________")
+        println(msgs)
+        println("____________________")
+        val sortedMsgs = msgs.sortedByDescending { it.timestamp }
+        println(sortedMsgs)
+        println("____________________")
+        val dropMsgs = sortedMsgs.drop(page * n)
+        println(dropMsgs)
+        println("____________________")
+        val msgsToShow = dropMsgs.take(n)
+        println(msgsToShow)
+        println("____________________")
+
+        return msgsToShow
+    }
+
+    fun hasMessagesInPage(
+        contactName: String,
+        page: Int,
+        n: Int,
+        passHash: String,
+    ): Boolean {
+        return getMessagesPage(contactName, page, n, passHash).isNotEmpty()
+    }
+
+    /**
      * Get the timestamp from the file if it exists otherwise, return null
      * @param path the path to the file
      * @param pwdHash the password hash

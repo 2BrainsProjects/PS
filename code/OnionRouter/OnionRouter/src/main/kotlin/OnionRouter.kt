@@ -152,7 +152,7 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
 
                     val msg = readFromClient(client, socketsList) ?: continue
 
-                    println("Received message: $msg")
+                    // println("Received message: $msg")
                     processMessage(msg)
 
                     if (--readyToRead == 0) break
@@ -167,12 +167,12 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
      * @param msg the message to be processed
      */
     private fun processMessage(msg: String) {
-        //println("processing...")
+        // println("processing...")
         if (msg.isBlank() || msg.isEmpty()) return
-        //println(msg)
-        //println(ip.port)
+        // println(msg)
+        // println(ip.port)
         val plainText = crypto.decipher(msg, ip.port)
-        //println("deciphered message: $plainText")
+        // println("deciphered message: $plainText")
 
         // final:id:name:msg
         if (plainText.startsWith("final:")) {
@@ -216,7 +216,7 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
         if (!addr.contains(":")) return
 
         if (!socketsList.any { it.remoteAddress.toString().contains(addr) }) {
-            //println("sending to: $addr")
+            // println("sending to: $addr")
             val splitAddr = addr.split(':')
             if (splitAddr.size != 2 && splitAddr.size != 9) return
             val newAddr = InetSocketAddress(addr.dropLastWhile { it != ':' }.dropLast(1), splitAddr.last().toInt())
