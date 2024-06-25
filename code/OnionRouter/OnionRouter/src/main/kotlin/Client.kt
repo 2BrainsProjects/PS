@@ -20,7 +20,7 @@ class Client(
     private val pathSize = 2
     private val amountRequest = 4
     private val messages = emptyList<String>().toMutableList()
-    private val messagesPerPage = 10
+    private val messagesPerPage = 1
 
     /*
     initialization menu
@@ -313,10 +313,11 @@ class Client(
                     }
                 }
                 "3" -> {
-                    val newPage = n - 1
+                    val newPage = if (n - 1 > 0) n - 1 else n
                     if (newPage >= 0) {
                         if (localMemory.hasMessagesInPage(client.name, newPage, messagesPerPage, pwd)) {
-                            val messages = localMemory.getMessagesPage(client.name, n--, messagesPerPage, pwd)
+                            n = newPage
+                            val messages = localMemory.getMessagesPage(client.name, n, messagesPerPage, pwd)
                             messages.forEach { println(it.content + " <" + it.timestamp + ">") }
                         }
                     }

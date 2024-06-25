@@ -194,19 +194,9 @@ class LocalMemory(private val httpRequests: HttpRequests, private val crypto: Cr
         passHash: String,
     ): List<Message> {
         val msgs = getMessages(contactName, passHash)
-        println("page: $page")
-        println("____________________")
-        println(msgs)
-        println("____________________")
         val sortedMsgs = msgs.sortedByDescending { it.timestamp }
-        println(sortedMsgs)
-        println("____________________")
         val dropMsgs = sortedMsgs.drop(page * n)
-        println(dropMsgs)
-        println("____________________")
         val msgsToShow = dropMsgs.take(n)
-        println(msgsToShow)
-        println("____________________")
 
         return msgsToShow
     }
