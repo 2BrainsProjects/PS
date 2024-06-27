@@ -57,7 +57,8 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
         cn: String,
         pwd: String,
     ): List<String> {
-        generatePrivateKey(port)
+        if(!File("$basePath/priv$port.pem").exists()) return emptyList()
+        //generatePrivateKey(port)
         answeringCSRCreation(port, cn, pwd)
         val path = "$basePath/$port.csr"
         BufferedReader(InputStreamReader(FileInputStream(path))).use {

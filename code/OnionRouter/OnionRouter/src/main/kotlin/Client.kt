@@ -3,6 +3,7 @@ import commands.Logout
 import commands.Register
 import domain.*
 import http.HttpRequests
+import java.io.File
 import java.security.cert.X509Certificate
 import java.time.LocalDateTime
 import kotlin.random.Random
@@ -103,8 +104,8 @@ class Client(
                     initializeRouter(ip)
                 }
                 "3" -> {
-                    val csr = authenticationMenu(ip)
-                    initializeRouter(ip, csr)
+                    authenticationMenu(ip)
+                    initializeRouter(ip)
                     operationsMenu(ip)
                 }
             }
@@ -151,9 +152,8 @@ class Client(
         return finalMsg
     }
 
-    private fun authenticationMenu(ip: String): String? {
+    private fun authenticationMenu(ip: String) {
         var command: String
-        var csr: String? = null
         while (true) {
             showMenu(
                 "Menu",
@@ -169,7 +169,8 @@ class Client(
                     val port = ip.split(":").last().toInt()
                     val name = args[0]
                     val pwd = args[2]
-                    csr = crypto.generateClientCSR(port, name, pwd).joinToString("\n")
+                    crypto.generatePrivateKey(port)
+                    val csr = crypto.generateClientCSR(port, name, pwd).joinToString("\n")
                     args.add(csr)
                     args.add(ip)
                     try {
@@ -197,7 +198,6 @@ class Client(
                 }
             }
         }
-        return csr
     }
 
     private fun operationsMenu(ip: String) {
@@ -369,12 +369,11 @@ class Client(
 
     private fun initializeRouter(
         ip: String,
-        csr: String? = null,
     ) {
         val password = "Pa\$\$w0rd${Random.nextInt()}"
         val port = ip.split(":").last().toInt()
         println("running on port $port")
-        val csrToUse = csr ?: crypto.generateClientCSR(port, "router", password).joinToString("\n")
+        val csrToUse = crypto.generateClientCSR(port, "router", password).joinToString("\n")
         val routerId = httpRequests.registerOnionRouter(csrToUse, ip, password)
         routerStorage = RouterStorage(routerId, password)
     }
