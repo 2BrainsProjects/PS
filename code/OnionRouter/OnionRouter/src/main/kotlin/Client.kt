@@ -369,10 +369,13 @@ class Client(
 
     private fun initializeRouter(
         ip: String,
+
     ) {
         val password = "Pa\$\$w0rd${Random.nextInt()}"
         val port = ip.split(":").last().toInt()
         println("running on port $port")
+        val privateKey = crypto.getPrivateKey(port)
+        if (privateKey.isEmpty() || privateKey.isBlank()) crypto.generatePrivateKey(port)
         val csrToUse = crypto.generateClientCSR(port, "router", password).joinToString("\n")
         val routerId = httpRequests.registerOnionRouter(csrToUse, ip, password)
         routerStorage = RouterStorage(routerId, password)

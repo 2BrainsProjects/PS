@@ -210,7 +210,9 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
     }
 
     fun getPrivateKey(port: Int): String {
-        val privateKeyBytes = getPrivateKey("$basePath\\priv$port.pem").encoded
+        val path = "$basePath\\priv$port.pem"
+        if (!File(path).exists()) return ""
+        val privateKeyBytes = getPrivateKey(path).encoded
         return Base64.getEncoder().encodeToString(privateKeyBytes)
     }
 
