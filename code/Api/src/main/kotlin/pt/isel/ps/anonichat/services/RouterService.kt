@@ -15,7 +15,7 @@ import java.io.File
 class RouterService(
     private val passwordEncoder: PasswordEncoder,
     private val tm: TransactionManager,
-    private val cd: CertificateDomain
+    private val cd: CertificateDomain,
 ) {
     /**
      * Gets the routers count
@@ -24,21 +24,23 @@ class RouterService(
      */
     fun getRouters(list: List<Int>): RoutersModel {
         return tm.run { tr ->
-            val routers = list.mapNotNull { id ->
-                if (tr.routerRepository.isRouter(id)) {
-                    tr.routerRepository.getRouterById(id)
-                } else {
-                    null
-                }
-            }
-                .map { router ->
-                    val cert = if (router.certificate != null) {
-                        readFile(router.certificate)
+            val routers =
+                list.mapNotNull { id ->
+                    if (tr.routerRepository.isRouter(id)) {
+                        tr.routerRepository.getRouterById(id)
                     } else {
-                        ""
+                        null
                     }
-                    router.toModel(cert)
                 }
+                    .map { router ->
+                        val cert =
+                            if (router.certificate != null) {
+                                readFile(router.certificate)
+                            } else {
+                                ""
+                            }
+                        router.toModel(cert)
+                    }
             RoutersModel(routers)
         }
     }
@@ -60,7 +62,12 @@ class RouterService(
      * @param path The path of certificate
      * @return The router's id
      */
-    fun createRouter(ip: String, routerCSR: String, pwd: String, path: String = basePath): Int {
+    fun createRouter(
+        ip: String,
+        routerCSR: String,
+        pwd: String,
+        path: String = basePath,
+    ): Int {
         return tm.run {
             // Hash the password
             val passwordHash = passwordEncoder.encode(pwd)
@@ -84,8 +91,15 @@ class RouterService(
      * @param path The path of certificate
      * @return If the router was deleted with success
      */
-    fun deleteRouter(id: Int, pwd: String, path: String = basePath): Boolean {
+    fun deleteRouter(
+        id: Int,
+        pwd: String,
+        path: String = basePath,
+    ): Boolean {
         return tm.run {
+            if (!it.routerRepository.isRouter(id)) {
+                return@run true
+            }
             val hashedPassword = it.routerRepository.getRouterById(id).passwordHash
             requireOrThrow<InvalidCredentialsException>(passwordEncoder.matches(pwd, hashedPassword)) {
                 "Incorrect password"
@@ -99,6 +113,7 @@ class RouterService(
     companion object {
         private val basePath
             get() = path()
+
         private fun path() = System.getProperty("user.dir") + "\\certificates\\routers"
     }
 }
