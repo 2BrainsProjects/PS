@@ -73,7 +73,9 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
             }
 
             client.initializationMenu(addrString)
-            if (client.getInfo().second != null) {
+
+            val clientInfo = client.getInfo()
+            if (clientInfo.second != null && clientInfo.first == null) {
                 getInput()
             }
         } catch (e: IOException) {
@@ -90,7 +92,10 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
         clientInformation: ClientInformation,
         msg: String,
     ): String {
-        val path = client.buildMessagePath().map { Pair(it.ip, it.certificate) } + Pair(clientInformation.ip, clientInformation.certificate)
+        val path =
+            client.buildMessagePath(clientInformation.ip).map {
+                Pair(it.ip, it.certificate)
+            } + Pair(clientInformation.ip, clientInformation.certificate)
         val firstNodeIp = path.first().first
 
         val encipherMsg = client.encipherMessage(msg, path.reversed())

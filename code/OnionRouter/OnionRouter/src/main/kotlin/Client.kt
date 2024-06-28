@@ -3,7 +3,6 @@ import commands.Logout
 import commands.Register
 import domain.*
 import http.HttpRequests
-import java.io.File
 import java.security.cert.X509Certificate
 import java.time.LocalDateTime
 import kotlin.random.Random
@@ -115,23 +114,29 @@ class Client(
         }
     }
 
-    fun buildMessagePath(): List<Router> {
+    fun buildMessagePath(ipClient: String): List<Router> {
         val count = httpRequests.getRouterCount()
         var ids: Set<Int>
+        var list: List<Router> = emptyList()
 
         // if(ids.size <= 1) throw Exception("Not enough routers to build a path")
         var counter = 0
+
         do {
             ids = (0..count).shuffled().take(amountRequest).toMutableSet()
             counter++
             if (counter >= 5) {
-                println("Error creating path")
                 ids.remove(routerStorage?.id)
+                list = httpRequests.getRouters(ids.toList())
+                val temp = list.toMutableList()
+                temp.removeIf { it.ip == ipClient }
+                list = temp
                 break
             }
-        } while (ids.contains(routerStorage?.id))
+            if (ids.contains(routerStorage?.id)) continue
 
-        val list = httpRequests.getRouters(ids.toList())
+            list = httpRequests.getRouters(ids.toList()).toMutableList()
+        } while (list.any { it.ip != ipClient })
 
         val pathRouters = list.shuffled().take(pathSize)
         return pathRouters
@@ -367,10 +372,7 @@ class Client(
         return client
     }
 
-    private fun initializeRouter(
-        ip: String,
-
-    ) {
+    private fun initializeRouter(ip: String) {
         val password = "Pa\$\$w0rd${Random.nextInt()}"
         val port = ip.split(":").last().toInt()
         println("running on port $port")
