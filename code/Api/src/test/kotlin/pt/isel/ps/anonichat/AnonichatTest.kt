@@ -35,7 +35,7 @@ open class AnonichatTest {
 
         private fun testRouterCSR(
             ip: String,
-            pwd: String,
+            pwd: String
         ) = generateRouterCSR(generateRandomId(), ip, pwd)
 
         private fun generateRandomId() = Random().nextInt(Int.MAX_VALUE)
@@ -46,7 +46,7 @@ open class AnonichatTest {
                 testEmail(),
                 testPassword(),
                 testUserCSR(),
-                testIp(),
+                testIp()
             )
 
         fun testRouterData(): Triple<String, String, String> {
@@ -60,7 +60,7 @@ open class AnonichatTest {
             pseudoname: String,
             email: String,
             pwd: String,
-            extraPath: String,
+            extraPath: String
         ): String {
             answeringCSRCreation(id, pseudoname, email, pwd, extraPath)
             BufferedReader(InputStreamReader(FileInputStream("$basePath$extraPath/$id.csr"))).use {
@@ -72,13 +72,13 @@ open class AnonichatTest {
             userId: Int,
             username: String,
             email: String,
-            pwd: String,
+            pwd: String
         ): String = generateCSR(userId, username, email, pwd, USERS)
 
         private fun generateRouterCSR(
             userId: Int,
             username: String,
-            pwd: String,
+            pwd: String
         ): String = generateCSR(userId, username, "", pwd, ROUTERS)
 
         private fun answeringCSRCreation(
@@ -86,7 +86,7 @@ open class AnonichatTest {
             name: String,
             email: String,
             password: String,
-            extraPath: String,
+            extraPath: String
         ) {
             File("$basePath$extraPath").mkdirs()
             val command =
@@ -126,7 +126,7 @@ open class AnonichatTest {
 
         fun testTimestamp(): String {
             // Make sure to adjust the date format ('YYYY-MM-DD HH24:MI:SS') according to the format of the timestamp you're passing.
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
             val currentTime = Date()
             return dateFormat.format(currentTime)
         }
@@ -147,7 +147,7 @@ open class AnonichatTest {
             Jdbi.create(
                 PGSimpleDataSource().apply {
                     setURL(Environment.getDbUrl())
-                },
+                }
             ).configure()
 
         fun resetUsers() {

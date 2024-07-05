@@ -88,6 +88,6 @@ tasks.withType<BootJar> {
 }
 
 tasks.named("check") {
-    dependsOn("dbTestsWait")
+    dependsOn("composeUp")
     finalizedBy("dbTestsDown")
 }

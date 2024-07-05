@@ -1,7 +1,17 @@
-FROM openjdk:17-alpine
+FROM ubuntu:latest
 
-RUN wget -O - https://www.openssl.org/source/openssl-3.3.0.tar.gz | tar zxf -
-RUN cd openssl-3.3.0
+RUN apt-get update && apt-get install -y build-essential wget zlib1g-dev
+
+WORKDIR /usr/local/src
+RUN wget https://www.openssl.org/source/openssl-3.0.3.tar.gz
+RUN tar -xf openssl-3.0.3.tar.gz
+WORKDIR /usr/local/src/openssl-3.0.3
+
+RUN ./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib
+RUN make
+RUN make install
+
+RUN apt-get install -y openjdk-17-jdk
 
 ARG DEPENDENCY=build/dependency
 # first layer with the external libs (i.e. the files that change the least).

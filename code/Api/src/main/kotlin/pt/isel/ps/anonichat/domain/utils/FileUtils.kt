@@ -11,7 +11,7 @@ import java.io.OutputStreamWriter
  * @param filePath The file path
  * @return The file content
  */
-fun readFile(filePath: String): String {
+fun readFromFile(filePath: String): String {
     val bufferedReader = BufferedReader(FileInputStream(filePath).bufferedReader())
     val text = bufferedReader.readText()
     bufferedReader.close()
@@ -23,9 +23,9 @@ fun readFile(filePath: String): String {
  * @param filePath The file path
  * @param text The text to write
  */
-fun writeFile(
+fun writeToFile(
     filePath: String,
-    text: String,
+    text: String
 ) {
     val bufferedWriter = BufferedWriter(OutputStreamWriter(FileOutputStream(filePath)))
     bufferedWriter.write(text)

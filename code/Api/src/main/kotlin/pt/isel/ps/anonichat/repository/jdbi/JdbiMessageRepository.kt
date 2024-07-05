@@ -17,7 +17,7 @@ class JdbiMessageRepository(
      * @return if the message was saved
      */
     override fun saveMessage(userId: Int, cid: String, message: String, msgDate: String): Boolean =
-        handle.createUpdate("insert into dbo.Message (user_id, cid, message, msg_date) values (:userId, :cid, :message, TO_TIMESTAMP(:msg_date, 'YYYY-MM-DD HH24:MI:SS'))")
+        handle.createUpdate("insert into dbo.Message (user_id, cid, message, msg_date) values (:userId, :cid, :message, TO_TIMESTAMP(:msg_date, 'YYYY-MM-DD HH24:MI:SS.FF3'))")
             .bind("userId", userId)
             .bind("cid", cid)
             .bind("message", message)
@@ -45,7 +45,7 @@ class JdbiMessageRepository(
      * @return The messages
      */
     override fun getMessages(userId: Int, cid: String, msgDate: String): List<Message> =
-        handle.createQuery("select * from dbo.Message where user_id = :userId and cid = :cid and msg_date > TO_TIMESTAMP(:msg_date, 'YYYY-MM-DD HH24:MI:SS')")
+        handle.createQuery("select * from dbo.Message where user_id = :userId and cid = :cid and msg_date > TO_TIMESTAMP(:msg_date, 'YYYY-MM-DD HH24:MI:SS.FF3')")
             .bind("userId", userId)
             .bind("cid", cid)
             .bind("msg_date", msgDate)

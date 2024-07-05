@@ -13,8 +13,8 @@ import pt.isel.ps.anonichat.domain.user.Message
 import pt.isel.ps.anonichat.domain.user.Token
 import pt.isel.ps.anonichat.domain.user.User
 import pt.isel.ps.anonichat.domain.user.UserDomain
-import pt.isel.ps.anonichat.domain.utils.readFile
-import pt.isel.ps.anonichat.domain.utils.writeFile
+import pt.isel.ps.anonichat.domain.utils.readFromFile
+import pt.isel.ps.anonichat.domain.utils.writeToFile
 import pt.isel.ps.anonichat.repository.transaction.TransactionManager
 import pt.isel.ps.anonichat.services.models.TokenModel
 import pt.isel.ps.anonichat.services.models.UserModel.Companion.toModel
@@ -38,7 +38,13 @@ class UserService(
      * @return The user's id and the certificate
      * @throws UserAlreadyExistsException if the user already exists
      */
-    fun registerUser(name: String, email: String, password: String, clientCSR: String, path: String = basePath): Int {
+    fun registerUser(
+        name: String,
+        email: String,
+        password: String,
+        clientCSR: String,
+        path: String = basePath
+    ): Int {
         val passwordHash = domain.encodePassword(password)
         return tm.run {
             requireOrThrow<UserAlreadyExistsException>(!it.userRepository.isUserByUsername(name)) {
@@ -77,7 +83,13 @@ class UserService(
      * @return The user's token and the content of the certificate
      * @throws InvalidCredentialsException if the username or email is not provided
      */
-    fun loginUser(name: String?, email: String?, password: String, ip: String, path: String = basePath): Pair<TokenModel, String> {
+    fun loginUser(
+        name: String?,
+        email: String?,
+        password: String,
+        ip: String,
+        path: String = basePath
+    ): Pair<TokenModel, String> {
         val tokenModelAndSessionInfo: Pair<TokenModel, String>
         when {
             name != null -> {
@@ -105,13 +117,14 @@ class UserService(
      */
     fun getUsers(usersIds: List<Int>): UsersModel {
         return tm.run { tr ->
-            val users = usersIds.mapNotNull { id ->
-                if (tr.userRepository.isUser(id)) tr.userRepository.getUser(id) else null
-            }
-                .map { user ->
-                    val cert = if (user.certificate != null) readFile(user.certificate) else ""
-                    user.toModel(cert)
+            val users =
+                usersIds.mapNotNull { id ->
+                    if (tr.userRepository.isUser(id)) tr.userRepository.getUser(id) else null
                 }
+                    .map { user ->
+                        val cert = if (user.certificate != null) readFromFile(user.certificate) else ""
+                        user.toModel(cert)
+                    }
             UsersModel(users)
         }
     }
@@ -149,12 +162,13 @@ class UserService(
     private fun createToken(userId: Int): TokenModel {
         val tokenValue = domain.generateTokenValue()
         val now = clock.now()
-        val token = Token(
-            tokenHash = domain.hashToken(tokenValue),
-            userId = userId,
-            createdAt = now,
-            lastUsedAt = now
-        )
+        val token =
+            Token(
+                tokenHash = domain.hashToken(tokenValue),
+                userId = userId,
+                createdAt = now,
+                lastUsedAt = now
+            )
         tm.run {
             requireOrThrow<UserNotFoundException>(it.userRepository.isUser(userId)) { "User was not found" }
             it.tokenRepository.createToken(token, domain.maxTokensPerUser)
@@ -197,11 +211,15 @@ class UserService(
      * @param msgDate The message date
      * @throws UserNotFoundException if the user was not found
      */
-    fun saveMessage(userId: Int, cid: String, message: String, msgDate: String) =
-        tm.run {
-            requireOrThrow<UserNotFoundException>(it.userRepository.isUser(userId)) { "User was not Found" }
-            it.messageRepository.saveMessage(userId, cid, message, msgDate)
-        }
+    fun saveMessage(
+        userId: Int,
+        cid: String,
+        message: String,
+        msgDate: String
+    ) = tm.run {
+        requireOrThrow<UserNotFoundException>(it.userRepository.isUser(userId)) { "User was not Found" }
+        it.messageRepository.saveMessage(userId, cid, message, msgDate)
+    }
 
     /**
      * Get messages if msgDate is null, get all messages, else get messages after msgDate
@@ -211,7 +229,11 @@ class UserService(
      * @return The list of messages
      * @throws UserNotFoundException if the user was not found
      */
-    fun getMessages(userId: Int, cid: String, msgDate: String?): List<Message> =
+    fun getMessages(
+        userId: Int,
+        cid: String,
+        msgDate: String?
+    ): List<Message> =
         tm.run {
             requireOrThrow<UserNotFoundException>(it.userRepository.isUser(userId)) { "User was not Found" }
             if (msgDate != null) {
@@ -227,12 +249,16 @@ class UserService(
      * @param sessionInfo The session info
      * @throws UserNotFoundException if the user was not found
      */
-    fun saveSessionInfo(userId: Int, sessionInfo: String) {
-        val sessionInfoPath = tm.run {
-            requireOrThrow<UserNotFoundException>(it.userRepository.isUser(userId)) { "User was not Found" }
-            it.userRepository.getUserSession(userId)
-        }
-        writeFile(sessionInfoPath, sessionInfo)
+    fun saveSessionInfo(
+        userId: Int,
+        sessionInfo: String
+    ) {
+        val sessionInfoPath =
+            tm.run {
+                requireOrThrow<UserNotFoundException>(it.userRepository.isUser(userId)) { "User was not Found" }
+                it.userRepository.getUserSession(userId)
+            }
+        writeToFile(sessionInfoPath, sessionInfo)
     }
 
     /**
@@ -242,7 +268,11 @@ class UserService(
      * @return The user's token and the session info
      * @throws InvalidCredentialsException if the username or password is incorrect
      */
-    private fun loginByUsername(name: String, password: String, ip: String): Pair<TokenModel, String> =
+    private fun loginByUsername(
+        name: String,
+        password: String,
+        ip: String
+    ): Pair<TokenModel, String> =
         tm.run {
             requireOrThrow<InvalidCredentialsException>(it.userRepository.isUserByUsername(name)) {
                 "Incorrect username or password"
@@ -253,7 +283,7 @@ class UserService(
             }
             it.userRepository.updateIp(user.id, ip)
             val sessionInfoPath = it.userRepository.getUserSession(user.id)
-            val sessionInfo = readFile(sessionInfoPath)
+            val sessionInfo = readFromFile(sessionInfoPath)
 
             val tokenModel = createToken(user.id)
 
@@ -267,7 +297,11 @@ class UserService(
      * @return The user's token and the session info
      * @throws InvalidCredentialsException if the email or password is incorrect
      */
-    private fun loginByEmail(email: String, password: String, ip: String): Pair<TokenModel, String> =
+    private fun loginByEmail(
+        email: String,
+        password: String,
+        ip: String
+    ): Pair<TokenModel, String> =
         tm.run {
             requireOrThrow<InvalidCredentialsException>(it.userRepository.isUserByEmail(email)) {
                 "Incorrect email or password"
@@ -279,7 +313,7 @@ class UserService(
             it.userRepository.updateIp(user.id, ip)
 
             val sessionInfoPath = it.userRepository.getUserSession(user.id)
-            val sessionInfo = readFile(sessionInfoPath)
+            val sessionInfo = readFromFile(sessionInfoPath)
 
             val tokenModel = createToken(user.id)
 
@@ -289,6 +323,7 @@ class UserService(
     companion object {
         private val basePath
             get() = path()
+
         private fun path() = System.getProperty("user.dir") + "\\certificates\\users"
     }
 }

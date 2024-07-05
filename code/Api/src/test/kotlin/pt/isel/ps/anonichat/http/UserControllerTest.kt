@@ -130,10 +130,10 @@ class UserControllerTest : HttpTest() {
     @Test
     fun `can get 3 users`() {
         // given: 5 users
-        val (u1Id) = registerTestUserHttp()
+        registerTestUserHttp()
         val (u2Id) = registerTestUserHttp()
         val (u3Id) = registerTestUserHttp()
-        val (u4Id) = registerTestUserHttp()
+        registerTestUserHttp()
         val (u5Id) = registerTestUserHttp()
 
         val maxIdResponse = client.get().uri(api("/users/count"))

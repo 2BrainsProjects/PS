@@ -1,5 +1,7 @@
 package pt.isel.ps.anonichat.repository
 
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -18,6 +20,7 @@ class MessageRepositoryTest : RepositoryTest() {
         val message1 = "hello, how you doing?"
         val message2 = "Well and you?"
         val msgDate1 = testTimestamp()
+
         assertTrue(messagesRepository.saveMessage(userId, cid, message1, msgDate1))
         Thread.sleep(1000)
 
@@ -32,7 +35,7 @@ class MessageRepositoryTest : RepositoryTest() {
         assertEquals(message2, msg.message)
         assertEquals(userId, msg.userId)
         assertEquals(cid, msg.cid)
-        assertEquals(msgDate2, msg.msgDate)
+        assertEquals(msgDate2.dropLastWhile { it == '0' }, msg.msgDate)
         assertNotNull(messages.firstOrNull { it.message == message1 })
 
         val messagesWithTime = messagesRepository.getMessages(userId, cid, msgDate1)
@@ -42,6 +45,6 @@ class MessageRepositoryTest : RepositoryTest() {
         assertEquals(message2, msgWithTime.message)
         assertEquals(userId, msgWithTime.userId)
         assertEquals(cid, msgWithTime.cid)
-        assertEquals(msgDate2, msgWithTime.msgDate)
+        assertEquals(msgDate2.dropLastWhile { it == '0' }, msgWithTime.msgDate)
     }
 }

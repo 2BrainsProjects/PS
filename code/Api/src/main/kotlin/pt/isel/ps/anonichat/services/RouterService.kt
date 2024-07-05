@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component
 import pt.isel.ps.anonichat.domain.certificate.CertificateDomain
 import pt.isel.ps.anonichat.domain.exceptions.RouterException.InvalidCredentialsException
 import pt.isel.ps.anonichat.domain.exceptions.requireOrThrow
-import pt.isel.ps.anonichat.domain.utils.readFile
+import pt.isel.ps.anonichat.domain.utils.readFromFile
 import pt.isel.ps.anonichat.repository.transaction.TransactionManager
 import pt.isel.ps.anonichat.services.models.RouterModel.Companion.toModel
 import pt.isel.ps.anonichat.services.models.RoutersModel
@@ -15,7 +15,7 @@ import java.io.File
 class RouterService(
     private val passwordEncoder: PasswordEncoder,
     private val tm: TransactionManager,
-    private val cd: CertificateDomain,
+    private val cd: CertificateDomain
 ) {
     /**
      * Gets the routers count
@@ -35,7 +35,7 @@ class RouterService(
                     .map { router ->
                         val cert =
                             if (router.certificate != null) {
-                                readFile(router.certificate)
+                                readFromFile(router.certificate)
                             } else {
                                 ""
                             }
@@ -66,7 +66,7 @@ class RouterService(
         ip: String,
         routerCSR: String,
         pwd: String,
-        path: String = basePath,
+        path: String = basePath
     ): Int {
         return tm.run {
             // Hash the password
@@ -94,7 +94,7 @@ class RouterService(
     fun deleteRouter(
         id: Int,
         pwd: String,
-        path: String = basePath,
+        path: String = basePath
     ): Boolean {
         return tm.run {
             if (!it.routerRepository.isRouter(id)) {
