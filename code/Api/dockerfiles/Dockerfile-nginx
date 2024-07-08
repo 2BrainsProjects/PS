@@ -1,2 +1,2 @@
 FROM nginx
-COPY ./jvm/dockerfiles/nginx/nginx.conf /etc/nginx
+COPY ./dockerfiles/nginx/nginx.conf /etc/nginx

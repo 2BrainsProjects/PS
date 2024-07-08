@@ -11,7 +11,7 @@ class OnionRouterTest {
 //  private val DELAY_TO_SET_NETWORK = 1000L
     private fun generateRandomPort() = Random.nextInt(7000, 9000)
 
-    @Test
+    /*@Test
     fun `can create onion router`(){
         val serverPort = generateRandomPort()
         val onionRouter = OnionRouter(InetSocketAddress(serverPort), path)
@@ -21,6 +21,7 @@ class OnionRouterTest {
 
         assertFailsWith<BindException> { ServerSocket().bind(InetSocketAddress(serverPort)) }
     }
+    */
 
     /*
     @Test

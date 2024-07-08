@@ -28,6 +28,7 @@ class CryptoTest {
         val port = generateRandomPort()
         val ip = "localhost:" + generateIp()
         val pwd = "P4\$\$w0rd"
+        crypto.generatePrivateKey(port)
         val csrContent = crypto.generateClientCSR(port, ip, pwd).joinToString("\n")
 
         val csrFile = File("$path\\$port.csr")

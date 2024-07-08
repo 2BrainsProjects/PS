@@ -18,5 +18,13 @@ services:
     environment:
       PORT: 8080
       DATABASE_URL: "jdbc:postgresql://db-compose:5432/dbo?user=postgres&password=postgres"
+
+  nginx:
+    container_name: nginx
+    build:
+      context: .
+      dockerfile: ./dockerfiles/Dockerfile-nginx
     ports:
       - 8080:8080
+    depends_on:
+      - anonichat-service

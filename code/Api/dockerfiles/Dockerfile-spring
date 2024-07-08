@@ -1,4 +1,3 @@
-#FROM openjdk:17
 FROM ubuntu:latest
 
 RUN apt-get update
@@ -31,4 +30,5 @@ COPY ${DEPENDENCY}/BOOT-INF/lib /app/lib
 COPY ${DEPENDENCY}/META-INF /app/META-INF
 # last layer with the application JARs (i.e. the files that change the most).
 COPY ${DEPENDENCY}/BOOT-INF/classes /app
+
 ENTRYPOINT ["java","-cp","app:app/lib/*","pt.isel.ps.anonichat.AnonichatApplicationKt"]

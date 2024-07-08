@@ -25,7 +25,15 @@ kotlin {
 
 tasks.register<JavaExec>("launch") {
     group = "launch"
-    this.mainClass.set("MainKt")
+    this.mainClass.set("OnionRouterKt")
     classpath = sourceSets["main"].runtimeClasspath
     standardInput = System.`in`
+}
+
+task<Copy>("extractUberJar") {
+    dependsOn("assemble")
+    // opens the JAR containing everything...
+    from(zipTree("$buildDir/libs/${rootProject.name}-$version.jar"))
+    // ... into the 'build/dependency' folder
+    into("build/dependency")
 }
