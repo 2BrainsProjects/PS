@@ -1,6 +1,8 @@
+#FROM openjdk:17
 FROM ubuntu:latest
 
-RUN apt-get update && apt-get install -y build-essential wget zlib1g-dev
+RUN apt-get update
+RUN apt-get install -y build-essential wget zlib1g-dev
 
 WORKDIR /usr/local/src
 RUN wget https://www.openssl.org/source/openssl-3.0.3.tar.gz
@@ -11,7 +13,16 @@ RUN ./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib
 RUN make
 RUN make install
 
+ENV PATH="${PATH}:/usr/local/ssl/bin"
+
+WORKDIR /
+
 RUN apt-get install -y openjdk-17-jdk
+
+ARG CRYPTO=certificates
+
+COPY ${CRYPTO}/certificate.crt /${CRYPTO}/certificate.crt
+COPY ${CRYPTO}/privateKey.key /${CRYPTO}/privateKey.key
 
 ARG DEPENDENCY=build/dependency
 # first layer with the external libs (i.e. the files that change the least).
