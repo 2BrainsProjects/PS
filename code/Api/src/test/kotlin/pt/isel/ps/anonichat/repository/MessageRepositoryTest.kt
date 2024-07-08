@@ -1,7 +1,5 @@
 package pt.isel.ps.anonichat.repository
 
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

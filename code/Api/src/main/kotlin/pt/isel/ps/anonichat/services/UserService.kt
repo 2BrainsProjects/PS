@@ -323,7 +323,14 @@ class UserService(
     companion object {
         private val basePath
             get() = path()
-
-        private fun path() = System.getProperty("user.dir") + "\\certificates\\users"
+        private fun path(): String {
+            val userDir = System.getProperty("user.dir")
+            val certificatePath = if (userDir == "/" || userDir == "\\") {
+                "certificates\\users"
+            } else {
+                "\\certificates\\users"
+            }
+            return "$userDir$certificatePath"
+        }
     }
 }

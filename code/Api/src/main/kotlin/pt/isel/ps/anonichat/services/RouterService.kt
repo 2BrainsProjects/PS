@@ -113,7 +113,14 @@ class RouterService(
     companion object {
         private val basePath
             get() = path()
-
-        private fun path() = System.getProperty("user.dir") + "\\certificates\\routers"
+        private fun path(): String {
+            val userDir = System.getProperty("user.dir")
+            val certificatePath = if (userDir == "/" || userDir == "\\") {
+                "certificates\\routers"
+            } else {
+                "\\certificates\\routers"
+            }
+            return "$userDir$certificatePath"
+        }
     }
 }

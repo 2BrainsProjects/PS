@@ -69,6 +69,14 @@ class CertificateDomain {
     companion object {
         private val SERVER_PATH
             get() = path()
-        private fun path() = System.getProperty("user.dir") + "\\certificates"
+        private fun path(): String {
+            val userDir = System.getProperty("user.dir")
+            val certificatePath =  if (userDir == "/" || userDir == "\\") {
+                "certificates"
+            } else {
+                "\\certificates"
+            }
+            return "$userDir$certificatePath"
+        }
     }
 }
