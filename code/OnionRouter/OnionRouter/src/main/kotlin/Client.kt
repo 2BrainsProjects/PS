@@ -20,7 +20,7 @@ class Client(
     private val pathSize = 2
     private val amountRequest = 4
     private val messages = emptyList<String>().toMutableList()
-    private val messagesPerPage = 1
+    private val messagesPerPage = 10
 
     /*
     initialization menu

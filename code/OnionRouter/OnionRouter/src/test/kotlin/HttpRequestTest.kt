@@ -1,6 +1,7 @@
 import domain.Message
 import domain.UserStorage
 import http.HttpRequests
+import java.time.LocalDateTime
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -31,6 +32,7 @@ class HttpRequestTest {
     @Test
     fun `can register a client`() {
         val (name, ip, pwd) = userInformation()
+        crypto.generatePrivateKey(ip.split(":").last().toInt())
         val csr = generateCsr(ip, pwd)
         val id = httpRequests.registerClient(name, "$name@gmail.com", pwd, csr)
         assertTrue(id > 0)
@@ -39,6 +41,7 @@ class HttpRequestTest {
     @Test
     fun `cant register a client with wrong credentials`() {
         val (name, ip, pwd) = userInformation()
+        crypto.generatePrivateKey(ip.split(":").last().toInt())
         val csr = generateCsr(ip, pwd)
 
         assertFailsWith<Exception> { httpRequests.registerClient(name, name, pwd, csr) }
@@ -50,6 +53,7 @@ class HttpRequestTest {
     @Test
     fun `can login a client`() {
         val (name, ip, pwd) = userInformation()
+        crypto.generatePrivateKey(ip.split(":").last().toInt())
         val csr = generateCsr(ip, pwd)
         val id = httpRequests.registerClient(name, "$name@gmail.com", pwd, csr)
 
@@ -71,6 +75,7 @@ class HttpRequestTest {
     @Test
     fun `can logout a client`() {
         val (name, ip, pwd) = userInformation()
+        crypto.generatePrivateKey(ip.split(":").last().toInt())
         val csr = generateCsr(ip, pwd)
         val id = httpRequests.registerClient(name, "$name@gmail.com", pwd, csr)
         val (token, _) = httpRequests.loginClient(name, ip, pwd)
@@ -83,7 +88,9 @@ class HttpRequestTest {
 
     @Test
     fun `can save and get Messages`() {
+
         val (name, ip, pwd) = userInformation()
+        crypto.generatePrivateKey(ip.split(":").last().toInt())
         val csr = generateCsr(ip, pwd)
         httpRequests.registerClient(name, "$name@gmail.com", pwd, csr)
 
@@ -92,33 +99,40 @@ class HttpRequestTest {
         val cid = "0"
 
         val messagesToSave =
-            listOf(
-                Message(cid, "Hello, World!", "2021-10-10 10:10:10"),
-                Message(cid, "How are you doing?", "2021-10-10 10:10:11"),
-            )
-
+            List(2) {
+                if(it == 0)
+                    Message(cid, "Hello, World!", LocalDateTime.now().format())
+                else
+                    Thread.sleep(100)
+                    Message(cid, "How are you doing?", LocalDateTime.now().format())
+            }
         messagesToSave.forEach {
             assertTrue { httpRequests.saveMessage(token.token, it.conversationId, it.content, it.timestamp) }
         }
 
         val messages = httpRequests.getMessages(token.token, cid)
         assertEquals(messagesToSave.size, messages.size)
-        assertTrue(messages.containsAll(messagesToSave))
+        println(messages)
+        println(messagesToSave)
+        assertTrue(messages.containsAll(messagesToSave.map{ it.copy(timestamp = it.timestamp.dropLastWhile { t -> t == '0' })}))
 
-        val messages2 = httpRequests.getMessages(token.token, cid, "2021-10-10 10:10:10")
+        val messages2 = httpRequests.getMessages(token.token, cid, messagesToSave[0].timestamp)
 
         assertEquals(1, messages2.size)
         assertEquals(messagesToSave[1], messages2[0])
+
     }
 
     @Test
     fun `can get Clients`() {
         val (name, ip, pwd) = userInformation()
+        crypto.generatePrivateKey(ip.split(":").last().toInt())
         val csr = generateCsr(ip, pwd)
         httpRequests.registerClient(name, "$name@gmail.com", pwd, csr)
         val ids =
             List(2) {
                 val (contactName, contactIp, contactPwd) = userInformation()
+                crypto.generatePrivateKey(contactIp.split(":").last().toInt())
                 val contactCsr = generateCsr(contactIp, contactPwd)
                 httpRequests.registerClient(contactName, "$contactName@gmail.com", contactPwd, contactCsr)
             }
@@ -134,6 +148,7 @@ class HttpRequestTest {
     @Test
     fun `client can authentication, logout and authentication again`() {
         val (name, ip, pwd) = userInformation()
+        crypto.generatePrivateKey(ip.split(":").last().toInt())
         val csr = generateCsr(ip, pwd)
         val port = generateRandomPort()
         crypto.generateKeys(port)
@@ -154,6 +169,7 @@ class HttpRequestTest {
     @Test
     fun `can register a onion router`() {
         val (ip, pwd) = routerInformation()
+        crypto.generatePrivateKey(ip.split(":").last().toInt())
         val csr = generateCsr(ip, pwd)
         val id = httpRequests.registerOnionRouter(csr, ip, pwd)
         assertTrue(id > 0)
@@ -162,6 +178,7 @@ class HttpRequestTest {
     @Test
     fun `can delete a onion router`() {
         val (ip, pwd) = routerInformation()
+        crypto.generatePrivateKey(ip.split(":").last().toInt())
         val csr = generateCsr(ip, pwd)
         val id = httpRequests.registerOnionRouter(csr, ip, pwd)
         val deleted = httpRequests.deleteRouter(id, pwd)
@@ -171,6 +188,7 @@ class HttpRequestTest {
     @Test
     fun `cant delete a onion router with wrong credentials`() {
         val (ip, pwd) = routerInformation()
+        crypto.generatePrivateKey(ip.split(":").last().toInt())
         val csr = generateCsr(ip, pwd)
         val id = httpRequests.registerOnionRouter(csr, ip, pwd)
         assertFailsWith<Exception> { httpRequests.deleteRouter(id, "password") }
@@ -181,6 +199,7 @@ class HttpRequestTest {
         val ids =
             List(2) {
                 val (ip, pwd) = routerInformation()
+                crypto.generatePrivateKey(ip.split(":").last().toInt())
                 val csr = generateCsr(ip, pwd)
                 httpRequests.registerOnionRouter(csr, ip, pwd)
             }
