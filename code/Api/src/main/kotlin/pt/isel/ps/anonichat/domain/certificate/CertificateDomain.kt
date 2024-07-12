@@ -32,7 +32,6 @@ class CertificateDomain {
 
         val signedCertificateCommand = signedCertificateCommand(clientId, path)
         execute(signedCertificateCommand)
-
         // wait for the file to be written on
         while (BufferedReader(FileInputStream(certFile).bufferedReader()).readLines().isEmpty());
         csrFile.delete()
@@ -71,7 +70,7 @@ class CertificateDomain {
             get() = path()
         private fun path(): String {
             val userDir = System.getProperty("user.dir")
-            val certificatePath =  if (userDir == "/" || userDir == "\\") {
+            val certificatePath = if (userDir == "/" || userDir == "\\") {
                 "certificates"
             } else {
                 "\\certificates"

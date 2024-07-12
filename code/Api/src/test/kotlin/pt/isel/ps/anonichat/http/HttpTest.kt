@@ -22,7 +22,7 @@ class HttpTest : AnonichatTest() {
     @LocalServerPort
     var port: Int = 0
     final val client = WebTestClient.bindToServer().baseUrl(api("/")).build()
-    final fun api(path: String): String = "http://localhost:$port/api$path"
+    final fun api(path: String): String = "https://localhost:$port/api$path"
 
     fun registerTestUserHttp(
         name: String = testUsername(),

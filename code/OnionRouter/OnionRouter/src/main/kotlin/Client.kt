@@ -125,7 +125,7 @@ class Client(
         do {
             ids = (0..count).shuffled().take(amountRequest).toMutableSet()
             counter++
-            if (counter >= 5) {
+            if (counter >= 5 || count <= amountRequest) {
                 ids.remove(routerStorage?.id)
                 list = httpRequests.getRouters(ids.toList())
                 val temp = list.toMutableList()

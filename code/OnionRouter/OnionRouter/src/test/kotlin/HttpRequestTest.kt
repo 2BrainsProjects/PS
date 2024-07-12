@@ -105,7 +105,7 @@ class HttpRequestTest {
                 else
                     Thread.sleep(100)
                     Message(cid, "How are you doing?", LocalDateTime.now().format())
-            }
+            }.map{ it.copy(timestamp = it.timestamp.dropLastWhile { t -> t == '0' })}
         messagesToSave.forEach {
             assertTrue { httpRequests.saveMessage(token.token, it.conversationId, it.content, it.timestamp) }
         }
@@ -114,7 +114,7 @@ class HttpRequestTest {
         assertEquals(messagesToSave.size, messages.size)
         println(messages)
         println(messagesToSave)
-        assertTrue(messages.containsAll(messagesToSave.map{ it.copy(timestamp = it.timestamp.dropLastWhile { t -> t == '0' })}))
+        assertTrue(messages.containsAll(messagesToSave))
 
         val messages2 = httpRequests.getMessages(token.token, cid, messagesToSave[0].timestamp)
 
