@@ -133,7 +133,7 @@ Instead of the implementing multiple column mappers to allow the mapping of thos
 
 To run the application, make sure you have Docker Desktop installed, and execute the following command:
 ```bash
-docker-compose up
+docker compose up
 ```
 # Conclusion
 

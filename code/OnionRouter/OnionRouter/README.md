@@ -42,10 +42,12 @@ In this is possibly to:
 * user authentication.
 
 For the last operation, the menu will only be shown when the user is authenticated. In this is possibly:
-* To add a contact;
+* show personal information;
+* to add a contact;
 * enter a conversation;
     * send a message;
-    * see previous messages (Not implement);
-    * see next messages (Not implement);
-* list contacts (Not implement);
+    * see previous messages;
+    * see next messages;
+    * leave conversation;
+* list contacts;
 * logout.
