@@ -24,7 +24,7 @@ To run, follow the steps below:
 
 * Run the API using the following command in the folder API:
 ```sh 
-docker compose up
+docker compose up -d
 ```
 
 * To execute an instance of Onion routers, use the command in the folder OnionRouter:
