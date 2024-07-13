@@ -5,6 +5,6 @@ fun main(args: Array<String>) {
     val port = args[0].toIntOrNull()
     requireNotNull(port) { "Port must be a number" }
     require(port != 8080) { "Port 8080 is reserved" }
-   //val port = 80811
+   //val port = 8081
     OnionRouter(InetSocketAddress("127.0.0.1", port)).start()
 }

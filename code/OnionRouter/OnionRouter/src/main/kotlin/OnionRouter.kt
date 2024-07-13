@@ -201,7 +201,7 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
         // verfificar se existe/estabelecer ligação ao nextNode
         putConnectionIfAbsent(addr)
 
-        println("-------------------------------------------------------")
+        //println("-------------------------------------------------------")
 
         // socket com o próximo node                           removing prefix '/'  e.g. /127.0.0.1
         val socket =
