@@ -19,56 +19,15 @@ The **frontend technical document** containing the frontend service implementati
 To run, follow the steps below:
 * install openssl version 3.3.0;
 * add openssl/bin to PATH;
-* install PostgreSQL 15;
-* Configure the environment variable `DATABASE_URL` (e.g. jdbc:postgresql://localhost/postgres?user=postgres&password=postgres);
+* install docker desktop;
 
-* Build the database using the following commands:
-```sh
-psql -U postgres
 
-<password>
-
-create schema dbo;
-
-create table if not exists dbo.User(
-    id serial primary key,
-    ip varchar(64) null,
-    name varchar(64) unique not null,
-    email varchar(64) unique not null check (email ~ '^[A-Za-z0-9+.-]+@(.+)$'),
-    password_hash varchar(60) not null,
-    certificate varchar(256) null,
-    session_info varchar(256) null
-);
-
-create table if not exists dbo.Token(
-    token_hash varchar(256) primary key,
-    user_id int references dbo.User(id) on delete cascade,
-    created_at bigint not null,
-    last_used_at bigint not null
-);
-
-create table if not exists dbo.Router(
-    id serial primary key,
-    ip varchar(64) null,
-    password_hash varchar(60) not null,
-    certificate varchar(256) null
-);
-
-create table if not exists dbo.Message(
-    user_id int references dbo.User(id) on delete cascade,
-    cid varchar(128) not null,
-    message varchar(512) not null,
-    msg_date timestamp not null
-);
-
-```
-
-* Run the API using the following command:
+* Run the API using the following command in the folder API:
 ```sh 
-gradlew launch
+docker compose up
 ```
 
-* To execute an instance of Onion routers, use the command:
+* To execute an instance of Onion routers, use the command in the folder OnionRouter:
 ```sh
 gradlew launch --args=<port>
 ```

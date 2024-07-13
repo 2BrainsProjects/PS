@@ -1,7 +1,10 @@
 package pt.isel.ps.anonichat.http
 
+import io.netty.handler.ssl.SslContextBuilder
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
+import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBody
 import org.springframework.util.LinkedMultiValueMap
@@ -14,6 +17,7 @@ import pt.isel.ps.anonichat.http.controllers.user.models.RegisterOutputModel
 import pt.isel.ps.anonichat.http.hypermedia.SirenEntity
 import pt.isel.ps.anonichat.http.hypermedia.SirenEntityEmbeddedLinkModel
 import pt.isel.ps.anonichat.http.hypermedia.SirenEntityEmbeddedRepresentationModel
+import reactor.netty.http.client.HttpClient
 import kotlin.test.assertTrue
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -21,7 +25,9 @@ class HttpTest : AnonichatTest() {
 
     @LocalServerPort
     var port: Int = 0
-    final val client = WebTestClient.bindToServer().baseUrl(api("/")).build()
+    private val sslContext = SslContextBuilder.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE).build()
+    private val httpClient = HttpClient.create().secure{ sslContextSpec -> sslContextSpec.sslContext(sslContext) }
+    val client = WebTestClient.bindToServer(ReactorClientHttpConnector(httpClient)).baseUrl(api("/")).build()
     final fun api(path: String): String = "https://localhost:$port/api$path"
 
     fun registerTestUserHttp(

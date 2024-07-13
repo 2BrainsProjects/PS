@@ -236,3 +236,4 @@ class UserControllerTest : HttpTest() {
         )
     }
 }
+

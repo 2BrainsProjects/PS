@@ -8,7 +8,7 @@ import http.siren.*
 class HttpRequests(private val crypto: Crypto = Crypto()) {
     private val httpUtils = HttpUtils()
     private val json = "application/json"
-    private val apiUri = "https://localhost:443/api"
+    private val apiUri = "https://localhost:8080/api"
     private val routerUrl = "$apiUri/routers"
     private val userUrl = "$apiUri/users"
     private val gson = Gson()

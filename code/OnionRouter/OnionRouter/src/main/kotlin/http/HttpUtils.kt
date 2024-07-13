@@ -1,11 +1,39 @@
 package http
 
 import com.google.gson.Gson
-import okhttp3.*
+import okhttp3.FormBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import java.security.SecureRandom
+import java.security.cert.X509Certificate
+import javax.net.ssl.*
+
 
 class HttpUtils {
     private val client = OkHttpClient()
     private val gson = Gson()
+    private val newBuilder: OkHttpClient.Builder
+    init {
+        val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
+            override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {
+            }
+
+            override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {
+            }
+
+            override fun getAcceptedIssuers(): Array<X509Certificate> {
+                return arrayOf()
+            }
+        })
+        val sslContext = SSLContext.getInstance("SSL")
+        sslContext.init(null, trustAllCerts, SecureRandom())
+
+        newBuilder = OkHttpClient.Builder()
+        newBuilder.sslSocketFactory(sslContext.socketFactory, trustAllCerts[0] as X509TrustManager)
+        newBuilder.hostnameVerifier { _, _ -> true }
+
+    }
 
     private data class Problem(
         val type: String,
@@ -109,7 +137,9 @@ class HttpUtils {
     ): Response {
         var detail: String? = null
         try {
-            val response = client.newCall(request).execute()
+            val newClient = newBuilder.build()
+            val response = newClient.newCall(request).execute()
+
             if (!response.isSuccessful) {
                 val body = response.body?.string()
                 detail = gson.fromJson(body, Problem::class.java).detail
@@ -184,3 +214,4 @@ class HttpUtils {
             .build()
     }
 }
+
