@@ -17,9 +17,10 @@ The **frontend technical document** containing the frontend service implementati
 # How to run
 
 To run, follow the steps below:
-* install openssl version 3.3.0;
+* install Java 21 (https://www.oracle.com/pt/java/technologies/downloads/#java21);
+* install openssl version 3.3.0 (https://www.openssl.org/source/);
 * add openssl/bin to PATH;
-* install docker desktop;
+* install docker desktop (https://www.docker.com/products/docker-desktop/);
 
 
 * Run the API using the following command in the folder API:
