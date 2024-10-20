@@ -63,7 +63,7 @@ class OnionRouter(private val ip: InetSocketAddress, path: String = System.getPr
             Thread {
                 handleConnection()
             }.start()
-
+//rpc
             Signal.handle(Signal("INT")) {
                 th.interrupt()
                 status = 1

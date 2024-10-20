@@ -313,12 +313,12 @@ class Client(
                 }
                 "2" -> {
                     if (localMemory.hasMessagesInPage(client.name, n + 1, messagesPerPage, pwd)) {
-                        val messages = localMemory.getMessagesPage(client.name, n++, messagesPerPage, pwd)
+                        val messages = localMemory.getMessagesPage(client.name, ++n, messagesPerPage, pwd)
                         messages.forEach { println(it.content + " <" + it.timestamp + ">") }
                     }
                 }
                 "3" -> {
-                    val newPage = if (n - 1 > 0) n - 1 else n
+                    val newPage = if (n - 1 >= 0) n - 1 else n
                     if (newPage >= 0) {
                         if (localMemory.hasMessagesInPage(client.name, newPage, messagesPerPage, pwd)) {
                             n = newPage
