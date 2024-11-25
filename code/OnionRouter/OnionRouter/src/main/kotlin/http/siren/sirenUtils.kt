@@ -7,6 +7,9 @@ import domain.ClientInformation
 import domain.Message
 import domain.Router
 
+const val SIREN_CLIENTS_PROBLEM_MSG = "Problem extracting clients from siren response"
+const val SIREN_PROPERTY_PROBLEM_MSG = "Problem extracting property from siren response"
+
 /**
  * Extracts the elements from a siren response
  * @param crypto the crypto object
@@ -33,7 +36,7 @@ fun SirenEntity<*>.extractElements(crypto: Crypto): List<*> =
  * @return the list of clients
  */
 fun SirenEntity<*>.extractClient(): Client {
-    require(properties is LinkedTreeMap<*, *>){ "Problem extracting clients from siren response" }
+    require(properties is LinkedTreeMap<*, *>){  }
     val id = extractProperty<Double>("id").toInt()
     val name = extractProperty<String>("name")
     return Client(id, name)
@@ -46,7 +49,7 @@ fun SirenEntity<*>.extractClient(): Client {
  */
 fun SirenEntity<*>.extractClients(crypto: Crypto): List<ClientInformation> =
     entities?.map {
-        require(it.properties is LinkedTreeMap<*, *>){ "Problem extracting clients from siren response" }
+        require(it.properties is LinkedTreeMap<*, *>){ SIREN_CLIENTS_PROBLEM_MSG }
         val id = it.extractProperty<Double>("id").toInt()
         val name = it.extractProperty<String>("name")
         val ip = it.extractProperty<String>("ip")
@@ -76,7 +79,7 @@ fun SirenEntity<*>.extractMessages() : List<Message> =
  */
 fun SirenEntity<*>.extractRouters(crypto: Crypto): List<Router> =
     entities?.map {
-        require(it.properties is LinkedTreeMap<*, *>){ "Problem extracting clients from siren response" }
+        require(it.properties is LinkedTreeMap<*, *>){ SIREN_CLIENTS_PROBLEM_MSG }
         val id = it.extractProperty<Double>("id").toInt()
         val ip = it.extractProperty<String>("ip")
         val certificateContent = it.extractProperty<String>("certificate")
@@ -90,7 +93,7 @@ fun SirenEntity<*>.extractRouters(crypto: Crypto): List<Router> =
  * @return the property as a string
  */
 inline fun <reified T> SirenEntity<*>.extractProperty(propertyName: String): T {
-    require(properties is LinkedTreeMap<*, *>){ "Problem extracting property from siren response" }
+    require(properties is LinkedTreeMap<*, *>){ SIREN_PROPERTY_PROBLEM_MSG }
     return properties[propertyName] as T
 }
 
@@ -100,6 +103,6 @@ inline fun <reified T> SirenEntity<*>.extractProperty(propertyName: String): T {
  * @return the property as a string
  */
 inline fun <reified T> SubEntity.EmbeddedRepresentation<*>.extractProperty(propertyName: String): T {
-    require(properties is LinkedTreeMap<*, *>){ "Problem extracting property from siren response" }
+    require(properties is LinkedTreeMap<*, *>){ SIREN_PROPERTY_PROBLEM_MSG }
     return properties[propertyName] as T
 }

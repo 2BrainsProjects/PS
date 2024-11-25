@@ -1,5 +1,5 @@
 package commands
 
-interface Command {
+fun interface Command {
     fun execute(args: List<String>)
 }

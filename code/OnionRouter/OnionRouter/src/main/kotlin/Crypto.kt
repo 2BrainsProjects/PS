@@ -63,7 +63,7 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
         val path = "$basePath/$port.csr"
         BufferedReader(InputStreamReader(FileInputStream(path))).use {
             val csrContent = it.readLines()
-            File(path).delete()
+            check(!File(path).delete()) {"Could not delete the file"}
             return csrContent
         }
     }
@@ -290,7 +290,7 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
         filePath: String,
     ) {
         val file = File(filePath)
-        if (file.exists()) file.delete()
+        check(file.exists() && !file.delete()) {"Could not delete the file"}
         file.createNewFile()
         file.writeBytes(key)
     }
@@ -352,7 +352,7 @@ class Crypto(private val basePath: String = System.getProperty("user.dir") + "\\
 
     companion object {
         private const val ALG_SYMMETRIC = "AES"
-        private const val ALG_ASYMMETRIC = "RSA"
+        private const val ALG_ASYMMETRIC = "RSA/ECB/OAEPWITHSHA-256ANDMGF1PADDING"
         private const val STD_CERTIFICATE = "X.509"
         private const val MARK_SIZE = 128
         private const val KEY_SIZE = 256

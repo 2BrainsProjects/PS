@@ -17,22 +17,22 @@ class HttpUtils {
     init {
         val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
             override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {
+                // trust all
             }
 
             override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {
+                // trust all
             }
 
             override fun getAcceptedIssuers(): Array<X509Certificate> {
                 return arrayOf()
             }
         })
-        val sslContext = SSLContext.getInstance("SSL")
+        val sslContext = SSLContext.getInstance("TLSv1.2")
         sslContext.init(null, trustAllCerts, SecureRandom())
 
         newBuilder = OkHttpClient.Builder()
         newBuilder.sslSocketFactory(sslContext.socketFactory, trustAllCerts[0] as X509TrustManager)
-        newBuilder.hostnameVerifier { _, _ -> true }
-
     }
 
     private data class Problem(

@@ -30,7 +30,7 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
     ): Int {
         val registerResponse =
             httpUtils.postRequest(
-                hashMapOf("Content-Type" to json),
+                hashMapOf(CONTENT_TYPE to json),
                 userUrl,
                 hashMapOf("name" to name, "email" to email, "password" to password, "clientCSR" to clientCSR),
                 "Error registering user",
@@ -67,7 +67,7 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
 
         val loginResponse =
             httpUtils.postRequest(
-                hashMapOf("Content-Type" to json),
+                hashMapOf(CONTENT_TYPE to json),
                 "$apiUri/login",
                 body,
                 "Error logging in",
@@ -106,7 +106,7 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
     ): Boolean {
         val gsonStorage = gson.toJson(storage)
         val encryptedStorage = Crypto().encryptWithPwd(gsonStorage, pwd)
-        val headers = hashMapOf("Content-Type" to json, "Authorization" to "Bearer $token")
+        val headers = hashMapOf(CONTENT_TYPE to json, "Authorization" to "Bearer $token")
         val body = hashMapOf("sessionInfo" to encryptedStorage)
         val logoutResponse = httpUtils.postRequest(headers, "$apiUri/logout", body, "Error logout in")
 
@@ -119,7 +119,7 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
      * @return the client
      */
     fun getClient(token: String): Client {
-        val headers = hashMapOf("Content-Type" to json, "Authorization" to "Bearer $token")
+        val headers = hashMapOf(CONTENT_TYPE to json, "Authorization" to "Bearer $token")
         val response = httpUtils.getRequest(headers, "$apiUri/user", hashMapOf(), "Error getting user")
         val responseBody = response.body?.string()
         requireNotNull(responseBody)
@@ -141,7 +141,7 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
         cid: String,
         msgDate: String? = null,
     ): List<Message> {
-        val headers = hashMapOf("Content-Type" to json, "Authorization" to "Bearer $token")
+        val headers = hashMapOf(CONTENT_TYPE to json, "Authorization" to "Bearer $token")
         val query = hashMapOf("cid" to cid, "msgDate" to msgDate)
         val response = httpUtils.getRequest(headers, "$apiUri/messages", query, "Error getting messages")
         val body = response.body?.string()
@@ -165,7 +165,7 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
         message: String,
         msgDate: String,
     ): Boolean {
-        val headers = hashMapOf("Content-Type" to json, "Authorization" to "Bearer $token")
+        val headers = hashMapOf(CONTENT_TYPE to json, "Authorization" to "Bearer $token")
         val body = hashMapOf("cid" to cid, "message" to message, "msgDate" to msgDate)
         val response = httpUtils.postRequest(headers, "$apiUri/messages", body, "Error saving message")
 
@@ -180,7 +180,7 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
     fun getClients(ids: List<Int>): List<ClientInformation> {
         val response =
             httpUtils.getRequest(
-                hashMapOf("Content-Type" to json),
+                hashMapOf(CONTENT_TYPE to json),
                 userUrl,
                 hashMapOf("ids" to ids.joinToString(",")),
                 "Users not found",
@@ -214,7 +214,7 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
     ): Int {
         val registerResponse =
             httpUtils.postRequest(
-                hashMapOf("Content-Type" to json),
+                hashMapOf(CONTENT_TYPE to json),
                 routerUrl,
                 hashMapOf("routerCSR" to csr, "ip" to ip, "pwd" to pwd),
                 "Error creating router",
@@ -238,7 +238,7 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
     fun getRouters(ids: List<Int>): List<Router> {
         val response =
             httpUtils.getRequest(
-                hashMapOf("Content-Type" to json),
+                hashMapOf(CONTENT_TYPE to json),
                 routerUrl,
                 hashMapOf("ids" to ids.joinToString(",")),
                 "Error getting routers",
@@ -270,7 +270,7 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
     ): Boolean {
         val response =
             httpUtils.deleteRequest(
-                hashMapOf("Content-Type" to json),
+                hashMapOf(CONTENT_TYPE to json),
                 "$routerUrl/$routerId",
                 hashMapOf("pwd" to pwd),
                 "Error deleting Router",
@@ -286,7 +286,7 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
     private fun getCount(uri: String): Int {
         val response =
             httpUtils.getRequest(
-                hashMapOf("Content-Type" to json),
+                hashMapOf(CONTENT_TYPE to json),
                 uri,
                 null,
                 "Error getting routers max id",
@@ -305,4 +305,8 @@ class HttpRequests(private val crypto: Crypto = Crypto()) {
      * @return the SirenEntity
      */
     private fun transformBodyToSiren(body: String): SirenEntity<*> = gson.fromJson(body, SirenEntity::class.java)
+
+    companion object{
+        private const val CONTENT_TYPE = "Content-Type"
+    }
 }

@@ -58,7 +58,7 @@ class UserService(
             val sessionInfoPath = System.getProperty("user.dir") + "\\sessions\\user$userId.txt"
             val file = File(sessionInfoPath)
             File(file.parent).mkdirs()
-            file.delete()
+            check(!file.delete()) {"Could not delete the file"}
             file.createNewFile()
 
             it.userRepository.updateSessionInfo(userId, sessionInfoPath)
@@ -149,7 +149,7 @@ class UserService(
 
     fun getUser(tokenValue: String): User {
         val user = getUserByToken(tokenValue)
-        requireOrThrow<UserNotFoundException>(user != null) { "User was not found" }
+        requireOrThrow<UserNotFoundException>(user != null) { USER_NOT_FOUND_MSG }
         return user
     }
 
@@ -170,7 +170,7 @@ class UserService(
                 lastUsedAt = now
             )
         tm.run {
-            requireOrThrow<UserNotFoundException>(it.userRepository.isUser(userId)) { "User was not found" }
+            requireOrThrow<UserNotFoundException>(it.userRepository.isUser(userId)) { USER_NOT_FOUND_MSG }
             it.tokenRepository.createToken(token, domain.maxTokensPerUser)
         }
         return TokenModel(
@@ -217,7 +217,7 @@ class UserService(
         message: String,
         msgDate: String
     ) = tm.run {
-        requireOrThrow<UserNotFoundException>(it.userRepository.isUser(userId)) { "User was not Found" }
+        requireOrThrow<UserNotFoundException>(it.userRepository.isUser(userId)) { USER_NOT_FOUND_MSG }
         it.messageRepository.saveMessage(userId, cid, message, msgDate)
     }
 
@@ -235,7 +235,7 @@ class UserService(
         msgDate: String?
     ): List<Message> =
         tm.run {
-            requireOrThrow<UserNotFoundException>(it.userRepository.isUser(userId)) { "User was not Found" }
+            requireOrThrow<UserNotFoundException>(it.userRepository.isUser(userId)) { USER_NOT_FOUND_MSG }
             if (msgDate != null) {
                 it.messageRepository.getMessages(userId, cid, msgDate)
             } else {
@@ -255,7 +255,7 @@ class UserService(
     ) {
         val sessionInfoPath =
             tm.run {
-                requireOrThrow<UserNotFoundException>(it.userRepository.isUser(userId)) { "User was not Found" }
+                requireOrThrow<UserNotFoundException>(it.userRepository.isUser(userId)) { USER_NOT_FOUND_MSG }
                 it.userRepository.getUserSession(userId)
             }
         writeToFile(sessionInfoPath, sessionInfo)
@@ -332,5 +332,7 @@ class UserService(
             }
             return "$userDir$certificatePath"
         }
+
+        const val USER_NOT_FOUND_MSG = "User was not found"
     }
 }

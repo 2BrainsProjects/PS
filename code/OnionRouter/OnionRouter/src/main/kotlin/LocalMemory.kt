@@ -85,7 +85,7 @@ class LocalMemory(private val httpRequests: HttpRequests, private val crypto: Cr
         pwdHash: String,
     ) {
         val file = File("$basePath/session$storageId.txt")
-        file.delete()
+        check(!file.delete()) {"Could not delete file"}
         file.createNewFile()
         val text = "timestamp:$timestamp"
         val encryptText = crypto.encryptWithPwd(text, pwdHash)
@@ -175,7 +175,7 @@ class LocalMemory(private val httpRequests: HttpRequests, private val crypto: Cr
      */
     fun deleteConversation(name: String) {
         val file = File("$pathConversation/$name.txt")
-        file.delete()
+        check(!file.delete()) {"Could not delete file"}
     }
 
     /**

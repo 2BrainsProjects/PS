@@ -80,7 +80,7 @@ class Client(
     fun readConfirmationMsg(msg: String) {
         // confirmation:id:name:msg
         val (_, name, message, timestamp) = extractDataFromMessage(msg)
-        // println("removed msg: ${session?.id}:${session?.name}:$message")
+
         messages.remove("${session?.id}:${session?.name}:$message")
         println("$name received the message: $message at $timestamp")
     }
@@ -109,7 +109,7 @@ class Client(
                 }
             }
         } catch (e: Exception) {
-            println("Something went wrong. Try again.")
+            println(GENERAL_ERROR_MESSAGE)
             println(e.message)
         }
     }
@@ -119,7 +119,6 @@ class Client(
         var ids: Set<Int>
         var list: List<Router> = emptyList()
 
-        // if(ids.size <= 1) throw Exception("Not enough routers to build a path")
         var counter = 0
 
         do {
@@ -183,7 +182,7 @@ class Client(
                         Register(httpRequests, session!!, localMemory).execute(args)
                         break
                     } catch (e: Exception) {
-                        println("Something went wrong. Try again.")
+                        println(GENERAL_ERROR_MESSAGE)
                         println(e.message)
                     }
                 }
@@ -197,7 +196,7 @@ class Client(
                         Login(httpRequests, session!!, localMemory).execute(args)
                         break
                     } catch (e: Exception) {
-                        println("Something went wrong. Try again.")
+                        println(GENERAL_ERROR_MESSAGE)
                         println(e.message)
                     }
                 }
@@ -264,7 +263,7 @@ class Client(
         val name = session?.name
 
         if (id == null || pwd == null || name == null) {
-            println("Something went wrong. Try again.")
+            println(GENERAL_ERROR_MESSAGE)
             return
         }
 
@@ -295,7 +294,6 @@ class Client(
                     // id:name:msg
                     val sentMsg = sendMsg(client, msgToSend).replace("final:", "").replace(":$msgDate", "")
                     Thread {
-                        // println("added msg: $sentMsg")
                         messages.add(sentMsg)
                         val timer = System.currentTimeMillis()
                         while (System.currentTimeMillis() - timer < ONE_MINUTE);
@@ -319,12 +317,10 @@ class Client(
                 }
                 "3" -> {
                     val newPage = if (n - 1 >= 0) n - 1 else n
-                    if (newPage >= 0) {
-                        if (localMemory.hasMessagesInPage(client.name, newPage, messagesPerPage, pwd)) {
-                            n = newPage
-                            val messages = localMemory.getMessagesPage(client.name, n, messagesPerPage, pwd)
-                            messages.forEach { println(it.content + " <" + it.timestamp + ">") }
-                        }
+                    if (newPage >= 0 && localMemory.hasMessagesInPage(client.name, newPage, messagesPerPage, pwd)) {
+                        n = newPage
+                        val messages = localMemory.getMessagesPage(client.name, n, messagesPerPage, pwd)
+                        messages.forEach { println(it.content + " <" + it.timestamp + ">") }
                     }
                 }
                 "4" -> {
@@ -342,7 +338,7 @@ class Client(
             val clientId = args.first().toIntOrNull()
             if (clientId != null) {
                 if (clientId == session?.id || clientId < 0) continue
-                if (session?.contacts?.firstOrNull { it.id == clientId } != null) {
+                if (session?.contacts?.any { it.id == clientId } != null) {
                     println("Contact already added!")
                     continue
                 }
@@ -413,10 +409,9 @@ class Client(
         return MessageData(idContact, name, message, timestamp)
     }
 
-    private fun clearConsole() {
-        print("\u001b[H\u001b[2J")
-        /*repeat(40) {
-            println("\n")
-        }*/
+    private fun clearConsole() = print("\u001b[H\u001b[2J")
+
+    companion object{
+        const val GENERAL_ERROR_MESSAGE = "Something went wrong. Try again."
     }
 }
